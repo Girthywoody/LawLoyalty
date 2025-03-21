@@ -85,13 +85,83 @@ const RestaurantLoyaltyApp = () => {
   ]);
   
   const [discountRules, setDiscountRules] = useState({
-    'Server': { 'Downtown Bistro': 25, 'Harbor Seafood': 20, 'Uptown Grill': 15, 'Beachside Café': 20, 'The Garden Restaurant': 25 },
-    'Host': { 'Downtown Bistro': 20, 'Harbor Seafood': 15, 'Uptown Grill': 15, 'Beachside Café': 15, 'The Garden Restaurant': 20 },
-    'Chef': { 'Downtown Bistro': 35, 'Harbor Seafood': 35, 'Uptown Grill': 30, 'Beachside Café': 30, 'The Garden Restaurant': 35 },
-    'Bartender': { 'Downtown Bistro': 30, 'Harbor Seafood': 25, 'Uptown Grill': 30, 'Beachside Café': 35, 'The Garden Restaurant': 30 },
-    'Manager': { 'Downtown Bistro': 40, 'Harbor Seafood': 40, 'Uptown Grill': 40, 'Beachside Café': 40, 'The Garden Restaurant': 40 },
-    'Kitchen Staff': { 'Downtown Bistro': 25, 'Harbor Seafood': 25, 'Uptown Grill': 25, 'Beachside Café': 25, 'The Garden Restaurant': 25 },
-    'Busser': { 'Downtown Bistro': 20, 'Harbor Seafood': 20, 'Uptown Grill': 20, 'Beachside Café': 20, 'The Garden Restaurant': 20 }
+    'Server': { 
+      "Montana's": 20, 
+      "Kelsey's": 20, 
+      "Cora's Breakfast": 10, 
+      "J's Roadhouse": 20, 
+      "Swiss Chalet": 20, 
+      "Overtime Bar": 20, 
+      "Lot 88 Steakhouse": 20, 
+      "Poke Bar": 20, 
+      "Happy Life": 10 
+    },
+    'Host': { 
+      "Montana's": 20, 
+      "Kelsey's": 20, 
+      "Cora's Breakfast": 10, 
+      "J's Roadhouse": 20, 
+      "Swiss Chalet": 20, 
+      "Overtime Bar": 20, 
+      "Lot 88 Steakhouse": 20, 
+      "Poke Bar": 20, 
+      "Happy Life": 10 
+    },
+    'Chef': { 
+      "Montana's": 20, 
+      "Kelsey's": 20, 
+      "Cora's Breakfast": 10, 
+      "J's Roadhouse": 20, 
+      "Swiss Chalet": 20, 
+      "Overtime Bar": 20, 
+      "Lot 88 Steakhouse": 20, 
+      "Poke Bar": 20, 
+      "Happy Life": 10 
+    },
+    'Bartender': { 
+      "Montana's": 20, 
+      "Kelsey's": 20, 
+      "Cora's Breakfast": 10, 
+      "J's Roadhouse": 20, 
+      "Swiss Chalet": 20, 
+      "Overtime Bar": 20, 
+      "Lot 88 Steakhouse": 20, 
+      "Poke Bar": 20, 
+      "Happy Life": 10 
+    },
+    'Manager': { 
+      "Montana's": 20, 
+      "Kelsey's": 20, 
+      "Cora's Breakfast": 10, 
+      "J's Roadhouse": 20, 
+      "Swiss Chalet": 20, 
+      "Overtime Bar": 20, 
+      "Lot 88 Steakhouse": 20, 
+      "Poke Bar": 20, 
+      "Happy Life": 10 
+    },
+    'Kitchen Staff': { 
+      "Montana's": 20, 
+      "Kelsey's": 20, 
+      "Cora's Breakfast": 10, 
+      "J's Roadhouse": 20, 
+      "Swiss Chalet": 20, 
+      "Overtime Bar": 20, 
+      "Lot 88 Steakhouse": 20, 
+      "Poke Bar": 20, 
+      "Happy Life": 10 
+    },
+    'Busser': { 
+      "Montana's": 20, 
+      "Kelsey's": 20, 
+      "Cora's Breakfast": 10, 
+      "J's Roadhouse": 20, 
+      "Swiss Chalet": 20, 
+      "Overtime Bar": 20, 
+      "Lot 88 Steakhouse": 20, 
+      "Poke Bar": 20, 
+      "Happy Life": 10 
+    }
   });
   
   const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: '', discount: 20 });
