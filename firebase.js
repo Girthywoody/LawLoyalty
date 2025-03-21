@@ -53,7 +53,7 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     // Create the invite record first
     const inviteData = {
       email: email,
-      role: role, // 'Employee' or 'Manager'
+      role: role,
       status: 'pending',
       sentAt: new Date(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
@@ -63,13 +63,17 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     const inviteRef = await addDoc(invitesCollection, inviteData);
     const inviteId = inviteRef.id;
     
-    // Build the URL for the complete-signup page with query parameters 
-    const signupUrl = `${window.location.origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
-
-    // Basic action code settings
+    // Get the dynamic URL for the sign-in page
+    // Important: Must include protocol (https://) and exclude any hash fragments
+    const origin = window.location.origin; // e.g., https://your-app.vercel.app
+    const completeUrl = `${origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
+    
+    console.log("Sending email link with URL:", completeUrl);
+    
+    // Action code settings - must exactly match the URL where they'll complete sign-in
     const actionCodeSettings = {
-      url: signupUrl,
-      handleCodeInApp: true
+      url: completeUrl,
+      handleCodeInApp: true, // Must be true for email link authentication
     };
     
     // Send the email with the link
