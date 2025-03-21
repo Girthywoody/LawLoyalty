@@ -632,27 +632,6 @@ if (view === 'register') {
   );
 }
 
-  // LOGIN VIEW
-import React, { useState, useEffect } from 'react';
-import { 
-  Clock, 
-  User, 
-  Building, 
-  Percent, 
-  LogOut, 
-  Plus, 
-  Trash2, 
-  Edit, 
-  CheckCircle, 
-  XCircle,
-  Calendar,
-  Shield,
-  Award,
-  MapPin,
-  Mail,
-  ChevronRight
-} from 'lucide-react';
-
 
 
 
