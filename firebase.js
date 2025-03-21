@@ -176,6 +176,55 @@ export const completeRegistration = async (name, password, inviteId) => {
   }
 };
 
+// Send invite with email link
+export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
+  try {
+    // Create the invite record first
+    const inviteData = {
+      email: email,
+      role: role, // 'Employee' or 'Manager'
+      status: 'pending',
+      sentAt: new Date(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+      senderUid: senderUid
+    };
+    
+    const inviteRef = await addDoc(invitesCollection, inviteData);
+    const inviteId = inviteRef.id;
+    
+    // Save the email to localStorage to be retrieved when the link is clicked
+    localStorage.setItem('emailForSignIn', email);
+    
+    // Save the invite ID in the URL
+    const finalUrl = actionCodeSettings.url + `?inviteId=${inviteId}`;
+    const customActionCodeSettings = {
+      ...actionCodeSettings,
+      url: finalUrl,
+      // This doesn't fully customize the email, but it adds a bit more context
+      // For full customization, you'd need a server-side solution
+      handleCodeInApp: true,
+      iOS: {
+        bundleId: 'com.restaurantgroup.loyalty'
+      },
+      android: {
+        packageName: 'com.restaurantgroup.loyalty',
+        installApp: true
+      },
+      dynamicLinkDomain: 'restaurantloyalty.page.link'
+    };
+    
+    // Send the email
+    await sendSignInLinkToEmail(auth, email, customActionCodeSettings);
+    
+    // In a full implementation, you'd use Firebase Functions or a backend server
+    // to send fully customized HTML emails with your branding
+    
+    return { success: true, inviteId };
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Employee CRUD operations
 export const getEmployees = async () => {
   const snapshot = await getDocs(employeesCollection);

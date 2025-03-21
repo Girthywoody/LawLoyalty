@@ -1,12 +1,12 @@
-// This would be a new file: CompleteSignup.jsx
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { completeRegistration } from './firebase';
-import { User, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { User, Shield, CheckCircle, XCircle, Mail } from 'lucide-react';
 
 const CompleteSignup = () => {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [inviteId, setInviteId] = useState('');
@@ -33,8 +33,13 @@ const CompleteSignup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!name || !password) {
+    if (!name || !password || !confirmPassword) {
       setError('Please fill in all fields');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
     
@@ -62,13 +67,14 @@ const CompleteSignup = () => {
               <Shield size={36} className="text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">Complete Registration</h1>
-          <p className="mt-2 text-gray-500">Set up your account</p>
+          <h1 className="text-3xl font-bold text-gray-800">Welcome Aboard!</h1>
+          <p className="mt-2 text-gray-500">Complete your account setup</p>
         </div>
         
         {email && (
-          <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-            <p className="text-sm text-indigo-700">Completing signup for: <strong>{email}</strong></p>
+          <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 flex items-center">
+            <Mail size={18} className="text-indigo-600 mr-2" />
+            <p className="text-sm text-indigo-700">Setting up account for: <strong>{email}</strong></p>
           </div>
         )}
         
@@ -110,6 +116,24 @@ const CompleteSignup = () => {
                 />
               </div>
             </div>
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Shield size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -139,6 +163,10 @@ const CompleteSignup = () => {
             </button>
           </div>
         </form>
+        
+        <div className="text-center text-sm text-gray-500 mt-4">
+          <p>By creating an account, you'll be able to access employee discounts at participating restaurants.</p>
+        </div>
       </div>
     </div>
   );
