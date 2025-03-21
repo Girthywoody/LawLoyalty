@@ -15,7 +15,9 @@ import {
   Award,
   MapPin,
   Mail,
-  MessageSquare 
+  MessageSquare,
+  Phone,
+  ChevronDown
 } from 'lucide-react';
 
 import { Store } from 'lucide-react';
