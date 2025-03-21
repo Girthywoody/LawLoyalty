@@ -148,33 +148,34 @@ const RestaurantLoyaltyApp = () => {
     
     loadEmployees();
   }, []);
-  const handleCompleteSignup = async (e) => {
-    e.preventDefault();
-    
-    // Don't proceed if already loading
-    if (isLoading) return;
-    
-    setLoginError('');
-    setIsLoading(true);
-    
-    try {
-      // Validate passwords match
-      if (completeSignupPassword !== completeSignupConfirmPassword) {
-        throw new Error('Passwords do not match');
-      }
-      
-      // Complete the registration process
-      await completeRegistration(completeSignupName, completeSignupPassword, inviteCode);
-      
-      showNotification('Account created successfully! Please sign in.', 'success');
-      setView('login');
-    } catch (error) {
-      console.error("Registration error:", error);
-      setLoginError(error.message || 'Failed to complete registration. Please try again.');
-    } finally {
-      setIsLoading(false);
+
+const handleCompleteSignup = async (e) => {
+  e.preventDefault();
+  
+  // Don't proceed if already loading
+  if (isLoading) return;
+  
+  setLoginError('');
+  setIsLoading(true);
+  
+  try {
+    // Validate passwords match
+    if (completeSignupPassword !== completeSignupConfirmPassword) {
+      throw new Error('Passwords do not match');
     }
-  };
+    
+    // Call the completeRegistration function with the required parameters
+    await completeRegistration(completeSignupName, completeSignupPassword, inviteCode);
+    
+    showNotification('Account created successfully! Please sign in.', 'success');
+    setView('login');
+  } catch (error) {
+    console.error("Registration error:", error);
+    setLoginError(error.message || 'Failed to complete registration. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
     // Check for URL parameters that indicate we're coming from an email link
@@ -1061,6 +1062,72 @@ if (view === 'completeSignup') {
   // MANAGER VIEW
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
+      // Add this to the manager view - your invitation form
+
+<div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+  <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+    <h3 className="text-lg font-medium leading-6 text-gray-900">
+      Invite New Employee
+    </h3>
+    <p className="mt-1 text-sm text-gray-500">
+      Send an email invitation to create an account
+    </p>
+  </div>
+  
+  <div className="px-6 py-5">
+    <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
+      <div className="sm:col-span-3">
+        <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
+        <input
+          type="email"
+          id="inviteEmail"
+          placeholder="employee@example.com"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+          value={inviteEmail}
+          onChange={(e) => setInviteEmail(e.target.value)}
+        />
+      </div>
+      <div className="sm:col-span-2">
+        <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
+        <select
+          id="inviteRole"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+          value={inviteRole}
+          onChange={(e) => setInviteRole(e.target.value)}
+        >
+          {jobTitles.map(title => (
+            <option key={title} value={title}>{title}</option>
+          ))}
+        </select>
+      </div>
+      <div className="sm:col-span-1 flex items-end">
+        <button
+          type="button"
+          onClick={handleSendInvite}
+          disabled={isLoading || !inviteEmail}
+          className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center ${isLoading || !inviteEmail ? 'opacity-70 cursor-not-allowed' : ''}`}
+        >
+          Send Invite
+        </button>
+      </div>
+    </div>
+    
+    {inviteSuccess && (
+      <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
+          </div>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-green-800">
+              Invitation sent successfully! The employee will receive an email with instructions.
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
       {notification && <Notification message={notification.message} type={notification.type} />}
       
       {/* Header */}
