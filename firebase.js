@@ -41,11 +41,13 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+
 // Collection references
 const employeesCollection = collection(db, 'employees');
 const restaurantsCollection = collection(db, 'restaurants');
 const invitesCollection = collection(db, 'invites');
 
+export { db, auth, isSignInWithEmailLink };
 export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
     // Create the invite record first
@@ -63,7 +65,7 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     
     // Build the URL for the complete-signup page with query parameters 
     const signupUrl = `${window.location.origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
-        
+
     // Basic action code settings
     const actionCodeSettings = {
       url: signupUrl,
