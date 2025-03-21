@@ -48,7 +48,6 @@ const RestaurantLoyaltyApp = () => {
   const [isEditingEmployee, setIsEditingEmployee] = useState(false);
   const [editEmployee, setEditEmployee] = useState(null);
   const [loginError, setLoginError] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -116,12 +115,6 @@ const RestaurantLoyaltyApp = () => {
   // const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: 'Employee' });
   
     const [email, setEmail] = useState(''); // Instead of username
-    const [newEmployee, setNewEmployee] = useState({ 
-      name: '', 
-      email: '',
-      jobTitle: 'Employee',
-      discount: 20 
-    });
   // Clock update effect
   useEffect(() => {
     const timer = setInterval(() => {
@@ -311,42 +304,6 @@ const handleLogin = async (e) => {
       showNotification("Failed to send invite", "error");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Add employee
-  const addEmployeeToFirebase = async () => {
-    if (newEmployee.name && newEmployee.jobTitle) {
-      try {
-        setIsLoading(true);
-        
-        // Add employee to Firebase
-        await addEmployee({
-          name: newEmployee.name,
-          email: newEmployee.email || '',
-          jobTitle: newEmployee.jobTitle,
-          discount: parseInt(newEmployee.discount) || 20,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-        
-        // Reset form
-        setNewEmployee({ 
-          name: '', 
-          email: '',
-          jobTitle: 'Employee',
-          discount: 20 
-        });
-        setShowAddForm(false);
-        showNotification('Employee added successfully!', 'success');
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error adding employee:", error);
-        showNotification("Failed to add employee", "error");
-        setIsLoading(false);
-      }
-    } else {
-      showNotification('Please fill in all required fields', 'error');
     }
   };
 
@@ -1026,7 +983,7 @@ if (view === 'completeSignup') {
                       <div className="mt-4 bg-indigo-400 bg-opacity-20 p-3 rounded-lg border border-indigo-300 border-opacity-30">
                         <p className="text-sm text-white flex items-center">
                           <Clock size={14} className="mr-2" />
-                          Show this screen to the cashier to receive your discount.
+                          Show this screen to the worker to receive your discount.
                           The live clock confirms this is being viewed in real-time.
                         </p>
                       </div>
@@ -1191,92 +1148,7 @@ if (view === 'completeSignup') {
                     {employees.length} employees registered
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
-                  onClick={() => setShowAddForm(!showAddForm)}
-                >
-                  {showAddForm ? (
-                    <>
-                      <XCircle size={16} className="mr-2" />
-                      Cancel
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={16} className="mr-2" />
-                      Add Employee
-                    </>
-                  )}
-                </button>
               </div>
-
-              {/* Add new employee form */}
-              {showAddForm && (
-                <div className="px-6 py-5 border-b border-gray-200 bg-indigo-50">
-                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
-                    Add New Employee
-                  </h4>
-                  <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
-                    <div className="sm:col-span-2">
-                      <label htmlFor="name" className="block text-xs font-medium text-gray-500 mb-1">Employee Name</label>
-                      <input
-                        type="text"
-                        id="name"
-                        placeholder="Full Name"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                        value={newEmployee.name}
-                        onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})}
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label htmlFor="jobTitle" className="block text-xs font-medium text-gray-500 mb-1">Position</label>
-                      <select
-                        id="jobTitle"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                        value={newEmployee.jobTitle}
-                        onChange={(e) => setNewEmployee({...newEmployee, jobTitle: e.target.value})}
-                      >
-                        <option value="">Select Job Title</option>
-                        {jobTitles.map(title => (
-                          <option key={title} value={title}>{title}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="sm:col-span-1">
-                      <label htmlFor="discount" className="block text-xs font-medium text-gray-500 mb-1">Discount %</label>
-                      <input
-                        type="number"
-                        id="discount"
-                        placeholder="Discount"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                        value={newEmployee.discount}
-                        onChange={(e) => setNewEmployee({...newEmployee, discount: parseInt(e.target.value) || 0})}
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label htmlFor="email" className="block text-xs font-medium text-gray-500 mb-1">Email</label>
-                      <input
-                        type="email"
-                        id="email"
-                        placeholder="Email Address"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                        value={newEmployee.email}
-                        onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
-                      />
-                    </div>
-                    <div className="sm:col-span-1 flex items-end">
-                      <button
-                        type="button"
-                        onClick={addEmployeeToFirebase}
-                        className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 w-full justify-center"
-                      >
-                        <CheckCircle size={16} className="mr-2" />
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Employee list */}
               <div className="px-6 py-5">
@@ -1285,7 +1157,7 @@ if (view === 'completeSignup') {
                   <div className="relative w-full sm:w-64 mb-4 sm:mb-0">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <input
@@ -1567,7 +1439,7 @@ const DiscountCard = ({ location, discount, currentTime }) => (
         <div className="mt-4 bg-indigo-400 bg-opacity-20 p-3 rounded-lg border border-indigo-300 border-opacity-30">
           <p className="text-sm text-white flex items-center">
             <Clock size={14} className="mr-2" />
-            Show this screen to the cashier to receive your discount.
+            Show this screen to the worker to receive your discount.
             The live clock confirms this is being viewed in real-time.
           </p>
         </div>
