@@ -57,7 +57,7 @@ const RestaurantLoyaltyApp = () => {
   const [jobTitles, setJobTitles] = useState(['Employee', 'Manager']);
   const [employees, setEmployees] = useState([]);
   const [inviteSuccess, setInviteSuccess] = useState(false);
-
+  const [showRestaurantDropdown, setShowRestaurantDropdown] = useState(false);
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerName, setRegisterName] = useState('');
@@ -904,101 +904,108 @@ if (view === 'completeSignup') {
 
             {/* Location selector */}
             <div className="p-6 border-b border-gray-200">
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-4">
+              <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-4">
                 Select Restaurant Location
               </label>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {RESTAURANTS.map((restaurant) => (
-                    <div key={restaurant.id}>
-                      <button
-                        onClick={() => {
-                          setSelectedRestaurant(restaurant);
-                          if (!restaurant.locations) {
-                            setSelectedLocation(restaurant.name);
-                          }
-                        }}
-                        className={`w-full p-4 rounded-lg border-2 transition-all duration-200 flex items-center justify-between group hover:border-indigo-500 hover:bg-indigo-50 ${
-                          selectedRestaurant?.id === restaurant.id 
-                            ? 'border-indigo-500 bg-indigo-50' 
-                            : 'border-gray-200 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            selectedRestaurant?.id === restaurant.id 
-                              ? 'bg-indigo-100' 
-                              : 'bg-gray-100 group-hover:bg-indigo-100'
-                          }`}>
-                            <Building size={20} className={`${
-                              selectedRestaurant?.id === restaurant.id 
-                                ? 'text-indigo-600' 
-                                : 'text-gray-500 group-hover:text-indigo-600'
-                            }`} />
-                          </div>
-                          <div className="ml-3 text-left">
-                            <p className={`font-medium ${
-                              selectedRestaurant?.id === restaurant.id 
-                                ? 'text-indigo-700' 
-                                : 'text-gray-700'
-                            }`}>
-                              {restaurant.name}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {restaurant.discount} discount
-                            </p>
-                          </div>
-                        </div>
-                        {restaurant.locations && (
-                          <MapPin size={16} className="text-gray-400 group-hover:text-indigo-500" />
-                        )}
-                      </button>
-                      
-                      {/* Show location options if this restaurant is selected and has multiple locations */}
-                      {selectedRestaurant?.id === restaurant.id && restaurant.locations && (
-                        <div className="mt-2 ml-12 space-y-2">
-                          {restaurant.locations.map((location) => (
-                            <button
-                              key={location.id}
-                              onClick={() => setSelectedLocation(location.name)}
-                              className={`w-full p-3 rounded-lg border transition-all duration-200 flex items-center ${
-                                selectedLocation === location.name
-                                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                  : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
-                              }`}
-                            >
-                              <MapPin size={16} className={`mr-2 ${
-                                selectedLocation === location.name
-                                  ? 'text-indigo-500'
-                                  : 'text-gray-400'
-                              }`} />
-                              <span className="text-sm">{location.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+              
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowRestaurantDropdown(!showRestaurantDropdown)}
+                  className="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Building size={20} className="text-gray-400 mr-3" />
+                      <span className="text-gray-700">
+                        {selectedRestaurant ? selectedRestaurant.name : 'Select a restaurant'}
+                      </span>
                     </div>
-                  ))}
-                </div>
+                    <svg
+                      className={`h-5 w-5 text-gray-400 transform transition-transform duration-200 ${
+                        showRestaurantDropdown ? 'rotate-180' : ''
+                      }`}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </button>
 
-                {/* Selected restaurant info */}
-                {selectedRestaurant && selectedLocation && (
-                  <div className="mt-6 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm font-medium text-indigo-900">Selected Location</h3>
-                        <p className="text-lg font-semibold text-indigo-700">
-                          {selectedRestaurant.name}
-                          {selectedLocation !== selectedRestaurant.name && ` - ${selectedLocation}`}
-                        </p>
-                      </div>
-                      <div className="bg-white px-3 py-1 rounded-full border border-indigo-200">
-                        <span className="text-indigo-700 font-medium">{selectedRestaurant.discount} discount</span>
-                      </div>
+                {/* Dropdown menu */}
+                {showRestaurantDropdown && (
+                  <div className="absolute z-10 mt-2 w-full rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                    <div className="max-h-60 overflow-auto">
+                      {RESTAURANTS.map((restaurant) => (
+                        <div key={restaurant.id}>
+                          <button
+                            onClick={() => {
+                              setSelectedRestaurant(restaurant);
+                              if (!restaurant.locations) {
+                                setSelectedLocation(restaurant.name);
+                              }
+                              setShowRestaurantDropdown(false);
+                            }}
+                            className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center justify-between group"
+                          >
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center mr-3 group-hover:bg-indigo-100">
+                                <Building size={16} className="text-indigo-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{restaurant.name}</p>
+                                <p className="text-xs text-gray-500">{restaurant.discount} discount</p>
+                              </div>
+                            </div>
+                            {restaurant.locations && (
+                              <MapPin size={16} className="text-gray-400 group-hover:text-indigo-500" />
+                            )}
+                          </button>
+
+                          {/* Location sub-menu */}
+                          {selectedRestaurant?.id === restaurant.id && restaurant.locations && (
+                            <div className="ml-12 border-l border-gray-100">
+                              {restaurant.locations.map((location) => (
+                                <button
+                                  key={location.id}
+                                  onClick={() => {
+                                    setSelectedLocation(location.name);
+                                    setShowRestaurantDropdown(false);
+                                  }}
+                                  className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center"
+                                >
+                                  <MapPin size={14} className="text-gray-400 mr-2" />
+                                  <span className="text-sm text-gray-700">{location.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
               </div>
+
+              {/* Selected restaurant info */}
+              {selectedRestaurant && selectedLocation && (
+                <div className="mt-6 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-indigo-900">Selected Location</h3>
+                      <p className="text-lg font-semibold text-indigo-700">
+                        {selectedRestaurant.name}
+                        {selectedLocation !== selectedRestaurant.name && ` - ${selectedLocation}`}
+                      </p>
+                    </div>
+                    <div className="bg-white px-3 py-1 rounded-full border border-indigo-200">
+                      <span className="text-indigo-700 font-medium">{selectedRestaurant.discount} discount</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Discount display */}
