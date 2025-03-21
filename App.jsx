@@ -988,24 +988,6 @@ if (view === 'completeSignup') {
                   </div>
                 )}
               </div>
-
-              {/* Selected restaurant info */}
-              {selectedRestaurant && selectedLocation && (
-                <div className="mt-6 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium text-indigo-900">Selected Location</h3>
-                      <p className="text-lg font-semibold text-indigo-700">
-                        {selectedRestaurant.name}
-                        {selectedLocation !== selectedRestaurant.name && ` - ${selectedLocation}`}
-                      </p>
-                    </div>
-                    <div className="bg-white px-3 py-1 rounded-full border border-indigo-200">
-                      <span className="text-indigo-700 font-medium">{selectedRestaurant.discount} discount</span>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Discount display */}
