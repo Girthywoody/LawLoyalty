@@ -140,11 +140,11 @@ export const completeRegistration = async (name, password, inviteCode) => {
   }
 };
 
-// Modify the sendManagerInvite function in firebase.js
+// Modify the sendManagerInvite function to direct to the signup page
 export const sendManagerInvite = async (email, role, senderUid, restaurantId) => {
   try {
     // Generate a unique invite code
-    const inviteCode = generateUniqueId(); // Ensure this function exists or use a UUID library
+    const inviteCode = generateUniqueId();
     
     // Store the invitation in Firestore without checking for sender in employees database
     const inviteRef = await addDoc(collection(db, 'invites'), {
@@ -157,17 +157,15 @@ export const sendManagerInvite = async (email, role, senderUid, restaurantId) =>
       code: inviteCode
     });
     
-    // Generate magic link for email
+    // Generate magic link for email - notice the updated URL format
     const actionCodeSettings = {
+      // Change this URL to explicitly point to the completeSignup view
       url: `${window.location.origin}?mode=complete&email=${email}&inviteId=${inviteCode}`,
       handleCodeInApp: true
     };
     
     // Send the email invitation
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    
-    // Save the invite code to localStorage to complete the flow
-    localStorage.setItem('emailForSignIn', email);
     
     return inviteRef.id;
   } catch (error) {

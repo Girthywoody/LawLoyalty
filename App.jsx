@@ -192,23 +192,23 @@ useEffect(() => {
     }
   };
 
-useEffect(() => {
-  // Check for URL parameters that indicate we're coming from an email link
-  const params = new URLSearchParams(window.location.search);
-  const mode = params.get('mode');
-  const emailParam = params.get('email');
-  const inviteIdParam = params.get('inviteId');
-  
-  if (mode === 'complete' && emailParam && inviteIdParam) {
-    // Store the email in localStorage for the auth process
-    localStorage.setItem('emailForSignIn', emailParam);
-    setInviteEmail(emailParam);
-    setInviteCode(inviteIdParam);
+  useEffect(() => {
+    // Check for URL parameters that indicate we're coming from an email link
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const emailParam = params.get('email');
+    const inviteIdParam = params.get('inviteId');
     
-    // Set the view to a dedicated welcome signup page
-    setView('completeSignup');
-  }
-}, []);
+    if (mode === 'complete' && emailParam && inviteIdParam) {
+      // Store the email in localStorage for the auth process
+      localStorage.setItem('emailForSignIn', emailParam);
+      setInviteEmail(emailParam);
+      setInviteCode(inviteIdParam);
+      
+      // Set the view to a dedicated welcome signup page
+      setView('completeSignup');
+    }
+  }, []);
 
   // Format time with leading zeros and seconds
   const formatTime = (time) => {
