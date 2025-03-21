@@ -17,12 +17,10 @@ import {
   Mail
 } from 'lucide-react';
 
+
+
 import { createUser, sendEmployeeInvite } from './firebase';
-// Add a new state
-const [view, setView] = useState('login');  // options: 'login', 'register', 'employee', 'manager'
-const [registerEmail, setRegisterEmail] = useState('');
-const [registerPassword, setRegisterPassword] = useState('');
-const [registerName, setRegisterName] = useState('');
+
 
 import { 
   loginWithEmailAndPassword, 
@@ -53,6 +51,10 @@ const RestaurantLoyaltyApp = () => {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [jobTitles, setJobTitles] = useState(['Employee', 'Manager']);
   const [employees, setEmployees] = useState([]);
+
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerName, setRegisterName] = useState('');
   
   // Data
   const RESTAURANTS = [
