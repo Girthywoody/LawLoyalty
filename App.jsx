@@ -25,6 +25,11 @@ import {
 
 import { createUser, sendEmployeeInvite } from './firebase';
 
+import { 
+  createManagerWithRestaurant,
+  subscribeToRestaurantEmployees,
+  sendManagerInvite
+} from './firebase';
 
 import { 
   loginWithEmailAndPassword, 
@@ -517,41 +522,39 @@ const getRestaurantName = (restaurantId) => {
   return "Unknown Restaurant";
 };
   // Handling the creation of restaurant managers
-const handleCreateManager = async () => {
-  if (!inviteEmail || !selectedManagerRestaurant) {
-    showNotification('Please enter an email address and select a restaurant', 'error');
-    return;
-  }
-  
-  setIsLoading(true);
-  
-  try {
-    // For the demo, we'll use a temporary password
-    const tempPassword = 'manager123';
+  const handleCreateManager = async () => {
+    if (!inviteEmail || !selectedManagerRestaurant) {
+      showNotification('Please enter an email address and select a restaurant', 'error');
+      return;
+    }
     
-    // Create the manager with restaurant assignment
-    await createManagerWithRestaurant(
-      inviteEmail, 
-      tempPassword, 
-      'New Manager', // This will be updated during onboarding
-      selectedManagerRestaurant.id
-    );
+    setIsLoading(true);
     
-    showNotification(`Manager account created for ${inviteEmail} at ${selectedManagerRestaurant.name}`, 'success');
-    setInviteEmail('');
-    setSelectedManagerRestaurant(null);
-    setInviteSuccess(true);
-    
-    setTimeout(() => {
-      setInviteSuccess(false);
-    }, 5000);
-  } catch (error) {
-    console.error("Error creating manager:", error);
-    showNotification("Failed to create manager account", "error");
-  } finally {
-    setIsLoading(false);
-  }
-};
+    try {
+      // Instead of creating the account directly, send an invitation
+      // with manager role and restaurant assignment
+      await sendManagerInvite(
+        inviteEmail, 
+        'Manager',
+        currentUser.id,
+        selectedManagerRestaurant.id
+      );
+      
+      showNotification(`Invitation sent to ${inviteEmail} for ${selectedManagerRestaurant.name}`, 'success');
+      setInviteEmail('');
+      setSelectedManagerRestaurant(null);
+      setInviteSuccess(true);
+      
+      setTimeout(() => {
+        setInviteSuccess(false);
+      }, 5000);
+    } catch (error) {
+      console.error("Error sending manager invitation:", error);
+      showNotification("Failed to send manager invitation", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Add this effect to handle search filtering
   useEffect(() => {

@@ -81,6 +81,58 @@ export const createManagerWithRestaurant = async (email, password, name, restaur
   }
 };
 
+// Add this function to firebase.js
+export const sendManagerInvite = async (email, role, senderUid, restaurantId) => {
+  try {
+    // Get the sender's information
+    const employeesRef = collection(db, 'employees');
+    const q = query(employeesRef, where("uid", "==", senderUid));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      throw new Error('Sender not found in employees database');
+    }
+    
+    const senderData = querySnapshot.docs[0].data();
+    
+    // Get restaurant name
+    const restaurantName = getRestaurantName(restaurantId);
+    
+    // Create the invite record with restaurant assignment
+    const inviteData = {
+      email: email,
+      role: role,
+      status: 'pending',
+      sentAt: new Date(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+      senderUid: senderUid,
+      restaurantId: restaurantId,
+      restaurantName: restaurantName
+    };
+    
+    const inviteRef = await addDoc(invitesCollection, inviteData);
+    const inviteId = inviteRef.id;
+    
+    // Get the dynamic URL for the sign-in page
+    const origin = window.location.origin;
+    const completeUrl = `${origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
+    
+    // Action code settings
+    const actionCodeSettings = {
+      url: completeUrl,
+      handleCodeInApp: true,
+    };
+    
+    // Send the email with the link
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    
+    return { success: true, inviteId };
+  } catch (error) {
+    console.error("Error sending manager invite:", error);
+    throw error;
+  }
+};
+
 // Helper function to get restaurant name by ID
 export const getRestaurantName = (restaurantId) => {
   const RESTAURANTS = [
