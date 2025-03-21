@@ -260,11 +260,11 @@ const RestaurantLoyaltyApp = () => {
   // LOGIN VIEW
   if (view === 'login') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100">
-        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
           <div className="text-center">
             <div className="flex justify-center">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-4">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
                 <Shield size={36} className="text-white" />
               </div>
             </div>
@@ -326,10 +326,6 @@ const RestaurantLoyaltyApp = () => {
                 <CheckCircle size={14} className="text-green-500 mr-2" />
                 <span>Include "manager" in name for manager access</span>
               </div>
-              <div className="flex items-center">
-                <CheckCircle size={14} className="text-green-500 mr-2" />
-                <span>Use "password" as the password</span>
-              </div>
             </div>
 
             {loginError && (
@@ -357,9 +353,6 @@ const RestaurantLoyaltyApp = () => {
                   'Sign in'
                 )}
               </button>
-              <p className="mt-3 text-sm text-gray-500 text-center">
-                For demo: Enter any name or "manager" for manager view
-              </p>
             </div>
           </form>
         </div>
@@ -902,6 +895,49 @@ const DiscountRuleCard = ({ jobTitle, locations, discountRules }) => (
           </span>
         </div>
       ))}
+    </div>
+  </div>
+);
+
+// Update the employee view styling for the discount card
+const DiscountCard = ({ location, discount, currentTime }) => (
+  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <p className="text-sm font-medium text-indigo-100">Location</p>
+        <div className="flex items-center mt-1">
+          <Building size={18} className="text-white mr-2" />
+          <p className="text-lg font-medium text-white">{location}</p>
+        </div>
+      </div>
+      <div>
+        <p className="text-sm font-medium text-indigo-100">Your Discount</p>
+        <div className="flex items-center mt-1">
+          <Percent size={18} className="text-white mr-2" />
+          <p className="text-3xl font-bold text-white">{discount}%</p>
+        </div>
+      </div>
+      <div className="md:col-span-2 pt-3 border-t border-indigo-400">
+        <p className="text-sm font-medium text-indigo-100">Valid</p>
+        <div className="flex items-center mt-1">
+          <Calendar size={18} className="text-white mr-2" />
+          <p className="text-lg font-medium text-white">
+            {new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </p>
+        </div>
+        <div className="mt-4 bg-indigo-400 bg-opacity-20 p-3 rounded-lg border border-indigo-300 border-opacity-30">
+          <p className="text-sm text-white flex items-center">
+            <Clock size={14} className="mr-2" />
+            Show this screen to the cashier to receive your discount.
+            The live clock confirms this is being viewed in real-time.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 );
