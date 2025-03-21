@@ -46,7 +46,7 @@ const employeesCollection = collection(db, 'employees');
 const restaurantsCollection = collection(db, 'restaurants');
 const invitesCollection = collection(db, 'invites');
 
-// Send invite with email link - simplified version
+// Send invite with email link - simplified version without react-router
 export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
     // Create the invite record first
@@ -62,20 +62,17 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     const inviteRef = await addDoc(invitesCollection, inviteData);
     const inviteId = inviteRef.id;
     
-    // Build the URL for the complete signup page
-    const completeSignupUrl = `${window.location.origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
+    // Build the URL for the main page with query parameters 
+    const signupUrl = `${window.location.origin}/?mode=complete&inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
     
-    // Basic action code settings without any dynamic link domains
+    // Basic action code settings
     const actionCodeSettings = {
-      url: completeSignupUrl,
+      url: signupUrl,
       handleCodeInApp: true
     };
     
     // Send the email with the link
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    
-    // Store the email in localStorage so it can be retrieved when the user clicks the link
-    localStorage.setItem('emailForSignIn', email);
     
     return { success: true, inviteId };
   } catch (error) {

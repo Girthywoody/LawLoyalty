@@ -17,6 +17,9 @@ import {
   Mail
 } from 'lucide-react';
 
+const [completeSignupName, setCompleteSignupName] = useState('');
+const [completeSignupPassword, setCompleteSignupPassword] = useState('');
+const [completeSignupConfirmPassword, setCompleteSignupConfirmPassword] = useState('');
 
 
 
@@ -145,6 +148,49 @@ const RestaurantLoyaltyApp = () => {
     };
     
     loadEmployees();
+  }, []);
+  const handleCompleteSignup = async (e) => {
+    e.preventDefault();
+    
+    // Don't proceed if already loading
+    if (isLoading) return;
+    
+    setLoginError('');
+    setIsLoading(true);
+    
+    try {
+      // Validate passwords match
+      if (completeSignupPassword !== completeSignupConfirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+      
+      // Complete the registration process
+      await completeRegistration(completeSignupName, completeSignupPassword, inviteCode);
+      
+      showNotification('Account created successfully! Please sign in.', 'success');
+      setView('login');
+    } catch (error) {
+      console.error("Registration error:", error);
+      setLoginError(error.message || 'Failed to complete registration. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Check for URL parameters that indicate we're coming from an email link
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const emailParam = params.get('email');
+    const inviteIdParam = params.get('inviteId');
+    
+    if (mode === 'complete' && emailParam && inviteIdParam) {
+      // Store the email in localStorage for the auth process
+      localStorage.setItem('emailForSignIn', emailParam);
+      setInviteEmail(emailParam);
+      setInviteCode(inviteIdParam);
+      setView('completeSignup');
+    }
   }, []);
 
   // Format time with leading zeros and seconds
@@ -695,6 +741,122 @@ if (view === 'register') {
       </div>
     );
   }
+
+  // COMPLETE SIGNUP VIEW
+if (view === 'completeSignup') {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+        <div className="text-center">
+          <div className="flex justify-center">
+            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
+              <Shield size={36} className="text-white" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800">Welcome Aboard!</h1>
+          <p className="mt-2 text-gray-500">Complete your account setup</p>
+        </div>
+        
+        {inviteEmail && (
+          <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 flex items-center">
+            <Mail size={18} className="text-indigo-600 mr-2" />
+            <p className="text-sm text-indigo-700">Setting up account for: <strong>{inviteEmail}</strong></p>
+          </div>
+        )}
+        
+        <form className="mt-6 space-y-6" onSubmit={handleCompleteSignup}>
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="completeName" className="block text-sm font-medium text-gray-700 mb-1">Your Full Name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="completeName"
+                  name="completeName"
+                  type="text"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Enter your full name"
+                  value={completeSignupName}
+                  onChange={(e) => setCompleteSignupName(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="completePassword" className="block text-sm font-medium text-gray-700 mb-1">Create Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Shield size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="completePassword"
+                  name="completePassword"
+                  type="password"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Create a secure password"
+                  value={completeSignupPassword}
+                  onChange={(e) => setCompleteSignupPassword(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Shield size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Confirm your password"
+                  value={completeSignupConfirmPassword}
+                  onChange={(e) => setCompleteSignupConfirmPassword(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {loginError && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex items-center">
+              <XCircle size={16} className="mr-2" />
+              {loginError}
+            </div>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors font-medium ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating Account...
+                </>
+              ) : (
+                'Complete Setup'
+              )}
+            </button>
+          </div>
+        </form>
+        
+        <div className="text-center text-sm text-gray-500 mt-4">
+          <p>By creating an account, you'll get access to exclusive employee discounts at participating restaurants!</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
   // EMPLOYEE VIEW
   if (view === 'employee') {
