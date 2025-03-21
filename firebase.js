@@ -279,4 +279,3 @@ export const subscribeToRestaurants = (callback) => {
   });
 };
 
-export { db, auth };
