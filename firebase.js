@@ -61,8 +61,8 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     const inviteRef = await addDoc(invitesCollection, inviteData);
     const inviteId = inviteRef.id;
     
-    // Build the URL for the main page with query parameters 
-    const signupUrl = `${window.location.origin}/?mode=complete&inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
+    // Build the URL for the complete-signup page with query parameters 
+    const signupUrl = `${window.location.origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
     
     // Basic action code settings
     const actionCodeSettings = {
