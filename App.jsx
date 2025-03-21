@@ -12,7 +12,8 @@ import {
   XCircle,
   Calendar,
   Shield,
-  Award
+  Award,
+  MapPin
 } from 'lucide-react';
 
 const RestaurantLoyaltyApp = () => {
@@ -31,15 +32,38 @@ const RestaurantLoyaltyApp = () => {
   const [notification, setNotification] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   
   // Data
-  const [locations, setLocations] = useState([
-    'Downtown Bistro', 
-    'Harbor Seafood', 
-    'Uptown Grill', 
-    'Beachside Café',
-    'The Garden Restaurant'
-  ]);
+  const RESTAURANTS = [
+    { id: "montanas", name: "Montana's", discount: "20%" },
+    { id: "kelseys", name: "Kelsey's", discount: "20%" },
+    { id: "coras", name: "Cora's Breakfast", discount: "10%" },
+    { id: "js-roadhouse", name: "J's Roadhouse", discount: "20%" },
+    { id: "swiss-chalet", name: "Swiss Chalet", discount: "20%" },
+    {
+      id: "overtime-bar",
+      name: "Overtime Bar",
+      discount: "20%",
+      locations: [
+        { id: "overtime-sudbury", name: "Sudbury" },
+        { id: "overtime-val-caron", name: "Val Caron" },
+        { id: "overtime-chelmsford", name: "Chelmsford" }
+      ]
+    },
+    { id: "lot-88", name: "Lot 88 Steakhouse", discount: "20%" },
+    { id: "poke-bar", name: "Poke Bar", discount: "20%" },
+    {
+      id: "happy-life",
+      name: "Happy Life",
+      discount: "10%",
+      locations: [
+        { id: "happy-life-kingsway", name: "Kingsway" },
+        { id: "happy-life-val-caron", name: "Val Caron" },
+        { id: "happy-life-chelmsford", name: "Chelmsford" }
+      ]
+    }
+  ];
   
   const [jobTitles, setJobTitles] = useState([
     'Server', 
@@ -410,23 +434,75 @@ const RestaurantLoyaltyApp = () => {
             {/* Location selector */}
             <div className="p-6 border-b border-gray-200">
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Select Restaurant Location
+                Select Restaurant
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Building size={20} className="text-gray-500" />
+              <div className="space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building size={20} className="text-gray-500" />
+                  </div>
+                  <select
+                    id="restaurant"
+                    className="block w-full pl-10 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg border shadow-sm"
+                    value={selectedRestaurant?.id || ""}
+                    onChange={(e) => {
+                      const restaurant = RESTAURANTS.find(r => r.id === e.target.value);
+                      setSelectedRestaurant(restaurant);
+                      if (!restaurant?.locations) {
+                        setSelectedLocation(restaurant?.name || "");
+                      } else {
+                        setSelectedLocation("");
+                      }
+                    }}
+                  >
+                    <option value="">Select a restaurant</option>
+                    {RESTAURANTS.map((restaurant) => (
+                      <option key={restaurant.id} value={restaurant.id}>
+                        {restaurant.name} ({restaurant.discount} discount)
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <select
-                  id="location"
-                  className="block w-full pl-10 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg border shadow-sm"
-                  value={selectedLocation}
-                  onChange={(e) => setSelectedLocation(e.target.value)}
-                >
-                  <option value="">Select a restaurant</option>
-                  {locations.map((location) => (
-                    <option key={location} value={location}>{location}</option>
-                  ))}
-                </select>
+
+                {/* Show location dropdown only if the selected restaurant has multiple locations */}
+                {selectedRestaurant?.locations && (
+                  <div className="relative mt-4">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <MapPin size={20} className="text-gray-500" />
+                    </div>
+                    <select
+                      id="location"
+                      className="block w-full pl-10 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg border shadow-sm"
+                      value={selectedLocation}
+                      onChange={(e) => setSelectedLocation(e.target.value)}
+                    >
+                      <option value="">Select a location</option>
+                      {selectedRestaurant.locations.map((location) => (
+                        <option key={location.id} value={location.name}>
+                          {location.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Show selected restaurant info */}
+                {selectedRestaurant && (
+                  <div className="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-medium text-indigo-900">Selected Restaurant</h3>
+                        <p className="text-lg font-semibold text-indigo-700">
+                          {selectedRestaurant.name}
+                          {selectedLocation && ` - ${selectedLocation}`}
+                        </p>
+                      </div>
+                      <div className="bg-white px-3 py-1 rounded-full border border-indigo-200">
+                        <span className="text-indigo-700 font-medium">{selectedRestaurant.discount} discount</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -751,7 +827,7 @@ const RestaurantLoyaltyApp = () => {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 {employee.discount}%
                               </span>
                             </td>
@@ -798,9 +874,9 @@ const RestaurantLoyaltyApp = () => {
                           <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Position
                           </th>
-                          {locations.map(location => (
-                            <th key={location} scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              {location}
+                          {RESTAURANTS.map(restaurant => (
+                            <th key={restaurant.id} scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              {restaurant.name}
                             </th>
                           ))}
                         </tr>
@@ -811,14 +887,14 @@ const RestaurantLoyaltyApp = () => {
                             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                               {jobTitle}
                             </td>
-                            {locations.map(location => (
-                              <td key={`${jobTitle}-${location}`} className="px-4 py-3 whitespace-nowrap text-center">
+                            {RESTAURANTS.map(restaurant => (
+                              <td key={`${jobTitle}-${restaurant.id}`} className="px-4 py-3 whitespace-nowrap text-center">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  discountRules[jobTitle][location] >= 30 ? 'bg-green-100 text-green-800' : 
-                                  discountRules[jobTitle][location] >= 20 ? 'bg-blue-100 text-blue-800' : 
+                                  discountRules[jobTitle][restaurant.name] >= 30 ? 'bg-green-100 text-green-800' : 
+                                  discountRules[jobTitle][restaurant.name] >= 20 ? 'bg-blue-100 text-blue-800' : 
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {discountRules[jobTitle][location]}%
+                                  {discountRules[jobTitle][restaurant.name]}%
                                 </span>
                               </td>
                             ))}
@@ -836,11 +912,11 @@ const RestaurantLoyaltyApp = () => {
           <div className="space-y-6">
             <h2 className="text-lg font-medium text-gray-900">Discount Rules</h2>
             <div className="grid gap-4">
-              {jobTitles.map(jobTitle => (
+              {RESTAURANTS.map(restaurant => (
                 <DiscountRuleCard
-                  key={jobTitle}
-                  jobTitle={jobTitle}
-                  locations={locations}
+                  key={restaurant.id}
+                  restaurant={restaurant}
+                  locations={RESTAURANTS}
                   discountRules={discountRules}
                 />
               ))}
@@ -880,18 +956,18 @@ const EmployeeLocationCard = ({ location, discount }) => (
 );
 
 // Add this component for the manager view
-const DiscountRuleCard = ({ jobTitle, locations, discountRules }) => (
+const DiscountRuleCard = ({ restaurant, locations, discountRules }) => (
   <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-    <h3 className="font-medium text-gray-900 mb-3">{jobTitle}</h3>
+    <h3 className="font-medium text-gray-900 mb-3">{restaurant.name}</h3>
     <div className="space-y-2">
       {locations.map(location => (
-        <div key={location} className="flex justify-between items-center text-sm">
-          <span className="text-gray-600">{location}</span>
+        <div key={location.id} className="flex justify-between items-center text-sm">
+          <span className="text-gray-600">{location.name}</span>
           <span className={`px-2 py-0.5 rounded-full ${
-            discountRules[jobTitle][location] >= 30 ? 'bg-green-100 text-green-800' :
+            discountRules[restaurant.name][location.name] >= 30 ? 'bg-green-100 text-green-800' :
             'bg-blue-100 text-blue-800'
           }`}>
-            {discountRules[jobTitle][location]}%
+            {discountRules[restaurant.name][location.name]}%
           </span>
         </div>
       ))}
