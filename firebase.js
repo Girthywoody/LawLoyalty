@@ -48,32 +48,127 @@ const restaurantsCollection = collection(db, 'restaurants');
 const invitesCollection = collection(db, 'invites');
 
 export { db, auth, isSignInWithEmailLink };
+
+
+
+
+// === STEP 1: Update firebase.js with restaurant assignments ===
+
+// Add this to your firebase.js file
+export const createManagerWithRestaurant = async (email, password, name, restaurantId) => {
+  try {
+    // Create the user in Firebase Authentication
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Add user to employees collection as a manager with restaurant assignment
+    await addEmployee({
+      name: name,
+      email: email,
+      jobTitle: 'Manager',
+      discount: 40,
+      restaurantId: restaurantId, // Add restaurant assignment
+      restaurantName: getRestaurantName(restaurantId), // We'll implement this function
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      uid: user.uid
+    });
+    
+    return user;
+  } catch (error) {
+    console.error("Error creating manager:", error);
+    throw error;
+  }
+};
+
+// Helper function to get restaurant name by ID
+export const getRestaurantName = (restaurantId) => {
+  const RESTAURANTS = [
+    { id: "montanas", name: "Montana's" },
+    { id: "kelseys", name: "Kelsey's" },
+    { id: "coras", name: "Cora's Breakfast" },
+    { id: "js-roadhouse", name: "J's Roadhouse" },
+    { id: "swiss-chalet", name: "Swiss Chalet" },
+    {
+      id: "overtime-bar",
+      name: "Overtime Bar",
+      locations: [
+        { id: "overtime-sudbury", name: "Sudbury" },
+        { id: "overtime-val-caron", name: "Val Caron" },
+        { id: "overtime-chelmsford", name: "Chelmsford" }
+      ]
+    },
+    { id: "lot-88", name: "Lot 88 Steakhouse" },
+    { id: "poke-bar", name: "Poke Bar" },
+    {
+      id: "happy-life",
+      name: "Happy Life",
+      locations: [
+        { id: "happy-life-kingsway", name: "Kingsway" },
+        { id: "happy-life-val-caron", name: "Val Caron" },
+        { id: "happy-life-chelmsford", name: "Chelmsford" }
+      ]
+    }
+  ];
+  
+  const restaurant = RESTAURANTS.find(r => r.id === restaurantId);
+  
+  if (restaurant) {
+    return restaurant.name;
+  }
+  
+  // For location-specific IDs
+  for (const restaurant of RESTAURANTS) {
+    if (restaurant.locations) {
+      const location = restaurant.locations.find(l => l.id === restaurantId);
+      if (location) {
+        return `${restaurant.name} - ${location.name}`;
+      }
+    }
+  }
+  
+  return "Unknown Restaurant";
+};
+
+// Modify the sendEmployeeInvite function to include restaurant assignment
 export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
-    // Create the invite record first
+    // Get the sender's restaurant assignment
+    const employeesRef = collection(db, 'employees');
+    const q = query(employeesRef, where("uid", "==", senderUid));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      throw new Error('Sender not found in employees database');
+    }
+    
+    const senderData = querySnapshot.docs[0].data();
+    const restaurantId = senderData.restaurantId || null;
+    const restaurantName = senderData.restaurantName || null;
+    
+    // Create the invite record with restaurant info
     const inviteData = {
       email: email,
       role: role,
       status: 'pending',
       sentAt: new Date(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
-      senderUid: senderUid
+      senderUid: senderUid,
+      restaurantId: restaurantId,
+      restaurantName: restaurantName
     };
     
     const inviteRef = await addDoc(invitesCollection, inviteData);
     const inviteId = inviteRef.id;
     
     // Get the dynamic URL for the sign-in page
-    // Important: Must include protocol (https://) and exclude any hash fragments
-    const origin = window.location.origin; // e.g., https://your-app.vercel.app
+    const origin = window.location.origin;
     const completeUrl = `${origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
     
-    console.log("Sending email link with URL:", completeUrl);
-    
-    // Action code settings - must exactly match the URL where they'll complete sign-in
+    // Action code settings
     const actionCodeSettings = {
       url: completeUrl,
-      handleCodeInApp: true, // Must be true for email link authentication
+      handleCodeInApp: true,
     };
     
     // Send the email with the link
@@ -86,6 +181,7 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
   }
 };
 
+// Modify the completeRegistration function to include restaurant info
 export const completeRegistration = async (name, password, inviteId) => {
   try {
     // Check if the link is a sign-in with email link
@@ -129,6 +225,8 @@ export const completeRegistration = async (name, password, inviteId) => {
         email: email,
         jobTitle: invite.role,
         discount: invite.role === 'Manager' ? 40 : 20,
+        restaurantId: invite.restaurantId, // Include restaurant ID
+        restaurantName: invite.restaurantName, // Include restaurant name
         createdAt: new Date(),
         updatedAt: new Date(),
         uid: user.uid
@@ -152,6 +250,30 @@ export const completeRegistration = async (name, password, inviteId) => {
     throw error;
   }
 };
+
+// Add a function to get employees by restaurant
+export const getEmployeesByRestaurant = async (restaurantId) => {
+  const q = query(employeesCollection, where("restaurantId", "==", restaurantId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+};
+
+// Add a subscribe function for restaurant-specific employees
+export const subscribeToRestaurantEmployees = (callback, restaurantId) => {
+  const q = query(employeesCollection, where("restaurantId", "==", restaurantId));
+  return onSnapshot(q, (snapshot) => {
+    const employeesData = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    callback(employeesData);
+  });
+};
+
+
 
 // Auth functions
 export const loginWithEmailAndPassword = async (email, password) => {

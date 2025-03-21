@@ -17,8 +17,11 @@ import {
   Mail
 } from 'lucide-react';
 
-
-
+import { Store } from 'lucide-react';
+import { 
+  createManagerWithRestaurant,
+  subscribeToRestaurantEmployees
+} from './firebase';
 
 import { createUser, sendEmployeeInvite } from './firebase';
 
@@ -69,7 +72,8 @@ const RestaurantLoyaltyApp = () => {
   const [inviteValidated, setInviteValidated] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteDetails, setInviteDetails] = useState(null);
-  
+  const [selectedManagerRestaurant, setSelectedManagerRestaurant] = useState(null);
+
   // Data
   const RESTAURANTS = [
     { id: "montanas", name: "Montana's", discount: "20%" },
@@ -124,23 +128,38 @@ const RestaurantLoyaltyApp = () => {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const loadEmployees = async () => {
-      setIsLoading(true);
-      
-      // Set up real-time listener for employees collection
-      const unsubscribe = subscribeToEmployees((employeesData) => {
+useEffect(() => {
+  const loadEmployees = async () => {
+    setIsLoading(true);
+    
+    // Set up the appropriate listener based on user role
+    let unsubscribe;
+    
+    if (currentUser && currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
+      // Restaurant manager - only see employees from their restaurant
+      unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
+        setEmployees(employeesData);
+        setFilteredEmployees(employeesData);
+        setIsLoading(false);
+      }, currentUser.restaurantId);
+    } else {
+      // Admin - see all employees
+      unsubscribe = subscribeToEmployees((employeesData) => {
         setEmployees(employeesData);
         setFilteredEmployees(employeesData);
         setIsLoading(false);
       });
-      
-      // Clean up listener when component unmounts
-      return () => unsubscribe();
-    };
+    }
     
+    // Clean up listener when component unmounts
+    return () => unsubscribe();
+  };
+  
+  // Only load employees if we're in manager or admin view
+  if (view === 'manager' || view === 'admin') {
     loadEmployees();
-  }, []);
+  }
+}, [view, currentUser]);
 
   const handleCompleteSignup = async (e) => {
     e.preventDefault();
@@ -230,16 +249,27 @@ const handleLogin = async (e) => {
     const employeeData = querySnapshot.docs[0].data();
     
     // Set current user from Firebase response and Firestore data
-    setCurrentUser({
-      id: user.uid,
-      name: employeeData.name || user.displayName || email,
-      email: user.email,
-      jobTitle: employeeData.jobTitle || 'Employee',
-      discount: employeeData.discount || 20
-    });
+// Set current user from Firebase response and Firestore data
+setCurrentUser({
+  id: user.uid,
+  name: employeeData.name || user.displayName || email,
+  email: user.email,
+  jobTitle: employeeData.jobTitle || 'Employee',
+  discount: employeeData.discount || 20,
+  restaurantId: employeeData.restaurantId || null,
+  restaurantName: employeeData.restaurantName || null
+});
+
+// Navigate to the appropriate view based on role
+if (employeeData.jobTitle === 'Admin') {
+  setView('admin');
+} else if (employeeData.jobTitle === 'Manager') {
+  setView('manager');
+} else {
+  setView('employee');
+}
     
-    // Navigate to the appropriate view based on actual role
-    setView(employeeData.jobTitle === 'Manager' ? 'manager' : 'employee');
+
     
     showNotification('Login successful', 'success');
   } catch (error) {
@@ -455,10 +485,73 @@ const handleRegister = async (e) => {
         <div className="flex items-center">
           <Award size={14} className="text-indigo-700 mr-1" />
           <p className="text-indigo-600 text-sm font-medium">{user?.jobTitle}</p>
+          {user?.restaurantName && (
+            <div className="flex items-center ml-2">
+              <Store size={14} className="text-green-700 mr-1" />
+              <p className="text-green-600 text-sm font-medium">{user?.restaurantName}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
+
+  // Helper function to get restaurant name by ID
+const getRestaurantName = (restaurantId) => {
+  const restaurant = RESTAURANTS.find(r => r.id === restaurantId);
+  
+  if (restaurant) {
+    return restaurant.name;
+  }
+  
+  // For location-specific IDs
+  for (const restaurant of RESTAURANTS) {
+    if (restaurant.locations) {
+      const location = restaurant.locations.find(l => l.id === restaurantId);
+      if (location) {
+        return `${restaurant.name} - ${location.name}`;
+      }
+    }
+  }
+  
+  return "Unknown Restaurant";
+};
+  // Handling the creation of restaurant managers
+const handleCreateManager = async () => {
+  if (!inviteEmail || !selectedManagerRestaurant) {
+    showNotification('Please enter an email address and select a restaurant', 'error');
+    return;
+  }
+  
+  setIsLoading(true);
+  
+  try {
+    // For the demo, we'll use a temporary password
+    const tempPassword = 'manager123';
+    
+    // Create the manager with restaurant assignment
+    await createManagerWithRestaurant(
+      inviteEmail, 
+      tempPassword, 
+      'New Manager', // This will be updated during onboarding
+      selectedManagerRestaurant.id
+    );
+    
+    showNotification(`Manager account created for ${inviteEmail} at ${selectedManagerRestaurant.name}`, 'success');
+    setInviteEmail('');
+    setSelectedManagerRestaurant(null);
+    setInviteSuccess(true);
+    
+    setTimeout(() => {
+      setInviteSuccess(false);
+    }, 5000);
+  } catch (error) {
+    console.error("Error creating manager:", error);
+    showNotification("Failed to create manager account", "error");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Add this effect to handle search filtering
   useEffect(() => {
@@ -585,6 +678,191 @@ if (view === 'register') {
     </div>
   );
 }
+
+// ADMIN VIEW
+if (view === 'admin') {
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {notification && <Notification message={notification.message} type={notification.type} />}
+      
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <div className="flex items-center">
+            <Shield size={24} className="text-indigo-600 mr-2" />
+            <h1 className="text-xl font-semibold text-indigo-700">Admin Dashboard</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center text-gray-700 bg-gray-100 py-1 px-3 rounded-lg">
+              <Clock size={18} className="mr-2 text-indigo-600" />
+              <span className="font-mono font-medium">{formatTime(currentTime)}</span>
+            </div>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+              aria-label="Logout"
+            >
+              <LogOut size={18} className="mr-1" />
+              <span className="hidden md:inline">Logout</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
+        {/* Admin-only section to create restaurant managers */}
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+            <h3 className="text-lg font-medium leading-6 text-gray-900">
+              Create Restaurant Manager
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Assign a manager to a specific restaurant
+            </p>
+          </div>
+          
+          <div className="px-6 py-5">
+            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
+              <div className="sm:col-span-3">
+                <label htmlFor="managerEmail" className="block text-xs font-medium text-gray-500 mb-1">Manager Email</label>
+                <input
+                  type="email"
+                  id="managerEmail"
+                  placeholder="manager@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="restaurant" className="block text-xs font-medium text-gray-500 mb-1">Restaurant</label>
+                <select
+                  id="restaurant"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={selectedManagerRestaurant ? selectedManagerRestaurant.id : ''}
+                  onChange={(e) => {
+                    const restaurant = RESTAURANTS.find(r => r.id === e.target.value);
+                    setSelectedManagerRestaurant(restaurant);
+                  }}
+                >
+                  <option value="">Select Restaurant</option>
+                  {RESTAURANTS.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-1 flex items-end">
+                <button
+                  type="button"
+                  onClick={handleCreateManager}
+                  disabled={isLoading || !inviteEmail || !selectedManagerRestaurant}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 w-full justify-center ${isLoading || !inviteEmail || !selectedManagerRestaurant ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Invite employees section */}
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+            <h3 className="text-lg font-medium leading-6 text-gray-900">
+              Invite New Employee
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Send an email invitation to create an account
+            </p>
+          </div>
+          
+          <div className="px-6 py-5">
+            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
+              <div className="sm:col-span-3">
+                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  id="inviteEmail"
+                  placeholder="employee@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
+                <select
+                  id="inviteRole"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                >
+                  {jobTitles.map(title => (
+                    <option key={title} value={title}>{title}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-1 flex items-end">
+                <button
+                  type="button"
+                  onClick={handleSendInvite}
+                  disabled={isLoading || !inviteEmail}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center ${isLoading || !inviteEmail ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  Send Invite
+                </button>
+              </div>
+            </div>
+            
+            {inviteSuccess && (
+              <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-green-800">
+                      Invitation sent successfully! The employee will receive an email with instructions.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Employee management section */}
+        <div className="w-full">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">Employee Management</h2>
+              <p className="text-gray-500">Manage all employees across restaurants</p>
+            </div>
+            <UserProfileBadge user={currentUser} />
+          </div>
+          
+          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+            {/* Rest of your employee management code... */}
+            {/* ... */}
+          </div>
+        </div>
+      </main>
+      
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-4 mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-xs text-center text-gray-500">
+            &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+
+
 
   // LOGIN VIEW
   if (view === 'login') {
@@ -1032,6 +1310,9 @@ if (view === 'completeSignup') {
     );
   }
 
+{/* Admin-only section to create restaurant managers */}
+
+
   // MANAGER VIEW
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -1044,6 +1325,7 @@ if (view === 'completeSignup') {
       Send an email invitation to create an account
     </p>
   </div>
+
   
   <div className="px-6 py-5">
     <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
