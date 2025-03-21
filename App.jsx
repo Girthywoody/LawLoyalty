@@ -17,12 +17,7 @@ import {
   Mail
 } from 'lucide-react';
 
-const [inviteCode, setInviteCode] = useState('');
-const [inviteRole, setInviteRole] = useState('Employee');
-const [registrationMode, setRegistrationMode] = useState('login'); // 'login', 'invite', 'register'
-const [inviteValidated, setInviteValidated] = useState(false);
-const [inviteEmail, setInviteEmail] = useState('');
-const [inviteDetails, setInviteDetails] = useState(null);
+
 
 
 import { createUser, sendEmployeeInvite } from './firebase';
@@ -61,6 +56,13 @@ const RestaurantLoyaltyApp = () => {
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerName, setRegisterName] = useState('');
+
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteRole, setInviteRole] = useState('Employee');
+  const [registrationMode, setRegistrationMode] = useState('login'); // 'login', 'invite', 'register'
+  const [inviteValidated, setInviteValidated] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteDetails, setInviteDetails] = useState(null);
   
   // Data
   const RESTAURANTS = [
@@ -218,28 +220,34 @@ const handleLogin = async (e) => {
     return 0;
   };
 
-  const [inviteEmail, setInviteEmail] = useState('');
 
   // Add this function to handle sending invites
-const handleSendInvite = async () => {
-  if (!inviteEmail) {
-    showNotification('Please enter an email address', 'error');
-    return;
-  }
-  
-  setIsLoading(true);
-  
-  try {
-    await sendEmployeeInvite(inviteEmail);
-    showNotification(`Invite sent to ${inviteEmail}`, 'success');
-    setInviteEmail('');
-  } catch (error) {
-    console.error("Error sending invite:", error);
-    showNotification("Failed to send invite", "error");
-  } finally {
-    setIsLoading(false);
-  }
-};
+  const handleSendInvite = async () => {
+    if (!inviteEmail) {
+      showNotification('Please enter an email address', 'error');
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Use the current user's ID as senderUid and pass the selected role
+      await sendEmployeeInvite(inviteEmail, inviteRole, currentUser.id);
+      showNotification(`Invite sent to ${inviteEmail} as ${inviteRole}`, 'success');
+      setInviteEmail('');
+      setInviteSuccess(true); // Show success message
+      
+      // Hide the success message after 5 seconds
+      setTimeout(() => {
+        setInviteSuccess(false);
+      }, 5000);
+    } catch (error) {
+      console.error("Error sending invite:", error);
+      showNotification("Failed to send invite", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Add employee
   const addEmployeeToFirebase = async () => {
@@ -1032,6 +1040,7 @@ if (view === 'register') {
                     </span>
                   </div>
                 </div>
+                <div className="mt-8 pt-6 border-t border-gray-200">
               
                 {/* Employee table */}
                 <div className="overflow-x-auto rounded-lg shadow">
@@ -1153,6 +1162,7 @@ if (view === 'register') {
                     </tbody>
                   </table>
                 </div>
+              </div>
 
                 // Add a new state for the invite email
 
