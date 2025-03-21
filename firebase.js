@@ -81,52 +81,95 @@ export const createManagerWithRestaurant = async (email, password, name, restaur
   }
 };
 
-// Add this function to firebase.js
-export const sendManagerInvite = async (email, role, senderUid, restaurantId) => {
+// Add this function to your firebase.js file
+export const completeRegistration = async (name, password, inviteCode) => {
   try {
-    // Get the sender's information
-    const employeesRef = collection(db, 'employees');
-    const q = query(employeesRef, where("uid", "==", senderUid));
+    // Get the email from localStorage
+    const email = localStorage.getItem('emailForSignIn');
+    if (!email) {
+      throw new Error('No email found. Please restart the invitation process.');
+    }
+    
+    // Find the invitation by code
+    const invitesRef = collection(db, 'invites');
+    const q = query(invitesRef, where("code", "==", inviteCode), where("email", "==", email));
     const querySnapshot = await getDocs(q);
     
     if (querySnapshot.empty) {
-      throw new Error('Sender not found in employees database');
+      throw new Error('Invalid invitation code or email mismatch.');
     }
     
-    const senderData = querySnapshot.docs[0].data();
+    const inviteData = querySnapshot.docs[0].data();
+    const inviteId = querySnapshot.docs[0].id;
     
-    // Get restaurant name
-    const restaurantName = getRestaurantName(restaurantId);
+    // Create the user account
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
     
-    // Create the invite record with restaurant assignment
-    const inviteData = {
-      email: email,
-      role: role,
+    // Update profile with display name
+    await updateProfile(user, {
+      displayName: name
+    });
+    
+    // Add user to employees collection with appropriate role and restaurant
+    await addDoc(collection(db, 'employees'), {
+      name,
+      email,
+      jobTitle: inviteData.role,
+      restaurantId: inviteData.restaurantId,
+      restaurantName: getRestaurantName(inviteData.restaurantId), // Make sure this function is accessible
+      discount: inviteData.role === 'Manager' ? 40 : 20, // Default discounts
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      uid: user.uid
+    });
+    
+    // Update invitation status
+    await updateDoc(doc(db, 'invites', inviteId), {
+      status: 'completed',
+      completedAt: new Date()
+    });
+    
+    // Clear localStorage
+    localStorage.removeItem('emailForSignIn');
+    
+    return user;
+  } catch (error) {
+    console.error("Error completing registration:", error);
+    throw error;
+  }
+};
+
+// Modify the sendManagerInvite function in firebase.js
+export const sendManagerInvite = async (email, role, senderUid, restaurantId) => {
+  try {
+    // Generate a unique invite code
+    const inviteCode = generateUniqueId(); // Ensure this function exists or use a UUID library
+    
+    // Store the invitation in Firestore without checking for sender in employees database
+    const inviteRef = await addDoc(collection(db, 'invites'), {
+      email,
+      role,
+      senderUid, // Keep this for tracking, but don't validate against employees
+      restaurantId,
       status: 'pending',
-      sentAt: new Date(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
-      senderUid: senderUid,
-      restaurantId: restaurantId,
-      restaurantName: restaurantName
-    };
+      createdAt: new Date(),
+      code: inviteCode
+    });
     
-    const inviteRef = await addDoc(invitesCollection, inviteData);
-    const inviteId = inviteRef.id;
-    
-    // Get the dynamic URL for the sign-in page
-    const origin = window.location.origin;
-    const completeUrl = `${origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
-    
-    // Action code settings
+    // Generate magic link for email
     const actionCodeSettings = {
-      url: completeUrl,
-      handleCodeInApp: true,
+      url: `${window.location.origin}?mode=complete&email=${email}&inviteId=${inviteCode}`,
+      handleCodeInApp: true
     };
     
-    // Send the email with the link
+    // Send the email invitation
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
     
-    return { success: true, inviteId };
+    // Save the invite code to localStorage to complete the flow
+    localStorage.setItem('emailForSignIn', email);
+    
+    return inviteRef.id;
   } catch (error) {
     console.error("Error sending manager invite:", error);
     throw error;

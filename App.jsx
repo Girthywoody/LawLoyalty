@@ -36,6 +36,7 @@ import {
   updateEmployee, 
   deleteEmployee, 
   subscribeToEmployees,
+  completeRegistration,
   db
 } from './firebase';
 
