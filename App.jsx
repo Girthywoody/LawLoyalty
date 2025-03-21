@@ -199,6 +199,8 @@ useEffect(() => {
     const emailParam = params.get('email');
     const inviteIdParam = params.get('inviteId');
     
+    console.log("URL params:", { mode, emailParam, inviteIdParam }); // Add this for debugging
+    
     if (mode === 'complete' && emailParam && inviteIdParam) {
       // Store the email in localStorage for the auth process
       localStorage.setItem('emailForSignIn', emailParam);

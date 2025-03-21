@@ -21,7 +21,8 @@ import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
-  updatePassword
+  updatePassword,
+  updateProfile  // Add this missing import
 } from 'firebase/auth';
 
 // Replace this with your Firebase configuration
@@ -239,6 +240,9 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     const restaurantId = senderData.restaurantId || null;
     const restaurantName = senderData.restaurantName || null;
     
+    // Generate a unique invite code
+    const inviteCode = generateUniqueId();
+    
     // Create the invite record with restaurant info
     const inviteData = {
       email: email,
@@ -248,26 +252,22 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
       senderUid: senderUid,
       restaurantId: restaurantId,
-      restaurantName: restaurantName
+      restaurantName: restaurantName,
+      code: inviteCode // Add the code here
     };
     
     const inviteRef = await addDoc(invitesCollection, inviteData);
-    const inviteId = inviteRef.id;
     
-    // Get the dynamic URL for the sign-in page
-    const origin = window.location.origin;
-    const completeUrl = `${origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
-    
-    // Action code settings
+    // Generate magic link for email - using the same URL format as manager invites
     const actionCodeSettings = {
-      url: completeUrl,
-      handleCodeInApp: true,
+      url: `${window.location.origin}?mode=complete&email=${email}&inviteId=${inviteCode}`,
+      handleCodeInApp: true
     };
     
-    // Send the email with the link
+    // Send the email invitation
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
     
-    return { success: true, inviteId };
+    return { success: true, inviteId: inviteRef.id };
   } catch (error) {
     console.error("Error sending invite:", error);
     throw error;
