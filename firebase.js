@@ -50,6 +50,24 @@ export const logoutUser = async () => {
   }
 };
 
+// Add to firebase.js
+export const sendEmployeeInvite = async (employeeEmail) => {
+  try {
+    // In a real app, you would use Firebase Auth sendSignInLinkToEmail or a custom email service
+    // For now, we'll just add a placeholder record to Firestore
+    const inviteData = {
+      email: employeeEmail,
+      status: 'pending',
+      sentAt: new Date(),
+    };
+    
+    await addDoc(collection(db, 'invites'), inviteData);
+    return true;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const createUser = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);

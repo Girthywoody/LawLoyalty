@@ -17,6 +17,13 @@ import {
   Mail
 } from 'lucide-react';
 
+import { createUser, sendEmployeeInvite } from './firebase';
+// Add a new state
+const [view, setView] = useState('login');  // options: 'login', 'register', 'employee', 'manager'
+const [registerEmail, setRegisterEmail] = useState('');
+const [registerPassword, setRegisterPassword] = useState('');
+const [registerName, setRegisterName] = useState('');
+
 import { 
   loginWithEmailAndPassword, 
   logoutUser, 
@@ -135,66 +142,22 @@ const RestaurantLoyaltyApp = () => {
     });
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    
-    setLoginError('');
-    setIsLoading(true);
-    
-    try {
-      // For demo purposes, if password is "password", skip Firebase Auth
-      if (password === "password") {
-        // Find employee from our data
-        const matchedEmployee = employees.find(emp => 
-          emp.email && emp.email.toLowerCase() === email.toLowerCase());
-        
-        if (matchedEmployee) {
-          setCurrentUser(matchedEmployee);
-          setView(matchedEmployee.jobTitle === 'Manager' ? 'manager' : 'employee');
-        } else {
-          // For demo purposes
-          if (email.toLowerCase().includes('manager')) {
-            setCurrentUser({
-              id: '999',
-              name: email.split('@')[0] || 'Manager',
-              email: email,
-              jobTitle: 'Manager',
-              discount: 40
-            });
-            setView('manager');
-          } else {
-            setCurrentUser({
-              id: '1000',
-              name: email.split('@')[0] || 'Demo Employee',
-              email: email,
-              jobTitle: 'Employee',
-              discount: 25
-            });
-            setView('employee');
-          }
-        }
-      } else {
-        // Actual Firebase authentication
-        const user = await loginWithEmailAndPassword(email, password);
-        
-        // Find the employee record associated with this email
-        const matchedEmployee = employees.find(emp => 
-          emp.email && emp.email.toLowerCase() === email.toLowerCase());
-        
-        if (matchedEmployee) {
-          setCurrentUser(matchedEmployee);
-          setView(matchedEmployee.jobTitle === 'Manager' ? 'manager' : 'employee');
-        } else {
-          setLoginError('User account exists but no employee record found');
-        }
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      setLoginError(error.message || 'Login failed. Check your credentials.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+// Make sure isLoading is properly reset if there's an error during login
+const handleLogin = async (e) => {
+  e.preventDefault();
+  
+  setLoginError('');
+  setIsLoading(true);
+  
+  try {
+    // Rest of your login logic here
+  } catch (error) {
+    console.error("Login error:", error);
+    setLoginError(error.message || 'Login failed. Check your credentials.');
+  } finally {
+    setIsLoading(false);  // Make sure isLoading is reset in all cases
+  }
+};
 
   // Handle logout
   const handleLogout = async () => {
@@ -223,6 +186,29 @@ const RestaurantLoyaltyApp = () => {
     }
     return 0;
   };
+
+  const [inviteEmail, setInviteEmail] = useState('');
+
+  // Add this function to handle sending invites
+const handleSendInvite = async () => {
+  if (!inviteEmail) {
+    showNotification('Please enter an email address', 'error');
+    return;
+  }
+  
+  setIsLoading(true);
+  
+  try {
+    await sendEmployeeInvite(inviteEmail);
+    showNotification(`Invite sent to ${inviteEmail}`, 'success');
+    setInviteEmail('');
+  } catch (error) {
+    console.error("Error sending invite:", error);
+    showNotification("Failed to send invite", "error");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Add employee
   const addEmployeeToFirebase = async () => {
@@ -273,6 +259,53 @@ const RestaurantLoyaltyApp = () => {
       setIsLoading(false);
     }
   };
+
+  // Add this function to handle registration
+const handleRegister = async (e) => {
+  e.preventDefault();
+  
+  setLoginError('');
+  setIsLoading(true);
+  
+  try {
+    // Create user in Firebase Authentication
+    const user = await createUser(registerEmail, registerPassword);
+    
+    // Add user to employees collection as a manager
+    await addEmployee({
+      name: registerName,
+      email: registerEmail,
+      jobTitle: 'Manager',
+      discount: 40,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    // Set current user and navigate to manager view
+    setCurrentUser({
+      id: user.uid,
+      name: registerName,
+      email: registerEmail,
+      jobTitle: 'Manager',
+      discount: 40
+    });
+    
+    // Clear registration form
+    setRegisterEmail('');
+    setRegisterPassword('');
+    setRegisterName('');
+    
+    // Navigate to manager view
+    setView('manager');
+    
+    showNotification('Account created successfully!', 'success');
+  } catch (error) {
+    console.error("Registration error:", error);
+    setLoginError(error.message || 'Failed to create account. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
   
   // Start editing employee
   const startEditEmployee = (employee) => {
@@ -364,6 +397,123 @@ const RestaurantLoyaltyApp = () => {
     setFilteredEmployees(filtered);
   }, [searchTerm, employees]);
 
+  // REGISTRATION VIEW
+if (view === 'register') {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+        <div className="text-center">
+          <div className="flex justify-center">
+            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
+              <Shield size={36} className="text-white" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800">Create Manager Account</h1>
+          <p className="mt-2 text-gray-500">Register for the Employee Discount System</p>
+        </div>
+        
+        <form className="mt-8 space-y-6" onSubmit={handleRegister}>
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="registerName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="registerName"
+                  name="registerName"
+                  type="text"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Enter your full name"
+                  value={registerName}
+                  onChange={(e) => setRegisterName(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="registerEmail" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="registerEmail"
+                  name="registerEmail"
+                  type="email"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Enter your email"
+                  value={registerEmail}
+                  onChange={(e) => setRegisterEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="registerPassword" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Shield size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="registerPassword"
+                  name="registerPassword"
+                  type="password"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Create a password"
+                  value={registerPassword}
+                  onChange={(e) => setRegisterPassword(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {loginError && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex items-center">
+              <XCircle size={16} className="mr-2" />
+              {loginError}
+            </div>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors font-medium ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </div>
+        </form>
+        
+        <div className="mt-4 text-center">
+          <button 
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+            onClick={() => {
+              setView('login');
+              setLoginError('');
+            }}
+          >
+            Already have an account? Sign in
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
   // LOGIN VIEW
   if (view === 'login') {
     return (
@@ -422,6 +572,19 @@ const RestaurantLoyaltyApp = () => {
                 </p>
               </div>
             </div>
+
+            // In your login view, add this after the form:
+<div className="mt-4 text-center">
+  <button 
+    className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+    onClick={() => {
+      setView('register');
+      setLoginError('');
+    }}
+  >
+    Need an account? Create one
+  </button>
+</div>
 
             {/* Add helpful tooltips */}
             <div className="space-y-2 text-sm text-gray-600">
@@ -788,7 +951,6 @@ const RestaurantLoyaltyApp = () => {
                         onChange={(e) => setNewEmployee({...newEmployee, discount: parseInt(e.target.value) || 0})}
                       />
                     </div>
-                    <div className="sm:col-span-1 flex items-end">
                     <div className="sm:col-span-2">
                       <label htmlFor="email" className="block text-xs font-medium text-gray-500 mb-1">Email</label>
                       <input
@@ -800,8 +962,15 @@ const RestaurantLoyaltyApp = () => {
                         onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
                       />
                     </div>
+                    <div className="sm:col-span-1 flex items-end">
+                      <button
+                        type="button"
+                        onClick={addEmployeeToFirebase}
+                        className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 w-full justify-center"
+                      >
                         <CheckCircle size={16} className="mr-2" />
                         Save
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -952,6 +1121,47 @@ const RestaurantLoyaltyApp = () => {
                     </tbody>
                   </table>
                 </div>
+
+                // Add a new state for the invite email
+const [inviteEmail, setInviteEmail] = useState('');
+
+// Add this to your manager view, perhaps below the employee list:
+<div className="mt-8 pt-6 border-t border-gray-200">
+  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
+    Invite Employees
+  </h4>
+  <div className="flex items-end space-x-4">
+    <div className="flex-grow">
+      <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">
+        Employee Email
+      </label>
+      <input
+        type="email"
+        id="inviteEmail"
+        placeholder="Enter employee email"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+        value={inviteEmail}
+        onChange={(e) => setInviteEmail(e.target.value)}
+      />
+    </div>
+    <button
+      type="button"
+      onClick={handleSendInvite}
+      disabled={isLoading}
+      className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+    >
+      {isLoading ? (
+        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      ) : (
+        <Mail size={16} className="mr-2" />
+      )}
+      Send Invite
+    </button>
+  </div>
+</div>
                 
                 {/* Discount rules info */}
                 <div className="mt-8 pt-6 border-t border-gray-200">
