@@ -84,85 +84,7 @@ const RestaurantLoyaltyApp = () => {
     { id: 6, name: 'Emma Roberts', jobTitle: 'Kitchen Staff', discount: 25 }
   ]);
   
-  const [discountRules, setDiscountRules] = useState({
-    'Server': { 
-      "Montana's": 20, 
-      "Kelsey's": 20, 
-      "Cora's Breakfast": 10, 
-      "J's Roadhouse": 20, 
-      "Swiss Chalet": 20, 
-      "Overtime Bar": 20, 
-      "Lot 88 Steakhouse": 20, 
-      "Poke Bar": 20, 
-      "Happy Life": 10 
-    },
-    'Host': { 
-      "Montana's": 20, 
-      "Kelsey's": 20, 
-      "Cora's Breakfast": 10, 
-      "J's Roadhouse": 20, 
-      "Swiss Chalet": 20, 
-      "Overtime Bar": 20, 
-      "Lot 88 Steakhouse": 20, 
-      "Poke Bar": 20, 
-      "Happy Life": 10 
-    },
-    'Chef': { 
-      "Montana's": 20, 
-      "Kelsey's": 20, 
-      "Cora's Breakfast": 10, 
-      "J's Roadhouse": 20, 
-      "Swiss Chalet": 20, 
-      "Overtime Bar": 20, 
-      "Lot 88 Steakhouse": 20, 
-      "Poke Bar": 20, 
-      "Happy Life": 10 
-    },
-    'Bartender': { 
-      "Montana's": 20, 
-      "Kelsey's": 20, 
-      "Cora's Breakfast": 10, 
-      "J's Roadhouse": 20, 
-      "Swiss Chalet": 20, 
-      "Overtime Bar": 20, 
-      "Lot 88 Steakhouse": 20, 
-      "Poke Bar": 20, 
-      "Happy Life": 10 
-    },
-    'Manager': { 
-      "Montana's": 20, 
-      "Kelsey's": 20, 
-      "Cora's Breakfast": 10, 
-      "J's Roadhouse": 20, 
-      "Swiss Chalet": 20, 
-      "Overtime Bar": 20, 
-      "Lot 88 Steakhouse": 20, 
-      "Poke Bar": 20, 
-      "Happy Life": 10 
-    },
-    'Kitchen Staff': { 
-      "Montana's": 20, 
-      "Kelsey's": 20, 
-      "Cora's Breakfast": 10, 
-      "J's Roadhouse": 20, 
-      "Swiss Chalet": 20, 
-      "Overtime Bar": 20, 
-      "Lot 88 Steakhouse": 20, 
-      "Poke Bar": 20, 
-      "Happy Life": 10 
-    },
-    'Busser': { 
-      "Montana's": 20, 
-      "Kelsey's": 20, 
-      "Cora's Breakfast": 10, 
-      "J's Roadhouse": 20, 
-      "Swiss Chalet": 20, 
-      "Overtime Bar": 20, 
-      "Lot 88 Steakhouse": 20, 
-      "Poke Bar": 20, 
-      "Happy Life": 10 
-    }
-  });
+  const [discountRules, setDiscountRules] = useState(null);
   
   const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: '', discount: 20 });
 
@@ -968,11 +890,11 @@ const RestaurantLoyaltyApp = () => {
                             {RESTAURANTS.map(restaurant => (
                               <td key={`${jobTitle}-${restaurant.id}`} className="px-4 py-3 whitespace-nowrap text-center">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  discountRules[jobTitle][restaurant.name] >= 30 ? 'bg-green-100 text-green-800' : 
-                                  discountRules[jobTitle][restaurant.name] >= 20 ? 'bg-blue-100 text-blue-800' : 
+                                  getDiscount(jobTitle, restaurant.name) >= 30 ? 'bg-green-100 text-green-800' : 
+                                  getDiscount(jobTitle, restaurant.name) >= 20 ? 'bg-blue-100 text-blue-800' : 
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {discountRules[jobTitle][restaurant.name]}%
+                                  {getDiscount(jobTitle, restaurant.name)}%
                                 </span>
                               </td>
                             ))}
@@ -994,8 +916,6 @@ const RestaurantLoyaltyApp = () => {
                 <DiscountRuleCard
                   key={restaurant.id}
                   restaurant={restaurant}
-                  locations={RESTAURANTS}
-                  discountRules={discountRules}
                 />
               ))}
             </div>
@@ -1034,21 +954,17 @@ const EmployeeLocationCard = ({ location, discount }) => (
 );
 
 // Update this component
-const DiscountRuleCard = ({ restaurant, locations, discountRules }) => (
+const DiscountRuleCard = ({ restaurant }) => (
   <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
     <h3 className="font-medium text-gray-900 mb-3">{restaurant.name}</h3>
-    <div className="space-y-2">
-      {Object.keys(discountRules).map(jobTitle => (
-        <div key={jobTitle} className="flex justify-between items-center text-sm">
-          <span className="text-gray-600">{jobTitle}</span>
-          <span className={`px-2 py-0.5 rounded-full ${
-            discountRules[jobTitle][restaurant.name] >= 20 ? 'bg-green-100 text-green-800' :
-            'bg-blue-100 text-blue-800'
-          }`}>
-            {discountRules[jobTitle][restaurant.name]}%
-          </span>
-        </div>
-      ))}
+    <div className="flex justify-between items-center text-sm">
+      <span className="text-gray-600">Employee Discount</span>
+      <span className={`px-2 py-0.5 rounded-full ${
+        restaurant.discount === '20%' ? 'bg-green-100 text-green-800' :
+        'bg-blue-100 text-blue-800'
+      }`}>
+        {restaurant.discount}
+      </span>
     </div>
   </div>
 );
