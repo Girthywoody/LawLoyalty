@@ -131,38 +131,48 @@ const RestaurantLoyaltyApp = () => {
     return () => clearInterval(timer);
   }, []);
 
-useEffect(() => {
-  const loadEmployees = async () => {
-    setIsLoading(true);
+  useEffect(() => {
+    const loadEmployees = async () => {
+      setIsLoading(true);
+      
+      // Set up the appropriate listener based on user role
+      let unsubscribe;
+      
+      if (currentUser && currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
+        // Restaurant manager - only see employees from their restaurant
+        unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
+          // Filter out any managers/admins unless the user is an admin
+          const filteredData = employeesData.filter(emp => 
+            emp.jobTitle === 'Employee' || 
+            emp.id === currentUser.id // Always include the current user
+          );
+          
+          setEmployees(filteredData);
+          setFilteredEmployees(filteredData);
+          setIsLoading(false);
+        }, currentUser.restaurantId);
+      } else if (currentUser && currentUser.jobTitle === 'Admin') {
+        // Admin - see all employees
+        unsubscribe = subscribeToEmployees((employeesData) => {
+          setEmployees(employeesData);
+          setFilteredEmployees(employeesData);
+          setIsLoading(false);
+        });
+      }
+      
+      // Clean up listener when component unmounts
+      return () => {
+        if (unsubscribe) {
+          unsubscribe();
+        }
+      };
+    };
     
-    // Set up the appropriate listener based on user role
-    let unsubscribe;
-    
-    if (currentUser && currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
-      // Restaurant manager - only see employees from their restaurant
-      unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
-        setEmployees(employeesData);
-        setFilteredEmployees(employeesData);
-        setIsLoading(false);
-      }, currentUser.restaurantId);
-    } else {
-      // Admin - see all employees
-      unsubscribe = subscribeToEmployees((employeesData) => {
-        setEmployees(employeesData);
-        setFilteredEmployees(employeesData);
-        setIsLoading(false);
-      });
+    // Only load employees if we're in manager or admin view
+    if (view === 'manager' || view === 'admin') {
+      loadEmployees();
     }
-    
-    // Clean up listener when component unmounts
-    return () => unsubscribe();
-  };
-  
-  // Only load employees if we're in manager or admin view
-  if (view === 'manager' || view === 'admin') {
-    loadEmployees();
-  }
-}, [view, currentUser]);
+  }, [view, currentUser]);
 
   const handleCompleteSignup = async (e) => {
     e.preventDefault();
@@ -314,7 +324,6 @@ if (employeeData.jobTitle === 'Admin') {
   };
 
 
-  // Add this function to handle sending invites
   const handleSendInvite = async () => {
     if (!inviteEmail) {
       showNotification('Please enter an email address', 'error');
@@ -324,9 +333,32 @@ if (employeeData.jobTitle === 'Admin') {
     setIsLoading(true);
     
     try {
-      // Use the current user's ID as senderUid and pass the selected role
-      await sendEmployeeInvite(inviteEmail, inviteRole, currentUser.id);
-      showNotification(`Invite sent to ${inviteEmail} as ${inviteRole}`, 'success');
+      // If the user is a manager, they can only invite to their restaurant
+      if (currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
+        // Use the current user's ID as senderUid and pass the selected role
+        await sendEmployeeInvite(inviteEmail, 'Employee', currentUser.id);
+        showNotification(`Invite sent to ${inviteEmail} as Employee for ${currentUser.restaurantName}`, 'success');
+      } else if (currentUser.jobTitle === 'Admin') {
+        // Admin can invite with custom role and restaurant
+        if (inviteRole === 'Manager') {
+          if (!selectedManagerRestaurant) {
+            throw new Error('Please select a restaurant for the manager');
+          }
+          
+          await sendManagerInvite(
+            inviteEmail, 
+            'Manager',
+            currentUser.id,
+            selectedManagerRestaurant.id
+          );
+          showNotification(`Manager invite sent to ${inviteEmail} for ${selectedManagerRestaurant.name}`, 'success');
+        } else {
+          // For employees without a specific restaurant assignment (admin's choice)
+          await sendEmployeeInvite(inviteEmail, inviteRole, currentUser.id);
+          showNotification(`Invite sent to ${inviteEmail} as ${inviteRole}`, 'success');
+        }
+      }
+      
       setInviteEmail('');
       setInviteSuccess(true); // Show success message
       
@@ -336,11 +368,50 @@ if (employeeData.jobTitle === 'Admin') {
       }, 5000);
     } catch (error) {
       console.error("Error sending invite:", error);
-      showNotification("Failed to send invite", "error");
+      showNotification(error.message || "Failed to send invite", "error");
     } finally {
       setIsLoading(false);
     }
   };
+
+// Handle creation of restaurant managers (admin only)
+const handleCreateManager = async () => {
+  if (!inviteEmail || !selectedManagerRestaurant) {
+    showNotification('Please enter an email address and select a restaurant', 'error');
+    return;
+  }
+  
+  setIsLoading(true);
+  
+  try {
+    // Only admins can create managers
+    if (currentUser.jobTitle !== 'Admin') {
+      throw new Error('Only administrators can create restaurant managers');
+    }
+    
+    // Send an invitation with manager role and restaurant assignment
+    await sendManagerInvite(
+      inviteEmail, 
+      'Manager',
+      currentUser.id,
+      selectedManagerRestaurant.id
+    );
+    
+    showNotification(`Invitation sent to ${inviteEmail} for ${selectedManagerRestaurant.name}`, 'success');
+    setInviteEmail('');
+    setSelectedManagerRestaurant(null);
+    setInviteSuccess(true);
+    
+    setTimeout(() => {
+      setInviteSuccess(false);
+    }, 5000);
+  } catch (error) {
+    console.error("Error sending manager invitation:", error);
+    showNotification(error.message || "Failed to send manager invitation", "error");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Remove employee
   const removeEmployeeFromFirebase = async (id) => {
@@ -420,20 +491,28 @@ const handleRegister = async (e) => {
     setIsEditingEmployee(true);
   };
   
-  // Save employee edits
   const saveEmployeeEditToFirebase = async () => {
     if (editEmployee && editEmployee.id) {
       try {
         setIsLoading(true);
         
-        // Update in Firebase
-        await updateEmployee(editEmployee.id, {
+        // Create an update object with all necessary fields
+        const updateData = {
           name: editEmployee.name,
           email: editEmployee.email,
           jobTitle: editEmployee.jobTitle,
           discount: parseInt(editEmployee.discount) || 0,
           updatedAt: new Date()
-        });
+        };
+        
+        // Preserve restaurant assignment if it exists
+        if (editEmployee.restaurantId) {
+          updateData.restaurantId = editEmployee.restaurantId;
+          updateData.restaurantName = editEmployee.restaurantName;
+        }
+        
+        // Update in Firebase
+        await updateEmployee(editEmployee.id, updateData);
         
         setIsEditingEmployee(false);
         setEditEmployee(null);
@@ -521,40 +600,7 @@ const getRestaurantName = (restaurantId) => {
   
   return "Unknown Restaurant";
 };
-  // Handling the creation of restaurant managers
-  const handleCreateManager = async () => {
-    if (!inviteEmail || !selectedManagerRestaurant) {
-      showNotification('Please enter an email address and select a restaurant', 'error');
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      // Instead of creating the account directly, send an invitation
-      // with manager role and restaurant assignment
-      await sendManagerInvite(
-        inviteEmail, 
-        'Manager',
-        currentUser.id,
-        selectedManagerRestaurant.id
-      );
-      
-      showNotification(`Invitation sent to ${inviteEmail} for ${selectedManagerRestaurant.name}`, 'success');
-      setInviteEmail('');
-      setSelectedManagerRestaurant(null);
-      setInviteSuccess(true);
-      
-      setTimeout(() => {
-        setInviteSuccess(false);
-      }, 5000);
-    } catch (error) {
-      console.error("Error sending manager invitation:", error);
-      showNotification("Failed to send manager invitation", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   // Add this effect to handle search filtering
   useEffect(() => {
@@ -714,31 +760,43 @@ if (view === 'admin') {
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
-        {/* Admin-only section to create restaurant managers */}
+        {/* User Management Panel */}
         <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
           <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
             <h3 className="text-lg font-medium leading-6 text-gray-900">
-              Create Restaurant Manager
+              User Management
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Assign a manager to a specific restaurant
+              Add new users and assign them to restaurants
             </p>
           </div>
           
           <div className="px-6 py-5">
-            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
-              <div className="sm:col-span-3">
-                <label htmlFor="managerEmail" className="block text-xs font-medium text-gray-500 mb-1">Manager Email</label>
+            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-12">
+              <div className="sm:col-span-4">
+                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
                 <input
                   type="email"
-                  id="managerEmail"
-                  placeholder="manager@example.com"
+                  id="inviteEmail"
+                  placeholder="user@example.com"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                 />
               </div>
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-3">
+                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
+                <select
+                  id="inviteRole"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                >
+                  <option value="Employee">Employee</option>
+                  <option value="Manager">Manager</option>
+                </select>
+              </div>
+              <div className="sm:col-span-4">
                 <label htmlFor="restaurant" className="block text-xs font-medium text-gray-500 mb-1">Restaurant</label>
                 <select
                   id="restaurant"
@@ -756,64 +814,16 @@ if (view === 'admin') {
                 </select>
               </div>
               <div className="sm:col-span-1 flex items-end">
-                <button
-                  type="button"
-                  onClick={handleCreateManager}
-                  disabled={isLoading || !inviteEmail || !selectedManagerRestaurant}
-                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 w-full justify-center ${isLoading || !inviteEmail || !selectedManagerRestaurant ? 'opacity-70 cursor-not-allowed' : ''}`}
-                >
-                  Create
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Invite employees section */}
-        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
-          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">
-              Invite New Employee
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Send an email invitation to create an account
-            </p>
-          </div>
-          
-          <div className="px-6 py-5">
-            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
-              <div className="sm:col-span-3">
-                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  id="inviteEmail"
-                  placeholder="employee@example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
-                <select
-                  id="inviteRole"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                >
-                  {jobTitles.map(title => (
-                    <option key={title} value={title}>{title}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="sm:col-span-1 flex items-end">
-                <button
-                  type="button"
-                  onClick={handleSendInvite}
-                  disabled={isLoading || !inviteEmail}
-                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center ${isLoading || !inviteEmail ? 'opacity-70 cursor-not-allowed' : ''}`}
-                >
-                  Send Invite
+              <button
+              
+                  {isLoading ? (
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    'Invite'
+                  )}
                 </button>
               </div>
             </div>
@@ -826,7 +836,7 @@ if (view === 'admin') {
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-green-800">
-                      Invitation sent successfully! The employee will receive an email with instructions.
+                      Invitation sent successfully! The user will receive an email with instructions.
                     </p>
                   </div>
                 </div>
@@ -839,15 +849,202 @@ if (view === 'admin') {
         <div className="w-full">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">Employee Management</h2>
-              <p className="text-gray-500">Manage all employees across restaurants</p>
+              <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
+              <p className="text-gray-500">Manage all users across restaurants</p>
             </div>
             <UserProfileBadge user={currentUser} />
           </div>
           
           <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-            {/* Rest of your employee management code... */}
-            {/* ... */}
+            {/* Search bar */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative w-full sm:w-64 mb-4 sm:mb-0">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">
+                    Showing {filteredEmployees.length} of {employees.length} users
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Employee table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Restaurant
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Discount
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {isEditingEmployee && editEmployee ? (
+                    <tr className="bg-indigo-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="text"
+                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.name}
+                          onChange={(e) => setEditEmployee({...editEmployee, name: e.target.value})}
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="email"
+                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.email}
+                          onChange={(e) => setEditEmployee({...editEmployee, email: e.target.value})}
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.jobTitle}
+                          onChange={(e) => setEditEmployee({...editEmployee, jobTitle: e.target.value})}
+                        >
+                          <option value="Employee">Employee</option>
+                          <option value="Manager">Manager</option>
+                          <option value="Admin">Admin</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.restaurantId || ''}
+                          onChange={(e) => {
+                            const restaurantId = e.target.value;
+                            setEditEmployee({
+                              ...editEmployee, 
+                              restaurantId: restaurantId,
+                              restaurantName: restaurantId ? getRestaurantName(restaurantId) : null
+                            });
+                          }}
+                        >
+                          <option value="">None</option>
+                          {RESTAURANTS.map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="number"
+                          className="w-20 px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.discount}
+                          onChange={(e) => setEditEmployee({...editEmployee, discount: parseInt(e.target.value) || 0})}
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={saveEmployeeEditToFirebase}
+                          className="text-green-600 hover:text-green-900 mr-3"
+                          aria-label="Save changes"
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="text-gray-600 hover:text-gray-900"
+                          aria-label="Cancel editing"
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ) : null}
+                  
+                  {filteredEmployees.map((employee) => (
+                    isEditingEmployee && editEmployee && employee.id === editEmployee.id ? null : (
+                      <tr key={employee.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                              <User size={14} className="text-indigo-600" />
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employee.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            employee.jobTitle === 'Admin' ? 'bg-purple-50 text-purple-700' :
+                            employee.jobTitle === 'Manager' ? 'bg-indigo-50 text-indigo-700' :
+                            'bg-green-50 text-green-700'
+                          }`}>
+                            {employee.jobTitle}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employee.restaurantName || 'Not assigned'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {employee.discount}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => startEditEmployee(employee)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                            aria-label="Edit user"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => removeEmployeeFromFirebase(employee.id)}
+                            className="text-red-600 hover:text-red-900"
+                            aria-label="Remove user"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  ))}
+                  
+                  {filteredEmployees.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-10 text-center text-sm text-gray-500">
+                        No users found. Try a different search or add a new user.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
@@ -1316,74 +1513,10 @@ if (view === 'completeSignup') {
 {/* Admin-only section to create restaurant managers */}
 
 
-  // MANAGER VIEW
+// MANAGER VIEW
+if (view === 'manager') {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-<div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
-  <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-    <h3 className="text-lg font-medium leading-6 text-gray-900">
-      Invite New Employee
-    </h3>
-    <p className="mt-1 text-sm text-gray-500">
-      Send an email invitation to create an account
-    </p>
-  </div>
-
-  
-  <div className="px-6 py-5">
-    <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
-      <div className="sm:col-span-3">
-        <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
-        <input
-          type="email"
-          id="inviteEmail"
-          placeholder="employee@example.com"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-          value={inviteEmail}
-          onChange={(e) => setInviteEmail(e.target.value)}
-        />
-      </div>
-      <div className="sm:col-span-2">
-        <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
-        <select
-          id="inviteRole"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-          value={inviteRole}
-          onChange={(e) => setInviteRole(e.target.value)}
-        >
-          {jobTitles.map(title => (
-            <option key={title} value={title}>{title}</option>
-          ))}
-        </select>
-      </div>
-      <div className="sm:col-span-1 flex items-end">
-        <button
-          type="button"
-          onClick={handleSendInvite}
-          disabled={isLoading || !inviteEmail}
-          className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center ${isLoading || !inviteEmail ? 'opacity-70 cursor-not-allowed' : ''}`}
-        >
-          Send Invite
-        </button>
-      </div>
-    </div>
-    
-    {inviteSuccess && (
-      <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
-          </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-green-800">
-              Invitation sent successfully! The employee will receive an email with instructions.
-            </p>
-          </div>
-        </div>
-      </div>
-    )}
-  </div>
-</div>
       {notification && <Notification message={notification.message} type={notification.type} />}
       
       {/* Header */}
@@ -1412,32 +1545,103 @@ if (view === 'completeSignup') {
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
-        {/* Employee management section - now full width */}
-        <div className="w-full">
-          <div className="mb-6 flex items-center justify-between">
+        {/* Restaurant info */}
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 flex justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">Employee Management</h2>
-              <p className="text-gray-500">Manage discount information for your restaurant employees</p>
+              <h3 className="text-lg font-medium leading-6 text-gray-900">
+                {currentUser?.restaurantName || 'Your Restaurant'}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Manage employees for your restaurant
+              </p>
             </div>
             <UserProfileBadge user={currentUser} />
           </div>
+        </div>
+
+        {/* Invite employee form - only for this restaurant */}
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+            <h3 className="text-lg font-medium leading-6 text-gray-900">
+              Invite New Employee
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Send an email invitation to join your restaurant
+            </p>
+          </div>
           
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-medium leading-6 text-gray-900">
-                  Employee Roster
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {employees.length} employees registered
-                </p>
+          <div className="px-6 py-5">
+            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
+              <div className="sm:col-span-4">
+                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  id="inviteEmail"
+                  placeholder="employee@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="sm:col-span-1">
+                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
+                <select
+                  id="inviteRole"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                >
+                  <option value="Employee">Employee</option>
+                </select>
+              </div>
+              <div className="sm:col-span-1 flex items-end">
+                <button
+                  type="button"
+                  onClick={handleSendInvite}
+                  disabled={isLoading || !inviteEmail || (inviteRole === 'Manager' && !selectedManagerRestaurant)}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center ${isLoading || !inviteEmail || (inviteRole === 'Manager' && !selectedManagerRestaurant) ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  {isLoading ? (
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    'Invite'
+                  )}
+                </button>
               </div>
             </div>
+            
+            {inviteSuccess && (
+              <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-green-800">
+                      Invitation sent successfully! The employee will receive an email with instructions.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-            {/* Employee list */}
-            <div className="px-6 py-5">
-              {/* Search bar */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        {/* Employee management section - filtered by restaurant */}
+        <div className="w-full">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Employee Management</h2>
+            <p className="text-gray-500">Manage employees for {currentUser?.restaurantName || 'your restaurant'}</p>
+          </div>
+          
+          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+            {/* Search bar */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative w-full sm:w-64 mb-4 sm:mb-0">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -1458,127 +1662,140 @@ if (view === 'completeSignup') {
                   </span>
                 </div>
               </div>
+            </div>
 
-              {/* Employee table */}
-              <div className="overflow-x-auto rounded-lg shadow">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Job Title
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Base Discount
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+            {/* Employee table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Discount
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {isEditingEmployee && editEmployee ? (
+                    <tr className="bg-indigo-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="text"
+                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.name}
+                          onChange={(e) => setEditEmployee({...editEmployee, name: e.target.value})}
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="email"
+                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.email}
+                          onChange={(e) => setEditEmployee({...editEmployee, email: e.target.value})}
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.jobTitle}
+                          onChange={(e) => setEditEmployee({...editEmployee, jobTitle: e.target.value})}
+                        >
+                          <option value="Employee">Employee</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="number"
+                          className="w-20 px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.discount}
+                          onChange={(e) => setEditEmployee({...editEmployee, discount: parseInt(e.target.value) || 0})}
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={saveEmployeeEditToFirebase}
+                          className="text-green-600 hover:text-green-900 mr-3"
+                          aria-label="Save changes"
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="text-gray-600 hover:text-gray-900"
+                          aria-label="Cancel editing"
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {isEditingEmployee && editEmployee ? (
-                      <tr className="bg-indigo-50">
+                  ) : null}
+                  
+                  {filteredEmployees.map((employee) => (
+                    isEditingEmployee && editEmployee && employee.id === editEmployee.id ? null : (
+                      <tr key={employee.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="text"
-                            className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            value={editEmployee.name}
-                            onChange={(e) => setEditEmployee({...editEmployee, name: e.target.value})}
-                          />
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                              <User size={14} className="text-indigo-600" />
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employee.email}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            value={editEmployee.jobTitle}
-                            onChange={(e) => setEditEmployee({...editEmployee, jobTitle: e.target.value})}
-                          >
-                            {jobTitles.map(title => (
-                              <option key={title} value={title}>{title}</option>
-                            ))}
-                          </select>
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-50 text-green-700">
+                            {employee.jobTitle}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="number"
-                            className="w-20 px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            value={editEmployee.discount}
-                            onChange={(e) => setEditEmployee({...editEmployee, discount: parseInt(e.target.value) || 0})}
-                          />
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {employee.discount}%
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
-                            onClick={saveEmployeeEditToFirebase}
-                            className="text-green-600 hover:text-green-900 mr-3"
+                            onClick={() => startEditEmployee(employee)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                            aria-label="Edit employee"
                           >
-                            <CheckCircle size={16} />
+                            <Edit size={16} />
                           </button>
                           <button
-                            onClick={cancelEdit}
-                            className="text-gray-600 hover:text-gray-900"
+                            onClick={() => removeEmployeeFromFirebase(employee.id)}
+                            className="text-red-600 hover:text-red-900"
+                            aria-label="Remove employee"
                           >
-                            <XCircle size={16} />
+                            <Trash2 size={16} />
                           </button>
                         </td>
                       </tr>
-                    ) : null}
-                    
-                    {filteredEmployees.map((employee) => (
-                      isEditingEmployee && editEmployee && employee.id === editEmployee.id ? null : (
-                        <tr key={employee.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                                <User size={14} className="text-indigo-600" />
-                              </div>
-                              <div className="ml-3">
-                                <div className="text-sm font-medium text-gray-900">{employee.name}</div>
-                                <div className="text-xs text-gray-500">ID: {employee.id}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700">
-                              {employee.jobTitle}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              {employee.discount}%
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => startEditEmployee(employee)}
-                              className="text-indigo-600 hover:text-indigo-900 mr-3"
-                              aria-label="Edit employee"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              onClick={() => removeEmployeeFromFirebase(employee.id)}
-                              className="text-red-600 hover:text-red-900"
-                              aria-label="Remove employee"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    ))}
-                    
-                    {filteredEmployees.length === 0 && (
-                      <tr>
-                        <td colSpan="4" className="px-6 py-10 text-center text-sm text-gray-500">
-                          No employees found. Try a different search or add a new employee.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    )
+                  ))}
+                  
+                  {filteredEmployees.length === 0 && (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
+                        No employees found. Try a different search or invite new employees.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1594,6 +1811,6 @@ if (view === 'completeSignup') {
       </footer>
     </div>
   );
-};
+}
 
 export default RestaurantLoyaltyApp;
