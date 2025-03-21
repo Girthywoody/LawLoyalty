@@ -56,6 +56,7 @@ const RestaurantLoyaltyApp = () => {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [jobTitles, setJobTitles] = useState(['Employee', 'Manager']);
   const [employees, setEmployees] = useState([]);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
 
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
