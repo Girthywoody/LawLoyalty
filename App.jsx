@@ -14,7 +14,8 @@ import {
   Shield,
   Award,
   MapPin,
-  Mail
+  Mail,
+  MessageSquare 
 } from 'lucide-react';
 
 import { Store } from 'lucide-react';
