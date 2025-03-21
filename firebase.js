@@ -260,7 +260,7 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     
     // Generate magic link for email - using the same URL format as manager invites
     const actionCodeSettings = {
-      url: `${window.location.origin}?mode=complete&email=${email}&inviteId=${inviteCode}`,
+      url: `${window.location.origin}/complete-signup?mode=complete&email=${email}&inviteId=${inviteCode}`,
       handleCodeInApp: true
     };
     
