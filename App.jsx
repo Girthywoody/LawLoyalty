@@ -575,18 +575,18 @@ if (view === 'register') {
               </div>
             </div>
 
-            // In your login view, add this after the form:
-<div className="mt-4 text-center">
-  <button 
-    className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-    onClick={() => {
-      setView('register');
-      setLoginError('');
-    }}
-  >
-    Need an account? Create one
-  </button>
-</div>
+            {/* In your login view, add this after the form: */}
+            <div className="mt-4 text-center">
+              <button 
+                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                onClick={() => {
+                  setView('register');
+                  setLoginError('');
+                }}
+              >
+                Need an account? Create one
+              </button>
+            </div>
 
             {/* Add helpful tooltips */}
             <div className="space-y-2 text-sm text-gray-600">
@@ -1125,7 +1125,6 @@ if (view === 'register') {
                 </div>
 
                 // Add a new state for the invite email
-const [inviteEmail, setInviteEmail] = useState('');
 
 // Add this to your manager view, perhaps below the employee list:
 <div className="mt-8 pt-6 border-t border-gray-200">
