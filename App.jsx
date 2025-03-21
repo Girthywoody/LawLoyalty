@@ -14,7 +14,8 @@ import {
   Shield,
   Award,
   MapPin,
-  Mail
+  Mail,
+  ChevronRight
 } from 'lucide-react';
 
 
@@ -70,6 +71,643 @@ const RestaurantLoyaltyApp = () => {
   const [inviteValidated, setInviteValidated] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteDetails, setInviteDetails] = useState(null);
+  
+  const [showDropdown, setShowDropdown] = useState(false);
+  
+  // Data
+  const RESTAURANTS = [
+    { id: "montanas", name: "Montana's", discount: "20%" },
+    { id: "kelseys", name: "Kelsey's", discount: "20%" },
+    { id: "coras", name: "Cora's Breakfast", discount: "10%" },
+    { id: "js-roadhouse", name: "J's Roadhouse", discount: "20%" },
+    { id: "swiss-chalet", name: "Swiss Chalet", discount: "20%" },
+    {
+      id: "overtime-bar",
+      name: "Overtime Bar",
+      discount: "20%",
+      locations: [
+        { id: "overtime-sudbury", name: "Sudbury" },
+        { id: "overtime-val-caron", name: "Val Caron" },
+        { id: "overtime-chelmsford", name: "Chelmsford" }
+      ]
+    },
+    { id: "lot-88", name: "Lot 88 Steakhouse", discount: "20%" },
+    { id: "poke-bar", name: "Poke Bar", discount: "20%" },
+    {
+      id: "happy-life",
+      name: "Happy Life",
+      discount: "10%",
+      locations: [
+        { id: "happy-life-kingsway", name: "Kingsway" },
+        { id: "happy-life-val-caron", name: "Val Caron" },
+        { id: "happy-life-chelmsford", name: "Chelmsford" }
+      ]
+    }
+  ];
+  
+  // const [jobTitles, setJobTitles] = useState(['Employee']);
+  
+  // const [employees, setEmployees] = useState([
+  //   { id: 1, name: 'John Smith', jobTitle: 'Employee' },
+  //   { id: 2, name: 'Maria Garcia', jobTitle: 'Employee' },
+  //   { id: 3, name: 'David Wong', jobTitle: 'Employee' },
+  //   { id: 4, name: 'Sarah Johnson', jobTitle: 'Employee' },
+  //   { id: 5, name: 'Alex Lee', jobTitle: 'Employee' },
+  //   { id: 6, name: 'Emma Roberts', jobTitle: 'Employee' }
+  // ]);
+  
+  // const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: 'Employee' });
+  
+    const [email, setEmail] = useState(''); // Instead of username
+    const [newEmployee, setNewEmployee] = useState({ 
+      name: '', 
+      email: '',
+      jobTitle: 'Employee',
+      discount: 20 
+    });
+  // Clock update effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      setIsLoading(true);
+      
+      // Set up real-time listener for employees collection
+      const unsubscribe = subscribeToEmployees((employeesData) => {
+        setEmployees(employeesData);
+        setFilteredEmployees(employeesData);
+        setIsLoading(false);
+      });
+      
+      // Clean up listener when component unmounts
+      return () => unsubscribe();
+    };
+    
+    loadEmployees();
+  }, []);
+
+  const handleCompleteSignup = async (e) => {
+    e.preventDefault();
+    
+    // Don't proceed if already loading
+    if (isLoading) return;
+    
+    setLoginError('');
+    setIsLoading(true);
+    
+    try {
+      // Validate passwords match
+      if (completeSignupPassword !== completeSignupConfirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+      
+      // Complete the registration process
+      await completeRegistration(completeSignupName, completeSignupPassword, inviteCode);
+      
+      showNotification('Account created successfully! Please sign in.', 'success');
+      setView('login');
+    } catch (error) {
+      console.error("Registration error:", error);
+      setLoginError(error.message || 'Failed to complete registration. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+useEffect(() => {
+  // Check for URL parameters that indicate we're coming from an email link
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode');
+  const emailParam = params.get('email');
+  const inviteIdParam = params.get('inviteId');
+  
+  if (mode === 'complete' && emailParam && inviteIdParam) {
+    // Store the email in localStorage for the auth process
+    localStorage.setItem('emailForSignIn', emailParam);
+    setInviteEmail(emailParam);
+    setInviteCode(inviteIdParam);
+    
+    // Set the view to a dedicated welcome signup page
+    setView('completeSignup');
+  }
+}, []);
+
+  // Format time with leading zeros and seconds
+  const formatTime = (time) => {
+    return time.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: true 
+    });
+  };
+
+// Make sure isLoading is properly reset if there's an error during login
+const handleLogin = async (e) => {
+  e.preventDefault();
+  
+  // Don't proceed if already loading
+  if (isLoading) return;
+  
+  setLoginError('');
+  setIsLoading(true);
+  
+  try {
+    // Basic validation
+    if (!email || !password) {
+      throw new Error('Please enter both email and password');
+    }
+    
+    // Implement actual Firebase login
+    const user = await loginWithEmailAndPassword(email, password);
+    
+    // Query Firestore to get the user's role information
+    const employeesRef = collection(db, 'employees');
+    const q = query(employeesRef, where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      throw new Error('User not found in employees database');
+    }
+    
+    // Get the employee data
+    const employeeData = querySnapshot.docs[0].data();
+    
+    // Set current user from Firebase response and Firestore data
+    setCurrentUser({
+      id: user.uid,
+      name: employeeData.name || user.displayName || email,
+      email: user.email,
+      jobTitle: employeeData.jobTitle || 'Employee',
+      discount: employeeData.discount || 20
+    });
+    
+    // Navigate to the appropriate view based on actual role
+    setView(employeeData.jobTitle === 'Manager' ? 'manager' : 'employee');
+    
+    showNotification('Login successful', 'success');
+  } catch (error) {
+    console.error("Login error:", error);
+    setLoginError(error.message || 'Login failed. Check your credentials.');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logoutUser(); // Firebase logout
+      setView('login');
+      setEmail('');
+      setPassword('');
+      setSelectedLocation('');
+      setCurrentUser(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      showNotification("Error logging out", "error");
+    }
+  };
+
+  // Simplify getDiscount to only use restaurant discount
+  const getDiscount = (location) => {
+    const restaurant = RESTAURANTS.find(r => 
+      r.name === location || 
+      (r.locations && r.locations.some(l => l.name === location))
+    );
+    
+    if (restaurant) {
+      return parseInt(restaurant.discount);
+    }
+    return 0;
+  };
+
+
+  // Add this function to handle sending invites
+  const handleSendInvite = async () => {
+    if (!inviteEmail) {
+      showNotification('Please enter an email address', 'error');
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Use the current user's ID as senderUid and pass the selected role
+      await sendEmployeeInvite(inviteEmail, inviteRole, currentUser.id);
+      showNotification(`Invite sent to ${inviteEmail} as ${inviteRole}`, 'success');
+      setInviteEmail('');
+      setInviteSuccess(true); // Show success message
+      
+      // Hide the success message after 5 seconds
+      setTimeout(() => {
+        setInviteSuccess(false);
+      }, 5000);
+    } catch (error) {
+      console.error("Error sending invite:", error);
+      showNotification("Failed to send invite", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add employee
+  const addEmployeeToFirebase = async () => {
+    if (newEmployee.name && newEmployee.jobTitle) {
+      try {
+        setIsLoading(true);
+        
+        // Add employee to Firebase
+        await addEmployee({
+          name: newEmployee.name,
+          email: newEmployee.email || '',
+          jobTitle: newEmployee.jobTitle,
+          discount: parseInt(newEmployee.discount) || 20,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        
+        // Reset form
+        setNewEmployee({ 
+          name: '', 
+          email: '',
+          jobTitle: 'Employee',
+          discount: 20 
+        });
+        setShowAddForm(false);
+        showNotification('Employee added successfully!', 'success');
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error adding employee:", error);
+        showNotification("Failed to add employee", "error");
+        setIsLoading(false);
+      }
+    } else {
+      showNotification('Please fill in all required fields', 'error');
+    }
+  };
+
+  // Remove employee
+  const removeEmployeeFromFirebase = async (id) => {
+    try {
+      setIsLoading(true);
+      await deleteEmployee(id);
+      showNotification('Employee removed successfully!', 'success');
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error removing employee:", error);
+      showNotification("Failed to remove employee", "error");
+      setIsLoading(false);
+    }
+  };
+
+  // Add this function to handle registration
+const handleRegister = async (e) => {
+  e.preventDefault();
+  
+  // Don't proceed if already loading
+  if (isLoading) return;
+  
+  setLoginError('');
+  setIsLoading(true);
+  
+  try {
+    // Basic validation
+    if (!registerEmail || !registerPassword || !registerName) {
+      throw new Error('Please fill in all fields');
+    }
+    
+    // Create user in Firebase Authentication
+    const user = await createUser(registerEmail, registerPassword);
+    
+    // Add user to employees collection as a manager
+    await addEmployee({
+      name: registerName,
+      email: registerEmail,
+      jobTitle: 'Manager',
+      discount: 40,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    // Set current user and navigate to manager view
+    setCurrentUser({
+      id: user.uid,
+      name: user.displayName || email,
+      email: user.email,
+      jobTitle: email.toLowerCase().includes('manager') ? 'Manager' : 'Employee',
+      discount: email.toLowerCase().includes('manager') ? 40 : 20
+    });
+
+    setView(email.toLowerCase().includes('manager') ? 'manager' : 'employee');
+
+    
+    // Clear registration form
+    setRegisterEmail('');
+    setRegisterPassword('');
+    setRegisterName('');
+    
+    // Navigate to manager view
+    setView('manager');
+    
+    showNotification('Account created successfully!', 'success');
+  } catch (error) {
+    console.error("Registration error:", error);
+    setLoginError(error.message || 'Failed to create account. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
+  
+  // Start editing employee
+  const startEditEmployee = (employee) => {
+    setEditEmployee({...employee});
+    setIsEditingEmployee(true);
+  };
+  
+  // Save employee edits
+  const saveEmployeeEditToFirebase = async () => {
+    if (editEmployee && editEmployee.id) {
+      try {
+        setIsLoading(true);
+        
+        // Update in Firebase
+        await updateEmployee(editEmployee.id, {
+          name: editEmployee.name,
+          email: editEmployee.email,
+          jobTitle: editEmployee.jobTitle,
+          discount: parseInt(editEmployee.discount) || 0,
+          updatedAt: new Date()
+        });
+        
+        setIsEditingEmployee(false);
+        setEditEmployee(null);
+        showNotification('Employee updated successfully!', 'success');
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error updating employee:", error);
+        showNotification("Failed to update employee", "error");
+        setIsLoading(false);
+      }
+    }
+  };
+  
+  // Cancel employee edit
+  const cancelEdit = () => {
+    setIsEditingEmployee(false);
+    setEditEmployee(null);
+  };
+
+  // Show notification
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
+
+  // Notification component
+  const Notification = ({ message, type }) => {
+    const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
+                     type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
+                     'bg-blue-100 border-blue-400 text-blue-700';
+    
+    const icon = type === 'success' ? <CheckCircle size={20} className="text-green-500" /> :
+                 type === 'error' ? <XCircle size={20} className="text-red-500" /> :
+                 null;
+    
+    return (
+      <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg border ${bgColor} shadow-lg flex items-center z-50`}>
+        {icon && <span className="mr-2">{icon}</span>}
+        <span>{message}</span>
+      </div>
+    );
+  };
+
+  // User profile badge
+  const UserProfileBadge = ({ user }) => (
+    <div className="flex items-center">
+      <div className="h-12 w-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+        <User size={24} className="text-white" />
+      </div>
+      <div className="ml-4">
+        <h2 className="text-lg font-bold text-gray-800">{user?.name}</h2>
+        <div className="flex items-center">
+          <Award size={14} className="text-indigo-700 mr-1" />
+          <p className="text-indigo-600 text-sm font-medium">{user?.jobTitle}</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Add this effect to handle search filtering
+  useEffect(() => {
+    const filtered = employees.filter(emp => 
+      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredEmployees(filtered);
+  }, [searchTerm, employees]);
+
+  // REGISTRATION VIEW
+if (view === 'register') {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+        <div className="text-center">
+          <div className="flex justify-center">
+            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
+              <Shield size={36} className="text-white" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800">Create Manager Account</h1>
+          <p className="mt-2 text-gray-500">Register for the Employee Discount System</p>
+        </div>
+        
+        <form className="mt-8 space-y-6" onSubmit={handleRegister}>
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="registerName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="registerName"
+                  name="registerName"
+                  type="text"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Enter your full name"
+                  value={registerName}
+                  onChange={(e) => setRegisterName(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="registerEmail" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="registerEmail"
+                  name="registerEmail"
+                  type="email"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Enter your email"
+                  value={registerEmail}
+                  onChange={(e) => setRegisterEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="registerPassword" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Shield size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="registerPassword"
+                  name="registerPassword"
+                  type="password"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Create a password"
+                  value={registerPassword}
+                  onChange={(e) => setRegisterPassword(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {loginError && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex items-center">
+              <XCircle size={16} className="mr-2" />
+              {loginError}
+            </div>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors font-medium ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </div>
+        </form>
+        
+        <div className="mt-4 text-center">
+          <button 
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+            onClick={() => {
+              setView('login');
+              setLoginError('');
+            }}
+          >
+            Already have an account? Sign in
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+  // LOGIN VIEW
+import React, { useState, useEffect } from 'react';
+import { 
+  Clock, 
+  User, 
+  Building, 
+  Percent, 
+  LogOut, 
+  Plus, 
+  Trash2, 
+  Edit, 
+  CheckCircle, 
+  XCircle,
+  Calendar,
+  Shield,
+  Award,
+  MapPin,
+  Mail,
+  ChevronRight
+} from 'lucide-react';
+
+
+
+
+import { createUser, sendEmployeeInvite } from './firebase';
+
+
+import { 
+  loginWithEmailAndPassword, 
+  logoutUser, 
+  getEmployees, 
+  addEmployee, 
+  updateEmployee, 
+  deleteEmployee, 
+  subscribeToEmployees,
+  db
+} from './firebase';
+
+import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
+
+
+const RestaurantLoyaltyApp = () => {
+  // App state
+  const [view, setView] = useState('login');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedLocation, setSelectedLocation] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isEditingEmployee, setIsEditingEmployee] = useState(false);
+  const [editEmployee, setEditEmployee] = useState(null);
+  const [loginError, setLoginError] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const [jobTitles, setJobTitles] = useState(['Employee', 'Manager']);
+  const [employees, setEmployees] = useState([]);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
+
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [completeSignupName, setCompleteSignupName] = useState('');
+  const [completeSignupPassword, setCompleteSignupPassword] = useState('');
+  const [completeSignupConfirmPassword, setCompleteSignupConfirmPassword] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteRole, setInviteRole] = useState('Employee');
+  const [registrationMode, setRegistrationMode] = useState('login'); // 'login', 'invite', 'register'
+  const [inviteValidated, setInviteValidated] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteDetails, setInviteDetails] = useState(null);
+  
+  const [showDropdown, setShowDropdown] = useState(false);
   
   // Data
   const RESTAURANTS = [
@@ -894,85 +1532,80 @@ if (view === 'completeSignup') {
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="flex-grow max-w-5xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-            {/* User info card */}
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+        {/* Main content - Centered */}
+        <main className="flex-grow flex flex-col items-center justify-center px-4 py-8">
+          <div className="w-full max-w-2xl mx-auto space-y-8">
+            {/* User Profile Badge - Centered */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
               <UserProfileBadge user={currentUser} />
             </div>
 
-            {/* Location selector */}
-            <div className="p-6 border-b border-gray-200">
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-4">
-                Select Restaurant Location
-              </label>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Restaurant Selector Dropdown */}
+            <div className="relative w-full">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="w-full p-4 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-between hover:border-indigo-500 transition-colors"
+              >
+                <div className="flex items-center">
+                  <Building size={20} className="text-indigo-600 mr-3" />
+                  <span className="text-gray-700">
+                    {selectedLocation || "Select Restaurant Location"}
+                  </span>
+                </div>
+                <svg
+                  className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${
+                    showDropdown ? 'rotate-180' : ''
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showDropdown && (
+                <div className="absolute z-20 w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto">
                   {RESTAURANTS.map((restaurant) => (
-                    <div key={restaurant.id}>
+                    <div key={restaurant.id} className="border-b border-gray-100 last:border-0">
                       <button
                         onClick={() => {
-                          setSelectedRestaurant(restaurant);
                           if (!restaurant.locations) {
                             setSelectedLocation(restaurant.name);
+                            setSelectedRestaurant(restaurant);
+                            setShowDropdown(false);
                           }
                         }}
-                        className={`w-full p-4 rounded-lg border-2 transition-all duration-200 flex items-center justify-between group hover:border-indigo-500 hover:bg-indigo-50 ${
-                          selectedRestaurant?.id === restaurant.id 
-                            ? 'border-indigo-500 bg-indigo-50' 
-                            : 'border-gray-200 bg-white'
-                        }`}
+                        className="w-full p-4 text-left hover:bg-indigo-50 transition-colors flex items-center justify-between"
                       >
                         <div className="flex items-center">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            selectedRestaurant?.id === restaurant.id 
-                              ? 'bg-indigo-100' 
-                              : 'bg-gray-100 group-hover:bg-indigo-100'
-                          }`}>
-                            <Building size={20} className={`${
-                              selectedRestaurant?.id === restaurant.id 
-                                ? 'text-indigo-600' 
-                                : 'text-gray-500 group-hover:text-indigo-600'
-                            }`} />
-                          </div>
-                          <div className="ml-3 text-left">
-                            <p className={`font-medium ${
-                              selectedRestaurant?.id === restaurant.id 
-                                ? 'text-indigo-700' 
-                                : 'text-gray-700'
-                            }`}>
-                              {restaurant.name}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {restaurant.discount} discount
-                            </p>
+                          <Building size={18} className="text-indigo-600 mr-3" />
+                          <div>
+                            <p className="font-medium text-gray-700">{restaurant.name}</p>
+                            <p className="text-sm text-gray-500">{restaurant.discount} discount</p>
                           </div>
                         </div>
                         {restaurant.locations && (
-                          <MapPin size={16} className="text-gray-400 group-hover:text-indigo-500" />
+                          <ChevronRight size={16} className="text-gray-400" />
                         )}
                       </button>
-                      
-                      {/* Show location options if this restaurant is selected and has multiple locations */}
-                      {selectedRestaurant?.id === restaurant.id && restaurant.locations && (
-                        <div className="mt-2 ml-12 space-y-2">
+
+                      {/* Sub-locations */}
+                      {restaurant.locations && (
+                        <div className="bg-gray-50 pl-12">
                           {restaurant.locations.map((location) => (
                             <button
                               key={location.id}
-                              onClick={() => setSelectedLocation(location.name)}
-                              className={`w-full p-3 rounded-lg border transition-all duration-200 flex items-center ${
-                                selectedLocation === location.name
-                                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                  : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
-                              }`}
+                              onClick={() => {
+                                setSelectedLocation(location.name);
+                                setSelectedRestaurant(restaurant);
+                                setShowDropdown(false);
+                              }}
+                              className="w-full p-3 text-left hover:bg-indigo-50 transition-colors flex items-center"
                             >
-                              <MapPin size={16} className={`mr-2 ${
-                                selectedLocation === location.name
-                                  ? 'text-indigo-500'
-                                  : 'text-gray-400'
-                              }`} />
-                              <span className="text-sm">{location.name}</span>
+                              <MapPin size={16} className="text-gray-400 mr-2" />
+                              <span className="text-sm text-gray-600">{location.name}</span>
                             </button>
                           ))}
                         </div>
@@ -980,31 +1613,12 @@ if (view === 'completeSignup') {
                     </div>
                   ))}
                 </div>
-
-                {/* Selected restaurant info */}
-                {selectedRestaurant && selectedLocation && (
-                  <div className="mt-6 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm font-medium text-indigo-900">Selected Location</h3>
-                        <p className="text-lg font-semibold text-indigo-700">
-                          {selectedRestaurant.name}
-                          {selectedLocation !== selectedRestaurant.name && ` - ${selectedLocation}`}
-                        </p>
-                      </div>
-                      <div className="bg-white px-3 py-1 rounded-full border border-indigo-200">
-                        <span className="text-indigo-700 font-medium">{selectedRestaurant.discount} discount</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
 
-            {/* Discount display */}
-            {selectedLocation ? (
-              <div className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Your Discount</h3>
+            {/* Discount Display Card - Only shown when location is selected */}
+            {selectedLocation && (
+              <div className="w-full animate-fade-in">
                 <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -1034,46 +1648,27 @@ if (view === 'completeSignup') {
                           })}
                         </p>
                       </div>
-                      <div className="mt-4 bg-indigo-400 bg-opacity-20 p-3 rounded-lg border border-indigo-300 border-opacity-30">
-                        <p className="text-sm text-white flex items-center">
-                          <Clock size={14} className="mr-2" />
-                          Show this screen to the cashier to receive your discount.
-                          The live clock confirms this is being viewed in real-time.
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Replace the QR code section with this: */}
-                {selectedLocation && (
-                  <div className="mt-6 text-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div className="flex flex-col items-center justify-center">
-                      <Clock size={32} className="text-indigo-600 mb-2" />
-                      <div className="text-4xl font-bold text-gray-800 font-mono tracking-wider">
-                        {formatTime(currentTime)}
-                      </div>
-                      <p className="mt-2 text-sm text-gray-500">
-                        Current Time
-                      </p>
+                {/* Live Clock Display */}
+                <div className="mt-6 text-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <div className="flex flex-col items-center justify-center">
+                    <Clock size={32} className="text-indigo-600 mb-2" />
+                    <div className="text-4xl font-bold text-gray-800 font-mono tracking-wider">
+                      {formatTime(currentTime)}
                     </div>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Current Time
+                    </p>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto flex items-center justify-center rounded-full bg-indigo-100">
-                  <Building size={24} className="text-indigo-600" />
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">Select a Location</h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Choose a restaurant location from the dropdown above to view your available discount.
-                </p>
               </div>
             )}
           </div>
         </main>
-        
+
         {/* Footer */}
         <footer className="bg-white border-t border-gray-200 py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1573,13 +2168,6 @@ const DiscountCard = ({ location, discount, currentTime }) => (
               month: 'long',
               day: 'numeric'
             })}
-          </p>
-        </div>
-        <div className="mt-4 bg-indigo-400 bg-opacity-20 p-3 rounded-lg border border-indigo-300 border-opacity-30">
-          <p className="text-sm text-white flex items-center">
-            <Clock size={14} className="mr-2" />
-            Show this screen to the cashier to receive your discount.
-            The live clock confirms this is being viewed in real-time.
           </p>
         </div>
       </div>
