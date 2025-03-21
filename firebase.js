@@ -46,7 +46,6 @@ const employeesCollection = collection(db, 'employees');
 const restaurantsCollection = collection(db, 'restaurants');
 const invitesCollection = collection(db, 'invites');
 
-// Send invite with email link - simplified version without react-router
 export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
     // Create the invite record first
@@ -81,7 +80,6 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
   }
 };
 
-// Complete registration with email link
 export const completeRegistration = async (name, password, inviteId) => {
   try {
     // Check if the link is a sign-in with email link

@@ -149,49 +149,51 @@ const RestaurantLoyaltyApp = () => {
     loadEmployees();
   }, []);
 
-const handleCompleteSignup = async (e) => {
-  e.preventDefault();
-  
-  // Don't proceed if already loading
-  if (isLoading) return;
-  
-  setLoginError('');
-  setIsLoading(true);
-  
-  try {
-    // Validate passwords match
-    if (completeSignupPassword !== completeSignupConfirmPassword) {
-      throw new Error('Passwords do not match');
+  const handleCompleteSignup = async (e) => {
+    e.preventDefault();
+    
+    // Don't proceed if already loading
+    if (isLoading) return;
+    
+    setLoginError('');
+    setIsLoading(true);
+    
+    try {
+      // Validate passwords match
+      if (completeSignupPassword !== completeSignupConfirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+      
+      // Complete the registration process
+      await completeRegistration(completeSignupName, completeSignupPassword, inviteCode);
+      
+      showNotification('Account created successfully! Please sign in.', 'success');
+      setView('login');
+    } catch (error) {
+      console.error("Registration error:", error);
+      setLoginError(error.message || 'Failed to complete registration. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Call the completeRegistration function with the required parameters
-    await completeRegistration(completeSignupName, completeSignupPassword, inviteCode);
-    
-    showNotification('Account created successfully! Please sign in.', 'success');
-    setView('login');
-  } catch (error) {
-    console.error("Registration error:", error);
-    setLoginError(error.message || 'Failed to complete registration. Please try again.');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
-  useEffect(() => {
-    // Check for URL parameters that indicate we're coming from an email link
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get('mode');
-    const emailParam = params.get('email');
-    const inviteIdParam = params.get('inviteId');
+useEffect(() => {
+  // Check for URL parameters that indicate we're coming from an email link
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode');
+  const emailParam = params.get('email');
+  const inviteIdParam = params.get('inviteId');
+  
+  if (mode === 'complete' && emailParam && inviteIdParam) {
+    // Store the email in localStorage for the auth process
+    localStorage.setItem('emailForSignIn', emailParam);
+    setInviteEmail(emailParam);
+    setInviteCode(inviteIdParam);
     
-    if (mode === 'complete' && emailParam && inviteIdParam) {
-      // Store the email in localStorage for the auth process
-      localStorage.setItem('emailForSignIn', emailParam);
-      setInviteEmail(emailParam);
-      setInviteCode(inviteIdParam);
-      setView('completeSignup');
-    }
-  }, []);
+    // Set the view to a dedicated welcome signup page
+    setView('completeSignup');
+  }
+}, []);
 
   // Format time with leading zeros and seconds
   const formatTime = (time) => {
@@ -743,6 +745,7 @@ if (view === 'register') {
   }
 
   // COMPLETE SIGNUP VIEW
+// COMPLETE SIGNUP VIEW
 if (view === 'completeSignup') {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -753,7 +756,7 @@ if (view === 'completeSignup') {
               <Shield size={36} className="text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">Welcome Aboard!</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Welcome to Law Loyalty!</h1>
           <p className="mt-2 text-gray-500">Complete your account setup</p>
         </div>
         
@@ -851,7 +854,7 @@ if (view === 'completeSignup') {
         </form>
         
         <div className="text-center text-sm text-gray-500 mt-4">
-          <p>By creating an account, you'll get access to exclusive employee discounts at participating restaurants!</p>
+          <p>By creating an account, you'll get access to exclusive employee discounts at all participating restaurants!</p>
         </div>
       </div>
     </div>
@@ -1062,8 +1065,6 @@ if (view === 'completeSignup') {
   // MANAGER VIEW
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      // Add this to the manager view - your invitation form
-
 <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
   <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
     <h3 className="text-lg font-medium leading-6 text-gray-900">
