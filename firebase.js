@@ -160,8 +160,7 @@ export const sendManagerInvite = async (email, role, senderUid, restaurantId) =>
     
     // Generate magic link for email - notice the updated URL format
     const actionCodeSettings = {
-      // Change this URL to explicitly point to the completeSignup view
-      url: `${window.location.origin}?mode=complete&email=${email}&inviteId=${inviteCode}`,
+      url: `${window.location.origin}/complete-signup?mode=complete&email=${email}&inviteId=${inviteCode}`,
       handleCodeInApp: true
     };
     
