@@ -17,9 +17,6 @@ import {
   Mail
 } from 'lucide-react';
 
-const [completeSignupName, setCompleteSignupName] = useState('');
-const [completeSignupPassword, setCompleteSignupPassword] = useState('');
-const [completeSignupConfirmPassword, setCompleteSignupConfirmPassword] = useState('');
 
 
 
@@ -64,7 +61,9 @@ const RestaurantLoyaltyApp = () => {
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerName, setRegisterName] = useState('');
-
+  const [completeSignupName, setCompleteSignupName] = useState('');
+  const [completeSignupPassword, setCompleteSignupPassword] = useState('');
+  const [completeSignupConfirmPassword, setCompleteSignupConfirmPassword] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [inviteRole, setInviteRole] = useState('Employee');
   const [registrationMode, setRegistrationMode] = useState('login'); // 'login', 'invite', 'register'
