@@ -1033,19 +1033,19 @@ const EmployeeLocationCard = ({ location, discount }) => (
   </div>
 );
 
-// Add this component for the manager view
+// Update this component
 const DiscountRuleCard = ({ restaurant, locations, discountRules }) => (
   <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
     <h3 className="font-medium text-gray-900 mb-3">{restaurant.name}</h3>
     <div className="space-y-2">
-      {locations.map(location => (
-        <div key={location.id} className="flex justify-between items-center text-sm">
-          <span className="text-gray-600">{location.name}</span>
+      {Object.keys(discountRules).map(jobTitle => (
+        <div key={jobTitle} className="flex justify-between items-center text-sm">
+          <span className="text-gray-600">{jobTitle}</span>
           <span className={`px-2 py-0.5 rounded-full ${
-            discountRules[restaurant.name][location.name] >= 30 ? 'bg-green-100 text-green-800' :
+            discountRules[jobTitle][restaurant.name] >= 20 ? 'bg-green-100 text-green-800' :
             'bg-blue-100 text-blue-800'
           }`}>
-            {discountRules[restaurant.name][location.name]}%
+            {discountRules[jobTitle][restaurant.name]}%
           </span>
         </div>
       ))}
