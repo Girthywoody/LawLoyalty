@@ -106,23 +106,21 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     const inviteRef = await addDoc(invitesCollection, inviteData);
     const inviteId = inviteRef.id;
     
-    // Save the email to localStorage to be retrieved when the link is clicked
-    // In a real implementation, this would be saved server-side or handled in the email verification flow
-    localStorage.setItem('emailForSignIn', email);
-    
     // Save the invite ID in the URL
     const finalUrl = actionCodeSettings.url + `?inviteId=${inviteId}`;
+    
+    // Simplified actionCodeSettings without the dynamic link domain
     const customActionCodeSettings = {
-      ...actionCodeSettings,
-      url: finalUrl
+      url: finalUrl,
+      handleCodeInApp: true
     };
     
-    // Send the email - Firebase will handle this with a default template
-    // We use sendSignInLinkToEmail which creates a passwordless sign-in link
+    // Send the email
     await sendSignInLinkToEmail(auth, email, customActionCodeSettings);
     
-    // In a full implementation, you'd use Firebase Functions or a backend server
-    // to send fully customized HTML emails with your branding
+    // Save the email to localStorage for the specific user being invited
+    // Note: In a production environment, you might want a more robust solution
+    localStorage.setItem(`emailForSignIn_${inviteId}`, email);
     
     return { success: true, inviteId };
   } catch (error) {
