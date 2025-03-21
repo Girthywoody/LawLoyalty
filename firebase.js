@@ -1,14 +1,28 @@
-// First, let's install the required Firebase packages
-// Run these commands in your project directory:
-// npm install firebase firebase/app firebase/auth firebase/firestore
-
-// Create a new file called firebase.js in your project's src directory
-// This file will handle all Firebase configuration and initialization
-
-// src/firebase.js
+// firebase.js
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, where, onSnapshot } from 'firebase/firestore';
-import { getAuth, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  getDocs, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  updateDoc, 
+  query, 
+  where, 
+  onSnapshot,
+  getDoc
+} from 'firebase/firestore';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  createUserWithEmailAndPassword,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  updatePassword
+} from 'firebase/auth';
 
 // Replace this with your Firebase configuration
 // You can find this in your Firebase project settings
@@ -20,7 +34,7 @@ const firebaseConfig = {
     messagingSenderId: "18898180139",
     appId: "1:18898180139:web:115ada8b7ab0d8a9edb26e",
     measurementId: "G-XTKBQK7L33"
-  };
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -30,6 +44,14 @@ const auth = getAuth(app);
 // Collection references
 const employeesCollection = collection(db, 'employees');
 const restaurantsCollection = collection(db, 'restaurants');
+const invitesCollection = collection(db, 'invites');
+
+// Configure actionCodeSettings for the email link
+const actionCodeSettings = {
+  // URL you want to redirect to after email verification
+  url: window.location.origin + '/complete-signup',
+  handleCodeInApp: true
+};
 
 // Auth functions
 export const loginWithEmailAndPassword = async (email, password) => {
@@ -50,28 +72,105 @@ export const logoutUser = async () => {
   }
 };
 
-// Add to firebase.js
-export const sendEmployeeInvite = async (employeeEmail) => {
+export const createUser = async (email, password) => {
   try {
-    // In a real app, you would use Firebase Auth sendSignInLinkToEmail or a custom email service
-    // For now, we'll just add a placeholder record to Firestore
-    const inviteData = {
-      email: employeeEmail,
-      status: 'pending',
-      sentAt: new Date(),
-    };
-    
-    await addDoc(collection(db, 'invites'), inviteData);
-    return true;
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
   } catch (error) {
     throw error;
   }
 };
 
-export const createUser = async (email, password) => {
+// Send invite with email link
+export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
+    // Create the invite record first
+    const inviteData = {
+      email: email,
+      role: role, // 'Employee' or 'Manager'
+      status: 'pending',
+      sentAt: new Date(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+      senderUid: senderUid
+    };
+    
+    const inviteRef = await addDoc(invitesCollection, inviteData);
+    const inviteId = inviteRef.id;
+    
+    // Save the invite ID in the URL
+    const finalUrl = actionCodeSettings.url + `?inviteId=${inviteId}`;
+    const customActionCodeSettings = {
+      ...actionCodeSettings,
+      url: finalUrl
+    };
+    
+    // Send the email
+    await sendSignInLinkToEmail(auth, email, customActionCodeSettings);
+    
+    // In a real implementation, you would use Firebase Functions or a backend server
+    // to handle the email sending in a more customized way
+    
+    return { success: true, inviteId };
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Complete registration with email link
+export const completeRegistration = async (name, password, inviteId) => {
+  try {
+    // Check if the link is a sign-in with email link
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      // Get the email from localStorage
+      let email = localStorage.getItem('emailForSignIn');
+      
+      // If email not found in localStorage, prompt user for it
+      if (!email) {
+        // This would be handled by your UI
+        throw new Error('Email not found. Please reopen the invite link from your email.');
+      }
+      
+      // Sign in with email link
+      const userCredential = await signInWithEmailLink(auth, email, window.location.href);
+      const user = userCredential.user;
+      
+      // Update the user's password
+      await updatePassword(user, password);
+      
+      // Get the invite details
+      const inviteDoc = doc(db, 'invites', inviteId);
+      const inviteSnap = await getDoc(inviteDoc);
+      
+      if (!inviteSnap.exists()) {
+        throw new Error('Invite not found');
+      }
+      
+      const invite = inviteSnap.data();
+      
+      // Add the user to the employees collection
+      await addEmployee({
+        name: name,
+        email: email,
+        jobTitle: invite.role,
+        discount: invite.role === 'Manager' ? 40 : 20,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        uid: user.uid
+      });
+      
+      // Update the invite status
+      await updateDoc(inviteDoc, {
+        status: 'accepted',
+        acceptedAt: new Date()
+      });
+      
+      // Clear email from localStorage
+      localStorage.removeItem('emailForSignIn');
+      
+      return user;
+    } else {
+      throw new Error('Invalid sign-in link');
+    }
   } catch (error) {
     throw error;
   }
@@ -126,6 +225,37 @@ export const subscribeToEmployees = (callback) => {
       ...doc.data()
     }));
     callback(employeesData);
+  });
+};
+
+// Invite management
+export const getInvites = async (status = null) => {
+  let invitesQuery = invitesCollection;
+  
+  if (status) {
+    invitesQuery = query(invitesCollection, where("status", "==", status));
+  }
+  
+  const snapshot = await getDocs(invitesQuery);
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+};
+
+export const subscribeToInvites = (callback, status = null) => {
+  let invitesQuery = invitesCollection;
+  
+  if (status) {
+    invitesQuery = query(invitesCollection, where("status", "==", status));
+  }
+  
+  return onSnapshot(invitesQuery, (snapshot) => {
+    const invitesData = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    callback(invitesData);
   });
 };
 

@@ -17,6 +17,12 @@ import {
   Mail
 } from 'lucide-react';
 
+const [inviteCode, setInviteCode] = useState('');
+const [inviteRole, setInviteRole] = useState('Employee');
+const [registrationMode, setRegistrationMode] = useState('login'); // 'login', 'invite', 'register'
+const [inviteValidated, setInviteValidated] = useState(false);
+const [inviteEmail, setInviteEmail] = useState('');
+const [inviteDetails, setInviteDetails] = useState(null);
 
 
 import { createUser, sendEmployeeInvite } from './firebase';
@@ -606,17 +612,10 @@ if (view === 'register') {
               </div>
             </div>
 
-            {/* In your login view, add this after the form: */}
             <div className="mt-4 text-center">
-              <button 
-                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                onClick={() => {
-                  setView('register');
-                  setLoginError('');
-                }}
-              >
-                Need an account? Create one
-              </button>
+              <p className="text-sm text-gray-500">
+                New users need an invitation from a manager.
+              </p>
             </div>
 
             {/* Add helpful tooltips */}
@@ -1162,19 +1161,33 @@ if (view === 'register') {
   <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
     Invite Employees
   </h4>
-  <div className="flex items-end space-x-4">
+  <div className="space-y-4">
     <div className="flex-grow">
       <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">
-        Employee Email
+        Email Address
       </label>
       <input
         type="email"
         id="inviteEmail"
-        placeholder="Enter employee email"
+        placeholder="Enter email to invite"
         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
         value={inviteEmail}
         onChange={(e) => setInviteEmail(e.target.value)}
       />
+    </div>
+    <div className="flex-grow">
+      <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">
+        Role
+      </label>
+      <select
+        id="inviteRole"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+        value={inviteRole}
+        onChange={(e) => setInviteRole(e.target.value)}
+      >
+        <option value="Employee">Employee</option>
+        <option value="Manager">Manager</option>
+      </select>
     </div>
     <button
       type="button"
@@ -1190,8 +1203,17 @@ if (view === 'register') {
       ) : (
         <Mail size={16} className="mr-2" />
       )}
-      Send Invite
+      Send Invite Email
     </button>
+    
+    {inviteSuccess && (
+      <div className="bg-green-50 p-3 rounded-lg border border-green-100 text-sm flex items-center">
+        <CheckCircle size={16} className="mr-2 text-green-500" />
+        <span className="text-green-700">
+          Invite sent successfully! The user will receive an email with setup instructions.
+        </span>
+      </div>
+    )}
   </div>
 </div>
                 
