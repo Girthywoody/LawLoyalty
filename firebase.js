@@ -63,7 +63,7 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     
     // Build the URL for the complete-signup page with query parameters 
     const signupUrl = `${window.location.origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
-    
+        
     // Basic action code settings
     const actionCodeSettings = {
       url: signupUrl,
