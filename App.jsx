@@ -14,13 +14,16 @@ import {
   Shield,
   Award,
   MapPin,
-  Mail,
-  ChevronRight
+  Mail
 } from 'lucide-react';
 
+
+
+
+import { createUser, sendEmployeeInvite } from './firebase';
+
+
 import { 
-  createUser, 
-  sendEmployeeInvite,
   loginWithEmailAndPassword, 
   logoutUser, 
   getEmployees, 
@@ -31,7 +34,8 @@ import {
   db
 } from './firebase';
 
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
+
 
 const RestaurantLoyaltyApp = () => {
   // App state
@@ -67,8 +71,6 @@ const RestaurantLoyaltyApp = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteDetails, setInviteDetails] = useState(null);
   
-  const [showDropdown, setShowDropdown] = useState(false);
-  
   // Data
   const RESTAURANTS = [
     { id: "montanas", name: "Montana's", discount: "20%" },
@@ -100,6 +102,26 @@ const RestaurantLoyaltyApp = () => {
     }
   ];
   
+  // const [jobTitles, setJobTitles] = useState(['Employee']);
+  
+  // const [employees, setEmployees] = useState([
+  //   { id: 1, name: 'John Smith', jobTitle: 'Employee' },
+  //   { id: 2, name: 'Maria Garcia', jobTitle: 'Employee' },
+  //   { id: 3, name: 'David Wong', jobTitle: 'Employee' },
+  //   { id: 4, name: 'Sarah Johnson', jobTitle: 'Employee' },
+  //   { id: 5, name: 'Alex Lee', jobTitle: 'Employee' },
+  //   { id: 6, name: 'Emma Roberts', jobTitle: 'Employee' }
+  // ]);
+  
+  // const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: 'Employee' });
+  
+    const [email, setEmail] = useState(''); // Instead of username
+    const [newEmployee, setNewEmployee] = useState({ 
+      name: '', 
+      email: '',
+      jobTitle: 'Employee',
+      discount: 20 
+    });
   // Clock update effect
   useEffect(() => {
     const timer = setInterval(() => {
@@ -872,80 +894,85 @@ if (view === 'completeSignup') {
           </div>
         </header>
 
-        {/* Main content - Centered */}
-        <main className="flex-grow flex flex-col items-center justify-center px-4 py-8">
-          <div className="w-full max-w-2xl mx-auto space-y-8">
-            {/* User Profile Badge - Centered */}
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        {/* Main content */}
+        <main className="flex-grow max-w-5xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+            {/* User info card */}
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
               <UserProfileBadge user={currentUser} />
             </div>
 
-            {/* Restaurant Selector Dropdown */}
-            <div className="relative w-full">
-              <button
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="w-full p-4 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-between hover:border-indigo-500 transition-colors"
-              >
-                <div className="flex items-center">
-                  <Building size={20} className="text-indigo-600 mr-3" />
-                  <span className="text-gray-700">
-                    {selectedLocation || "Select Restaurant Location"}
-                  </span>
-                </div>
-                <svg
-                  className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${
-                    showDropdown ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {/* Dropdown Menu */}
-              {showDropdown && (
-                <div className="absolute z-20 w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto">
+            {/* Location selector */}
+            <div className="p-6 border-b border-gray-200">
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-4">
+                Select Restaurant Location
+              </label>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {RESTAURANTS.map((restaurant) => (
-                    <div key={restaurant.id} className="border-b border-gray-100 last:border-0">
+                    <div key={restaurant.id}>
                       <button
                         onClick={() => {
+                          setSelectedRestaurant(restaurant);
                           if (!restaurant.locations) {
                             setSelectedLocation(restaurant.name);
-                            setSelectedRestaurant(restaurant);
-                            setShowDropdown(false);
                           }
                         }}
-                        className="w-full p-4 text-left hover:bg-indigo-50 transition-colors flex items-center justify-between"
+                        className={`w-full p-4 rounded-lg border-2 transition-all duration-200 flex items-center justify-between group hover:border-indigo-500 hover:bg-indigo-50 ${
+                          selectedRestaurant?.id === restaurant.id 
+                            ? 'border-indigo-500 bg-indigo-50' 
+                            : 'border-gray-200 bg-white'
+                        }`}
                       >
                         <div className="flex items-center">
-                          <Building size={18} className="text-indigo-600 mr-3" />
-                          <div>
-                            <p className="font-medium text-gray-700">{restaurant.name}</p>
-                            <p className="text-sm text-gray-500">{restaurant.discount} discount</p>
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            selectedRestaurant?.id === restaurant.id 
+                              ? 'bg-indigo-100' 
+                              : 'bg-gray-100 group-hover:bg-indigo-100'
+                          }`}>
+                            <Building size={20} className={`${
+                              selectedRestaurant?.id === restaurant.id 
+                                ? 'text-indigo-600' 
+                                : 'text-gray-500 group-hover:text-indigo-600'
+                            }`} />
+                          </div>
+                          <div className="ml-3 text-left">
+                            <p className={`font-medium ${
+                              selectedRestaurant?.id === restaurant.id 
+                                ? 'text-indigo-700' 
+                                : 'text-gray-700'
+                            }`}>
+                              {restaurant.name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {restaurant.discount} discount
+                            </p>
                           </div>
                         </div>
                         {restaurant.locations && (
-                          <ChevronRight size={16} className="text-gray-400" />
+                          <MapPin size={16} className="text-gray-400 group-hover:text-indigo-500" />
                         )}
                       </button>
-
-                      {/* Sub-locations */}
-                      {restaurant.locations && (
-                        <div className="bg-gray-50 pl-12">
+                      
+                      {/* Show location options if this restaurant is selected and has multiple locations */}
+                      {selectedRestaurant?.id === restaurant.id && restaurant.locations && (
+                        <div className="mt-2 ml-12 space-y-2">
                           {restaurant.locations.map((location) => (
                             <button
                               key={location.id}
-                              onClick={() => {
-                                setSelectedLocation(location.name);
-                                setSelectedRestaurant(restaurant);
-                                setShowDropdown(false);
-                              }}
-                              className="w-full p-3 text-left hover:bg-indigo-50 transition-colors flex items-center"
+                              onClick={() => setSelectedLocation(location.name)}
+                              className={`w-full p-3 rounded-lg border transition-all duration-200 flex items-center ${
+                                selectedLocation === location.name
+                                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                  : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                              }`}
                             >
-                              <MapPin size={16} className="text-gray-400 mr-2" />
-                              <span className="text-sm text-gray-600">{location.name}</span>
+                              <MapPin size={16} className={`mr-2 ${
+                                selectedLocation === location.name
+                                  ? 'text-indigo-500'
+                                  : 'text-gray-400'
+                              }`} />
+                              <span className="text-sm">{location.name}</span>
                             </button>
                           ))}
                         </div>
@@ -953,12 +980,31 @@ if (view === 'completeSignup') {
                     </div>
                   ))}
                 </div>
-              )}
+
+                {/* Selected restaurant info */}
+                {selectedRestaurant && selectedLocation && (
+                  <div className="mt-6 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-medium text-indigo-900">Selected Location</h3>
+                        <p className="text-lg font-semibold text-indigo-700">
+                          {selectedRestaurant.name}
+                          {selectedLocation !== selectedRestaurant.name && ` - ${selectedLocation}`}
+                        </p>
+                      </div>
+                      <div className="bg-white px-3 py-1 rounded-full border border-indigo-200">
+                        <span className="text-indigo-700 font-medium">{selectedRestaurant.discount} discount</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Discount Display Card - Only shown when location is selected */}
-            {selectedLocation && (
-              <div className="w-full animate-fade-in">
+            {/* Discount display */}
+            {selectedLocation ? (
+              <div className="p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Your Discount</h3>
                 <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -988,27 +1034,46 @@ if (view === 'completeSignup') {
                           })}
                         </p>
                       </div>
+                      <div className="mt-4 bg-indigo-400 bg-opacity-20 p-3 rounded-lg border border-indigo-300 border-opacity-30">
+                        <p className="text-sm text-white flex items-center">
+                          <Clock size={14} className="mr-2" />
+                          Show this screen to the cashier to receive your discount.
+                          The live clock confirms this is being viewed in real-time.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Live Clock Display */}
-                <div className="mt-6 text-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex flex-col items-center justify-center">
-                    <Clock size={32} className="text-indigo-600 mb-2" />
-                    <div className="text-4xl font-bold text-gray-800 font-mono tracking-wider">
-                      {formatTime(currentTime)}
+                {/* Replace the QR code section with this: */}
+                {selectedLocation && (
+                  <div className="mt-6 text-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="flex flex-col items-center justify-center">
+                      <Clock size={32} className="text-indigo-600 mb-2" />
+                      <div className="text-4xl font-bold text-gray-800 font-mono tracking-wider">
+                        {formatTime(currentTime)}
+                      </div>
+                      <p className="mt-2 text-sm text-gray-500">
+                        Current Time
+                      </p>
                     </div>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Current Time
-                    </p>
                   </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto flex items-center justify-center rounded-full bg-indigo-100">
+                  <Building size={24} className="text-indigo-600" />
                 </div>
+                <h3 className="mt-4 text-lg font-medium text-gray-900">Select a Location</h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  Choose a restaurant location from the dropdown above to view your available discount.
+                </p>
               </div>
             )}
           </div>
         </main>
-
+        
         {/* Footer */}
         <footer className="bg-white border-t border-gray-200 py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1508,6 +1573,13 @@ const DiscountCard = ({ location, discount, currentTime }) => (
               month: 'long',
               day: 'numeric'
             })}
+          </p>
+        </div>
+        <div className="mt-4 bg-indigo-400 bg-opacity-20 p-3 rounded-lg border border-indigo-300 border-opacity-30">
+          <p className="text-sm text-white flex items-center">
+            <Clock size={14} className="mr-2" />
+            Show this screen to the cashier to receive your discount.
+            The live clock confirms this is being viewed in real-time.
           </p>
         </div>
       </div>
