@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Clock, 
   User, 
@@ -14,15 +14,10 @@ import {
   Shield,
   Award,
   MapPin,
-  Mail,
-  MessageSquare,
-  Phone,
-  ChevronDown
+  Mail
 } from 'lucide-react';
 
 import { Store } from 'lucide-react';
-
-import TextInviteModal from './TextInviteModal';
 
 
 import { createUser, sendEmployeeInvite } from './firebase';
@@ -81,8 +76,6 @@ const RestaurantLoyaltyApp = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteDetails, setInviteDetails] = useState(null);
   const [selectedManagerRestaurant, setSelectedManagerRestaurant] = useState(null);
-  const [showTextInviteModal, setShowTextInviteModal] = useState(false);
-
 
   // Data
   const RESTAURANTS = [
@@ -547,82 +540,6 @@ const handleRegister = async (e) => {
     }, 3000);
   };
 
-
-  // Add these modified handler functions to your App.jsx
-
-// Handler for sending invites via both email and SMS
-const handleUnifiedInvite = async (contactInfo, role) => {
-  if ((!contactInfo.email && contactInfo.method === 'email') || 
-      (!contactInfo.phone && contactInfo.method === 'phone')) {
-    showNotification('Please enter valid contact information', 'error');
-    return;
-  }
-  
-  setIsLoading(true);
-  
-  try {
-    if (contactInfo.method === 'email') {
-      // Handle email invites using your existing function
-      if (currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
-        await sendEmployeeInvite(contactInfo.email, 'Employee', currentUser.id);
-        showNotification(`Invite sent to ${contactInfo.email} as Employee for ${currentUser.restaurantName}`, 'success');
-      } else if (currentUser.jobTitle === 'Admin') {
-        if (role === 'Manager') {
-          if (!selectedManagerRestaurant) {
-            throw new Error('Please select a restaurant for the manager');
-          }
-          
-          await sendManagerInvite(
-            contactInfo.email, 
-            'Manager',
-            currentUser.id,
-            selectedManagerRestaurant.id
-          );
-          showNotification(`Manager invite sent to ${contactInfo.email} for ${selectedManagerRestaurant.name}`, 'success');
-        } else {
-          await sendEmployeeInvite(contactInfo.email, role, currentUser.id);
-          showNotification(`Invite sent to ${contactInfo.email} as ${role}`, 'success');
-        }
-      }
-    } else {
-      // Handle SMS invites
-      // Generate invitation link
-      let restaurantId = null;
-      
-      if (currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
-        restaurantId = currentUser.restaurantId;
-      } else if (currentUser.jobTitle === 'Admin' && selectedManagerRestaurant) {
-        restaurantId = selectedManagerRestaurant.id;
-      }
-      
-      const result = await generateInviteLink(
-        contactInfo.email, // Use the email address we created for the phone number
-        role,
-        currentUser.id,
-        restaurantId
-      );
-      
-      // Generate the SMS message
-      const restaurantName = currentUser.restaurantName || selectedManagerRestaurant?.name || "our restaurant";
-      const message = `You've been invited to join ${restaurantName} as a ${role}! Click this link to set up your account: ${result.inviteLink}`;
-      
-      // Open SMS link
-      window.open(`sms:${contactInfo.phone}?body=${encodeURIComponent(message)}`);
-      
-      showNotification(`SMS invite ready for ${contactInfo.phone}`, 'success');
-    }
-    
-    setInviteSuccess(true);
-    setTimeout(() => {
-      setInviteSuccess(false);
-    }, 5000);
-  } catch (error) {
-    console.error("Error sending invite:", error);
-    showNotification(error.message || "Failed to send invite", "error");
-  } finally {
-    setIsLoading(false);
-  }
-};
   // Notification component
   const Notification = ({ message, type }) => {
     const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
@@ -682,182 +599,6 @@ const getRestaurantName = (restaurantId) => {
   }
   
   return "Unknown Restaurant";
-};
-
-// Add this component to your App.jsx file
-
-const UnifiedInviteComponent = ({ currentUser, selectedManagerRestaurant, onSendInvite }) => {
-  const [contactMethod, setContactMethod] = useState('email'); // 'email' or 'phone'
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [inviteRole, setInviteRole] = useState('Employee');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  
-  // Handle outside click to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
-  
-  const handlePhoneNumberChange = (e) => {
-    // Only allow numbers, parentheses, dashes and spaces
-    const value = e.target.value.replace(/[^\d\s()-]/g, '');
-    setPhoneNumber(value);
-  };
-  
-  const handleSendInvite = () => {
-    // Determine contact info based on selected method
-    const contactInfo = contactMethod === 'email' 
-      ? { email: inviteEmail, method: 'email' } 
-      : { email: `${phoneNumber.replace(/\D/g, '')}@text.invite`, phone: phoneNumber, method: 'phone' };
-      
-    // Call the parent handler with the collected information
-    onSendInvite(contactInfo, inviteRole);
-    
-    // Reset form
-    if (contactMethod === 'email') {
-      setInviteEmail('');
-    } else {
-      setPhoneNumber('');
-    }
-  };
-  
-  return (
-    <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-12">
-      <div className="sm:col-span-4 relative" ref={dropdownRef}>
-        <label htmlFor="inviteContact" className="block text-xs font-medium text-gray-500 mb-1">
-          Contact Information
-        </label>
-        <div className="flex items-center">
-          <div className="relative z-10">
-            <button
-              type="button"
-              className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              {contactMethod === 'email' ? (
-                <Mail size={16} className="text-indigo-600" />
-              ) : (
-                <Phone size={16} className="text-indigo-600" />
-              )}
-              <ChevronDown size={14} className="ml-1 text-gray-400" />
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-                <div className="py-1">
-                  <button
-                    type="button"
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => {
-                      setContactMethod('email');
-                      setIsDropdownOpen(false);
-                    }}
-                  >
-                    <Mail size={16} className="mr-2 text-indigo-600" />
-                    Email
-                  </button>
-                  <button
-                    type="button"
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => {
-                      setContactMethod('phone');
-                      setIsDropdownOpen(false);
-                    }}
-                  >
-                    <Phone size={16} className="mr-2 text-indigo-600" />
-                    Phone
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {contactMethod === 'email' ? (
-            <input
-              id="inviteEmail"
-              type="email"
-              placeholder="employee@example.com"
-              className="flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-            />
-          ) : (
-            <input
-              id="invitePhone"
-              type="tel"
-              inputMode="numeric"
-              pattern="[0-9\s\-\(\)]+"
-              placeholder="(555) 123-4567"
-              className="flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-              value={phoneNumber}
-              onChange={handlePhoneNumberChange}
-            />
-          )}
-        </div>
-        <p className="mt-1 text-xs text-gray-500">
-          {contactMethod === 'email' 
-            ? "Email will be linked to their account" 
-            : "Enter the phone number to send an SMS invitation"}
-        </p>
-      </div>
-
-      <div className="sm:col-span-3">
-        <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
-        <select
-          id="inviteRole"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-          value={inviteRole}
-          onChange={(e) => setInviteRole(e.target.value)}
-        >
-          <option value="Employee">Employee</option>
-          {currentUser.jobTitle === 'Admin' && (
-            <option value="Manager">Manager</option>
-          )}
-        </select>
-      </div>
-
-      {currentUser.jobTitle === 'Admin' && inviteRole === 'Manager' && (
-        <div className="sm:col-span-4">
-          <label htmlFor="restaurant" className="block text-xs font-medium text-gray-500 mb-1">Restaurant</label>
-          <select
-            id="restaurant"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-            value={selectedManagerRestaurant ? selectedManagerRestaurant.id : ''}
-            onChange={(e) => {
-              const restaurant = RESTAURANTS.find(r => r.id === e.target.value);
-              setSelectedManagerRestaurant(restaurant);
-            }}
-          >
-            <option value="">Select Restaurant</option>
-            {RESTAURANTS.map(r => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      <div className="sm:col-span-1 flex items-end">
-        <button
-          type="button"
-          onClick={handleSendInvite}
-          disabled={contactMethod === 'email' ? !inviteEmail : !phoneNumber}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {contactMethod === 'email' ? 'Email' : 'Text'}
-        </button>
-      </div>
-    </div>
-  );
 };
 
 
@@ -1020,39 +761,93 @@ if (view === 'admin') {
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
         {/* User Management Panel */}
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
-            <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-              <h3 className="text-lg font-medium leading-6 text-gray-900">
-                User Management
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Add new users and assign them to restaurants
-              </p>
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+            <h3 className="text-lg font-medium leading-6 text-gray-900">
+              User Management
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Add new users and assign them to restaurants
+            </p>
+          </div>
+          
+          <div className="px-6 py-5">
+            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-12">
+              <div className="sm:col-span-4">
+                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  id="inviteEmail"
+                  placeholder="user@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
+                <select
+                  id="inviteRole"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                >
+                  <option value="Employee">Employee</option>
+                  <option value="Manager">Manager</option>
+                </select>
+              </div>
+              <div className="sm:col-span-4">
+                <label htmlFor="restaurant" className="block text-xs font-medium text-gray-500 mb-1">Restaurant</label>
+                <select
+                  id="restaurant"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={selectedManagerRestaurant ? selectedManagerRestaurant.id : ''}
+                  onChange={(e) => {
+                    const restaurant = RESTAURANTS.find(r => r.id === e.target.value);
+                    setSelectedManagerRestaurant(restaurant);
+                  }}
+                >
+                  <option value="">Select Restaurant</option>
+                  {RESTAURANTS.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-1 flex items-end">
+              <button
+                  type="button"
+                  onClick={handleSendInvite}
+                  disabled={isLoading || !inviteEmail}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  {isLoading ? (
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    'Invite'
+                  )}
+                </button>
+              </div>
             </div>
             
-            <div className="px-6 py-5">
-              <UnifiedInviteComponent 
-                currentUser={currentUser}
-                selectedManagerRestaurant={selectedManagerRestaurant}
-                onSendInvite={handleUnifiedInvite}
-              />
-              
-              {inviteSuccess && (
-                <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-green-800">
-                        Invitation sent successfully!
-                      </p>
-                    </div>
+            {inviteSuccess && (
+              <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-green-800">
+                      Invitation sent successfully! The user will receive an email with instructions.
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>    
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Employee management section */}
         <div className="w-full">
@@ -1257,116 +1052,136 @@ if (view === 'admin') {
           </div>
         </div>
       </main>
-    </div>
-);
-}
-
-
-
-// LOGIN VIEW
-if (view === 'login') {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
-        <div className="text-center">
-          <div className="flex justify-center">
-            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
-              <Shield size={36} className="text-white" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-800">Restaurant Loyalty</h1>
-          <p className="mt-2 text-gray-500">Employee Discount System</p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail size={18} className="text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Shield size={18} className="text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-500">
-              New users need an invitation from a manager.
-            </p>
-          </div>
-
-          {/* Add helpful tooltips */}
-          <div className="flex items-center">
-            <CheckCircle size={14} className="text-green-500 mr-2" />
-            <span>Contact your manager if you have any trouble with the login process</span>
-          </div>
-
-          {loginError && (
-            <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex items-center">
-              <XCircle size={16} className="mr-2" />
-              {loginError}
-            </div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors font-medium ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Signing in...
-                </>
-              ) : (
-                'Sign in'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
       
-      <div className="mt-8 text-center">
-        <p className="text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
-        </p>
-      </div>
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-4 mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-xs text-center text-gray-500">
+            &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
+
+
+
+
+  // LOGIN VIEW
+  if (view === 'login') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+          <div className="text-center">
+            <div className="flex justify-center">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
+                <Shield size={36} className="text-white" />
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800">Restaurant Loyalty</h1>
+            <p className="mt-2 text-gray-500">Employee Discount System</p>
+          </div>
+          
+          <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+            <div className="space-y-5">
+              <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail size={18} className="text-gray-400" />
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Shield size={18} className="text-gray-400" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <p className="mt-1 text-sm text-green-600 flex items-center">
+                  <CheckCircle size={14} className="mr-1" />
+                  Use "password" as the password
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-500">
+                New users need an invitation from a manager.
+              </p>
+            </div>
+
+            {/* Add helpful tooltips */}
+            <div className="space-y-2 text-sm text-gray-600">
+              <div className="flex items-center">
+                <CheckCircle size={14} className="text-green-500 mr-2" />
+                <span>Enter any name to access employee view</span>
+              </div>
+              <div className="flex items-center">
+                <CheckCircle size={14} className="text-green-500 mr-2" />
+                <span>Include "manager" in name for manager access</span>
+              </div>
+            </div>
+
+            {loginError && (
+              <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex items-center">
+                <XCircle size={16} className="mr-2" />
+                {loginError}
+              </div>
+            )}
+
+            <div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors font-medium ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-500">
+            &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // COMPLETE SIGNUP VIEW
 // COMPLETE SIGNUP VIEW
@@ -1749,22 +1564,59 @@ if (view === 'manager') {
           </div>
         </div>
 
-        {/* Replace the existing invite employee form in manager view */}
+        {/* Invite employee form - only for this restaurant */}
         <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
           <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
             <h3 className="text-lg font-medium leading-6 text-gray-900">
               Invite New Employee
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Send an invitation to join your restaurant
+              Send an email invitation to join your restaurant
             </p>
           </div>
           
           <div className="px-6 py-5">
-            <UnifiedInviteComponent 
-              currentUser={currentUser}
-              onSendInvite={handleUnifiedInvite}
-            />
+            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
+              <div className="sm:col-span-4">
+                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  id="inviteEmail"
+                  placeholder="employee@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="sm:col-span-1">
+                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
+                <select
+                  id="inviteRole"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                >
+                  <option value="Employee">Employee</option>
+                </select>
+              </div>
+              <div className="sm:col-span-1 flex items-end">
+                <button
+                  type="button"
+                  onClick={handleSendInvite}
+                  disabled={isLoading || !inviteEmail || (inviteRole === 'Manager' && !selectedManagerRestaurant)}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center ${isLoading || !inviteEmail || (inviteRole === 'Manager' && !selectedManagerRestaurant) ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  {isLoading ? (
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    'Invite'
+                  )}
+                </button>
+              </div>
+            </div>
             
             {inviteSuccess && (
               <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
@@ -1774,7 +1626,7 @@ if (view === 'manager') {
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-green-800">
-                      Invitation sent successfully!
+                      Invitation sent successfully! The employee will receive an email with instructions.
                     </p>
                   </div>
                 </div>
@@ -1782,7 +1634,6 @@ if (view === 'manager') {
             )}
           </div>
         </div>
-
 
         {/* Employee management section - filtered by restaurant */}
         <div className="w-full">
@@ -1951,14 +1802,6 @@ if (view === 'manager') {
               </table>
             </div>
           </div>
-          {showTextInviteModal && 
-            <TextInviteModal 
-              isOpen={showTextInviteModal} 
-              onClose={() => setShowTextInviteModal(false)} 
-              currentUser={currentUser}
-              selectedRestaurant={selectedManagerRestaurant} 
-            />
-          }
         </div>
       </main>
       
