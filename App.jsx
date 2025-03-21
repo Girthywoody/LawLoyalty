@@ -65,28 +65,18 @@ const RestaurantLoyaltyApp = () => {
     }
   ];
   
-  const [jobTitles, setJobTitles] = useState([
-    'Server', 
-    'Host', 
-    'Chef', 
-    'Bartender', 
-    'Manager',
-    'Kitchen Staff',
-    'Busser'
-  ]);
+  const [jobTitles, setJobTitles] = useState(['Employee']);
   
   const [employees, setEmployees] = useState([
-    { id: 1, name: 'John Smith', jobTitle: 'Server', discount: 25 },
-    { id: 2, name: 'Maria Garcia', jobTitle: 'Chef', discount: 35 },
-    { id: 3, name: 'David Wong', jobTitle: 'Host', discount: 20 },
-    { id: 4, name: 'Sarah Johnson', jobTitle: 'Bartender', discount: 30 },
-    { id: 5, name: 'Alex Lee', jobTitle: 'Manager', discount: 40 },
-    { id: 6, name: 'Emma Roberts', jobTitle: 'Kitchen Staff', discount: 25 }
+    { id: 1, name: 'John Smith', jobTitle: 'Employee' },
+    { id: 2, name: 'Maria Garcia', jobTitle: 'Employee' },
+    { id: 3, name: 'David Wong', jobTitle: 'Employee' },
+    { id: 4, name: 'Sarah Johnson', jobTitle: 'Employee' },
+    { id: 5, name: 'Alex Lee', jobTitle: 'Employee' },
+    { id: 6, name: 'Emma Roberts', jobTitle: 'Employee' }
   ]);
   
-  const [discountRules, setDiscountRules] = useState(null);
-  
-  const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: '', discount: 20 });
+  const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: 'Employee' });
 
   // Clock update effect
   useEffect(() => {
@@ -152,7 +142,7 @@ const RestaurantLoyaltyApp = () => {
           setCurrentUser({
             id: 1000,
             name: username || 'Demo Employee',
-            jobTitle: 'Server',
+            jobTitle: 'Employee',
             discount: 25
           });
           setView('employee');
@@ -171,8 +161,8 @@ const RestaurantLoyaltyApp = () => {
     setCurrentUser(null);
   };
 
-  // Update the getDiscount function to use the restaurant's discount directly
-  const getDiscount = (jobTitle, location) => {
+  // Simplify getDiscount to only use restaurant discount
+  const getDiscount = (location) => {
     const restaurant = RESTAURANTS.find(r => 
       r.name === location || 
       (r.locations && r.locations.some(l => l.name === location))
@@ -189,7 +179,7 @@ const RestaurantLoyaltyApp = () => {
     if (newEmployee.name && newEmployee.jobTitle) {
       const newId = Math.max(...employees.map(e => e.id), 0) + 1;
       setEmployees([...employees, { ...newEmployee, id: newId }]);
-      setNewEmployee({ name: '', jobTitle: '', discount: 20 });
+      setNewEmployee({ name: '', jobTitle: 'Employee' });
       setShowAddForm(false);
       showNotification('Employee added successfully!', 'success');
     } else {
@@ -390,7 +380,7 @@ const RestaurantLoyaltyApp = () => {
   // EMPLOYEE VIEW
   if (view === 'employee') {
     const currentDiscount = selectedLocation ? 
-      getDiscount(currentUser?.jobTitle || 'Server', selectedLocation) : 0;
+      getDiscount(selectedLocation) : 0;
       
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
@@ -890,11 +880,11 @@ const RestaurantLoyaltyApp = () => {
                             {RESTAURANTS.map(restaurant => (
                               <td key={`${jobTitle}-${restaurant.id}`} className="px-4 py-3 whitespace-nowrap text-center">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  getDiscount(jobTitle, restaurant.name) >= 30 ? 'bg-green-100 text-green-800' : 
-                                  getDiscount(jobTitle, restaurant.name) >= 20 ? 'bg-blue-100 text-blue-800' : 
+                                  getDiscount(restaurant.name) >= 30 ? 'bg-green-100 text-green-800' : 
+                                  getDiscount(restaurant.name) >= 20 ? 'bg-blue-100 text-blue-800' : 
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {getDiscount(jobTitle, restaurant.name)}%
+                                  {getDiscount(restaurant.name)}%
                                 </span>
                               </td>
                             ))}
