@@ -148,6 +148,9 @@ const RestaurantLoyaltyApp = () => {
 const handleLogin = async (e) => {
   e.preventDefault();
   
+  // Don't proceed if already loading
+  if (isLoading) return;
+  
   setLoginError('');
   setIsLoading(true);
   
@@ -286,10 +289,18 @@ const handleSendInvite = async () => {
 const handleRegister = async (e) => {
   e.preventDefault();
   
+  // Don't proceed if already loading
+  if (isLoading) return;
+  
   setLoginError('');
   setIsLoading(true);
   
   try {
+    // Basic validation
+    if (!registerEmail || !registerPassword || !registerName) {
+      throw new Error('Please fill in all fields');
+    }
+    
     // Create user in Firebase Authentication
     const user = await createUser(registerEmail, registerPassword);
     
