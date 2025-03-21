@@ -179,10 +179,15 @@ const RestaurantLoyaltyApp = () => {
     setCurrentUser(null);
   };
 
-  // Calculate discount for current employee at selected location
+  // Update the getDiscount function to use the restaurant's discount directly
   const getDiscount = (jobTitle, location) => {
-    if (discountRules[jobTitle] && discountRules[jobTitle][location]) {
-      return discountRules[jobTitle][location];
+    const restaurant = RESTAURANTS.find(r => 
+      r.name === location || 
+      (r.locations && r.locations.some(l => l.name === location))
+    );
+    
+    if (restaurant) {
+      return parseInt(restaurant.discount);
     }
     return 0;
   };
