@@ -1816,5 +1816,6 @@ if (view === 'manager') {
     </div>
   );
 }
-}
+  return null;
+};
 export default RestaurantLoyaltyApp;
