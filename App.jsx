@@ -13,7 +13,8 @@ import {
   Calendar,
   Shield,
   Award,
-  MapPin
+  MapPin,
+  Mail
 } from 'lucide-react';
 
 import { 
@@ -43,6 +44,8 @@ const RestaurantLoyaltyApp = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const [jobTitles, setJobTitles] = useState(['Employee', 'Manager']);
+  const [employees, setEmployees] = useState([]);
   
   // Data
   const RESTAURANTS = [
@@ -880,7 +883,7 @@ const RestaurantLoyaltyApp = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button
-                              onClick={saveEmployeeEdit}
+                              onClick={saveEmployeeEditToFirebase}
                               className="text-green-600 hover:text-green-900 mr-3"
                             >
                               <CheckCircle size={16} />
@@ -928,7 +931,7 @@ const RestaurantLoyaltyApp = () => {
                                 <Edit size={16} />
                               </button>
                               <button
-                                onClick={() => removeEmployee(employee.id)}
+                                onClick={() => removeEmployeeFromFirebase(employee.id)}
                                 className="text-red-600 hover:text-red-900"
                                 aria-label="Remove employee"
                               >
