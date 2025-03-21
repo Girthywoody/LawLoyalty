@@ -550,17 +550,20 @@ const RestaurantLoyaltyApp = () => {
                   </div>
                 </div>
 
-                {/* QR Code placeholder for potential future feature */}
-                <div className="mt-6 p-6 rounded-xl border border-gray-200 text-center bg-gray-50">
-                  <div className="w-40 h-40 mx-auto bg-white p-2 rounded-lg shadow-sm border border-gray-300 flex items-center justify-center">
-                    <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-gray-400">
-                      QR Code
+                {/* Replace the QR code section with this: */}
+                {selectedLocation && (
+                  <div className="mt-6 text-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="flex flex-col items-center justify-center">
+                      <Clock size={32} className="text-indigo-600 mb-2" />
+                      <div className="text-4xl font-bold text-gray-800 font-mono tracking-wider">
+                        {formatTime(currentTime)}
+                      </div>
+                      <p className="mt-2 text-sm text-gray-500">
+                        Current Time
+                      </p>
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-gray-500">
-                    Alternatively, scan this code at checkout
-                  </p>
-                </div>
+                )}
               </div>
             ) : (
               <div className="p-8 text-center">
