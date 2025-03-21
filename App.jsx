@@ -18,10 +18,7 @@ import {
 } from 'lucide-react';
 
 import { Store } from 'lucide-react';
-import { 
-  createManagerWithRestaurant,
-  subscribeToRestaurantEmployees
-} from './firebase';
+
 
 import { createUser, sendEmployeeInvite } from './firebase';
 
