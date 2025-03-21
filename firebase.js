@@ -276,6 +276,16 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
   }
 };
 
+// Helper function to generate a unique ID for invites
+export const generateUniqueId = () => {
+  // Generate a random string of characters
+  const randomPart = Math.random().toString(36).substring(2, 15);
+  // Add a timestamp to ensure uniqueness
+  const timestampPart = Date.now().toString(36);
+  
+  return `${randomPart}${timestampPart}`;
+};
+
 
 // Add a function to get employees by restaurant
 export const getEmployeesByRestaurant = async (restaurantId) => {
