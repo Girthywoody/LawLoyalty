@@ -37,10 +37,12 @@ import {
   deleteEmployee, 
   subscribeToEmployees,
   completeRegistration,
-  db
+  db,
+  sendPasswordResetEmail
 } from './firebase';
 
 import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
+
 
 
 const RestaurantLoyaltyApp = () => {
@@ -1120,10 +1122,6 @@ if (view === 'admin') {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                <p className="mt-1 text-sm text-green-600 flex items-center">
-                  <CheckCircle size={14} className="mr-1" />
-                  Use "password" as the password
-                </p>
               </div>
             </div>
 
@@ -1137,11 +1135,7 @@ if (view === 'admin') {
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex items-center">
                 <CheckCircle size={14} className="text-green-500 mr-2" />
-                <span>Enter any name to access employee view</span>
-              </div>
-              <div className="flex items-center">
-                <CheckCircle size={14} className="text-green-500 mr-2" />
-                <span>Include "manager" in name for manager access</span>
+                <span>Ask your manager if you are having any problems logging in</span>
               </div>
             </div>
 
