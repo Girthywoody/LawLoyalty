@@ -30,8 +30,12 @@ import {
   addEmployee, 
   updateEmployee, 
   deleteEmployee, 
-  subscribeToEmployees 
+  subscribeToEmployees,
+  db
 } from './firebase';
+
+import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
+
 
 const RestaurantLoyaltyApp = () => {
   // App state
@@ -171,17 +175,29 @@ const handleLogin = async (e) => {
     // Implement actual Firebase login
     const user = await loginWithEmailAndPassword(email, password);
     
-    // Set current user from Firebase response
+    // Query Firestore to get the user's role information
+    const employeesRef = collection(db, 'employees');
+    const q = query(employeesRef, where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      throw new Error('User not found in employees database');
+    }
+    
+    // Get the employee data
+    const employeeData = querySnapshot.docs[0].data();
+    
+    // Set current user from Firebase response and Firestore data
     setCurrentUser({
       id: user.uid,
-      name: user.displayName || email,
+      name: employeeData.name || user.displayName || email,
       email: user.email,
-      jobTitle: email.toLowerCase().includes('manager') ? 'Manager' : 'Employee',
-      discount: email.toLowerCase().includes('manager') ? 40 : 20
+      jobTitle: employeeData.jobTitle || 'Employee',
+      discount: employeeData.discount || 20
     });
     
-    // Navigate to the appropriate view
-    setView(email.toLowerCase().includes('manager') ? 'manager' : 'employee');
+    // Navigate to the appropriate view based on actual role
+    setView(employeeData.jobTitle === 'Manager' ? 'manager' : 'employee');
     
     showNotification('Login successful', 'success');
   } catch (error) {
@@ -331,11 +347,14 @@ const handleRegister = async (e) => {
     // Set current user and navigate to manager view
     setCurrentUser({
       id: user.uid,
-      name: registerName,
-      email: registerEmail,
-      jobTitle: 'Manager',
-      discount: 40
+      name: user.displayName || email,
+      email: user.email,
+      jobTitle: email.toLowerCase().includes('manager') ? 'Manager' : 'Employee',
+      discount: email.toLowerCase().includes('manager') ? 40 : 20
     });
+
+    setView(email.toLowerCase().includes('manager') ? 'manager' : 'employee');
+
     
     // Clear registration form
     setRegisterEmail('');
