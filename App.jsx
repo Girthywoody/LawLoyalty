@@ -152,12 +152,32 @@ const handleLogin = async (e) => {
   setIsLoading(true);
   
   try {
-    // Rest of your login logic here
+    // Basic validation
+    if (!email || !password) {
+      throw new Error('Please enter both email and password');
+    }
+    
+    // Implement actual Firebase login
+    const user = await loginWithEmailAndPassword(email, password);
+    
+    // Set current user from Firebase response
+    setCurrentUser({
+      id: user.uid,
+      name: user.displayName || email,
+      email: user.email,
+      jobTitle: email.toLowerCase().includes('manager') ? 'Manager' : 'Employee',
+      discount: email.toLowerCase().includes('manager') ? 40 : 20
+    });
+    
+    // Navigate to the appropriate view
+    setView(email.toLowerCase().includes('manager') ? 'manager' : 'employee');
+    
+    showNotification('Login successful', 'success');
   } catch (error) {
     console.error("Login error:", error);
     setLoginError(error.message || 'Login failed. Check your credentials.');
   } finally {
-    setIsLoading(false);  // Make sure isLoading is reset in all cases
+    setIsLoading(false);
   }
 };
 
