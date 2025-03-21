@@ -16,6 +16,16 @@ import {
   MapPin
 } from 'lucide-react';
 
+import { 
+  loginWithEmailAndPassword, 
+  logoutUser, 
+  getEmployees, 
+  addEmployee, 
+  updateEmployee, 
+  deleteEmployee, 
+  subscribeToEmployees 
+} from './firebase';
+
 const RestaurantLoyaltyApp = () => {
   // App state
   const [view, setView] = useState('login');
@@ -65,19 +75,26 @@ const RestaurantLoyaltyApp = () => {
     }
   ];
   
-  const [jobTitles, setJobTitles] = useState(['Employee']);
+  // const [jobTitles, setJobTitles] = useState(['Employee']);
   
-  const [employees, setEmployees] = useState([
-    { id: 1, name: 'John Smith', jobTitle: 'Employee' },
-    { id: 2, name: 'Maria Garcia', jobTitle: 'Employee' },
-    { id: 3, name: 'David Wong', jobTitle: 'Employee' },
-    { id: 4, name: 'Sarah Johnson', jobTitle: 'Employee' },
-    { id: 5, name: 'Alex Lee', jobTitle: 'Employee' },
-    { id: 6, name: 'Emma Roberts', jobTitle: 'Employee' }
-  ]);
+  // const [employees, setEmployees] = useState([
+  //   { id: 1, name: 'John Smith', jobTitle: 'Employee' },
+  //   { id: 2, name: 'Maria Garcia', jobTitle: 'Employee' },
+  //   { id: 3, name: 'David Wong', jobTitle: 'Employee' },
+  //   { id: 4, name: 'Sarah Johnson', jobTitle: 'Employee' },
+  //   { id: 5, name: 'Alex Lee', jobTitle: 'Employee' },
+  //   { id: 6, name: 'Emma Roberts', jobTitle: 'Employee' }
+  // ]);
   
-  const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: 'Employee' });
-
+  // const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: 'Employee' });
+  
+    const [email, setEmail] = useState(''); // Instead of username
+    const [newEmployee, setNewEmployee] = useState({ 
+      name: '', 
+      email: '',
+      jobTitle: 'Employee',
+      discount: 20 
+    });
   // Clock update effect
   useEffect(() => {
     const timer = setInterval(() => {
@@ -85,6 +102,24 @@ const RestaurantLoyaltyApp = () => {
     }, 1000);
     
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      setIsLoading(true);
+      
+      // Set up real-time listener for employees collection
+      const unsubscribe = subscribeToEmployees((employeesData) => {
+        setEmployees(employeesData);
+        setFilteredEmployees(employeesData);
+        setIsLoading(false);
+      });
+      
+      // Clean up listener when component unmounts
+      return () => unsubscribe();
+    };
+    
+    loadEmployees();
   }, []);
 
   // Format time with leading zeros and seconds
@@ -97,68 +132,80 @@ const RestaurantLoyaltyApp = () => {
     });
   };
 
-  // Handle login with loading state and simulated delay
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     
-    // Clear any previous error
     setLoginError('');
     setIsLoading(true);
     
-    // Simulate network request
-    setTimeout(() => {
-      // Check if password is "password"
-      if (password !== "password") {
-        setLoginError('Please use "password" as the password');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Find employee from our data
-      const matchedEmployee = employees.find(emp => 
-        emp.name.toLowerCase() === username.toLowerCase());
-      
-      if (matchedEmployee) {
-        setCurrentUser(matchedEmployee);
+    try {
+      // For demo purposes, if password is "password", skip Firebase Auth
+      if (password === "password") {
+        // Find employee from our data
+        const matchedEmployee = employees.find(emp => 
+          emp.email && emp.email.toLowerCase() === email.toLowerCase());
         
-        // Check if manager
-        if (matchedEmployee.jobTitle === 'Manager') {
-          setView('manager');
+        if (matchedEmployee) {
+          setCurrentUser(matchedEmployee);
+          setView(matchedEmployee.jobTitle === 'Manager' ? 'manager' : 'employee');
         } else {
-          setView('employee');
+          // For demo purposes
+          if (email.toLowerCase().includes('manager')) {
+            setCurrentUser({
+              id: '999',
+              name: email.split('@')[0] || 'Manager',
+              email: email,
+              jobTitle: 'Manager',
+              discount: 40
+            });
+            setView('manager');
+          } else {
+            setCurrentUser({
+              id: '1000',
+              name: email.split('@')[0] || 'Demo Employee',
+              email: email,
+              jobTitle: 'Employee',
+              discount: 25
+            });
+            setView('employee');
+          }
         }
       } else {
-        // For demo purposes, if username contains "manager", go to manager view
-        if (username.toLowerCase().includes('manager')) {
-          setCurrentUser({
-            id: 999,
-            name: username,
-            jobTitle: 'Manager',
-            discount: 40
-          });
-          setView('manager');
+        // Actual Firebase authentication
+        const user = await loginWithEmailAndPassword(email, password);
+        
+        // Find the employee record associated with this email
+        const matchedEmployee = employees.find(emp => 
+          emp.email && emp.email.toLowerCase() === email.toLowerCase());
+        
+        if (matchedEmployee) {
+          setCurrentUser(matchedEmployee);
+          setView(matchedEmployee.jobTitle === 'Manager' ? 'manager' : 'employee');
         } else {
-          // Otherwise treat as regular employee
-          setCurrentUser({
-            id: 1000,
-            name: username || 'Demo Employee',
-            jobTitle: 'Employee',
-            discount: 25
-          });
-          setView('employee');
+          setLoginError('User account exists but no employee record found');
         }
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      setLoginError(error.message || 'Login failed. Check your credentials.');
+    } finally {
       setIsLoading(false);
-    }, 800); // Simulate a short delay
+    }
   };
 
   // Handle logout
-  const handleLogout = () => {
-    setView('login');
-    setUsername('');
-    setPassword('');
-    setSelectedLocation('');
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    try {
+      await logoutUser(); // Firebase logout
+      setView('login');
+      setEmail('');
+      setPassword('');
+      setSelectedLocation('');
+      setCurrentUser(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      showNotification("Error logging out", "error");
+    }
   };
 
   // Simplify getDiscount to only use restaurant discount
@@ -175,22 +222,53 @@ const RestaurantLoyaltyApp = () => {
   };
 
   // Add employee
-  const addEmployee = () => {
+  const addEmployeeToFirebase = async () => {
     if (newEmployee.name && newEmployee.jobTitle) {
-      const newId = Math.max(...employees.map(e => e.id), 0) + 1;
-      setEmployees([...employees, { ...newEmployee, id: newId }]);
-      setNewEmployee({ name: '', jobTitle: 'Employee' });
-      setShowAddForm(false);
-      showNotification('Employee added successfully!', 'success');
+      try {
+        setIsLoading(true);
+        
+        // Add employee to Firebase
+        await addEmployee({
+          name: newEmployee.name,
+          email: newEmployee.email || '',
+          jobTitle: newEmployee.jobTitle,
+          discount: parseInt(newEmployee.discount) || 20,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        
+        // Reset form
+        setNewEmployee({ 
+          name: '', 
+          email: '',
+          jobTitle: 'Employee',
+          discount: 20 
+        });
+        setShowAddForm(false);
+        showNotification('Employee added successfully!', 'success');
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error adding employee:", error);
+        showNotification("Failed to add employee", "error");
+        setIsLoading(false);
+      }
     } else {
       showNotification('Please fill in all required fields', 'error');
     }
   };
 
   // Remove employee
-  const removeEmployee = (id) => {
-    setEmployees(employees.filter(emp => emp.id !== id));
-    showNotification('Employee removed successfully!', 'success');
+  const removeEmployeeFromFirebase = async (id) => {
+    try {
+      setIsLoading(true);
+      await deleteEmployee(id);
+      showNotification('Employee removed successfully!', 'success');
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error removing employee:", error);
+      showNotification("Failed to remove employee", "error");
+      setIsLoading(false);
+    }
   };
   
   // Start editing employee
@@ -200,14 +278,29 @@ const RestaurantLoyaltyApp = () => {
   };
   
   // Save employee edits
-  const saveEmployeeEdit = () => {
+  const saveEmployeeEditToFirebase = async () => {
     if (editEmployee && editEmployee.id) {
-      setEmployees(employees.map(emp => 
-        emp.id === editEmployee.id ? editEmployee : emp
-      ));
-      setIsEditingEmployee(false);
-      setEditEmployee(null);
-      showNotification('Employee updated successfully!', 'success');
+      try {
+        setIsLoading(true);
+        
+        // Update in Firebase
+        await updateEmployee(editEmployee.id, {
+          name: editEmployee.name,
+          email: editEmployee.email,
+          jobTitle: editEmployee.jobTitle,
+          discount: parseInt(editEmployee.discount) || 0,
+          updatedAt: new Date()
+        });
+        
+        setIsEditingEmployee(false);
+        setEditEmployee(null);
+        showNotification('Employee updated successfully!', 'success');
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error updating employee:", error);
+        showNotification("Failed to update employee", "error");
+        setIsLoading(false);
+      }
     }
   };
   
@@ -286,20 +379,20 @@ const RestaurantLoyaltyApp = () => {
           <form className="mt-8 space-y-6" onSubmit={handleLogin}>
             <div className="space-y-5">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User size={18} className="text-gray-400" />
+                    <Mail size={18} className="text-gray-400" />
                   </div>
                   <input
-                    id="username"
-                    name="username"
-                    type="text"
+                    id="email"
+                    name="email"
+                    type="email"
                     required
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    placeholder="Enter your username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
@@ -693,14 +786,19 @@ const RestaurantLoyaltyApp = () => {
                       />
                     </div>
                     <div className="sm:col-span-1 flex items-end">
-                      <button
-                        type="button"
-                        className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 w-full justify-center"
-                        onClick={addEmployee}
-                      >
+                    <div className="sm:col-span-2">
+                      <label htmlFor="email" className="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                      <input
+                        type="email"
+                        id="email"
+                        placeholder="Email Address"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                        value={newEmployee.email}
+                        onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
+                      />
+                    </div>
                         <CheckCircle size={16} className="mr-2" />
                         Save
-                      </button>
                     </div>
                   </div>
                 </div>
