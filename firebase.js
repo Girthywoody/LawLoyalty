@@ -50,7 +50,16 @@ const invitesCollection = collection(db, 'invites');
 const actionCodeSettings = {
   // URL you want to redirect to after email verification
   url: window.location.origin + '/complete-signup',
-  handleCodeInApp: true
+  handleCodeInApp: true,
+  // Additional settings to make the email look more professional
+  iOS: {
+    bundleId: 'com.restaurantgroup.loyalty'
+  },
+  android: {
+    packageName: 'com.restaurantgroup.loyalty',
+    installApp: true
+  },
+  dynamicLinkDomain: 'restaurantloyalty.page.link'
 };
 
 // Auth functions
@@ -81,7 +90,7 @@ export const createUser = async (email, password) => {
   }
 };
 
-// Send invite with email link
+// Send invite with email link - updated to create a simpler welcome email
 export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
     // Create the invite record first
@@ -97,6 +106,10 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     const inviteRef = await addDoc(invitesCollection, inviteData);
     const inviteId = inviteRef.id;
     
+    // Save the email to localStorage to be retrieved when the link is clicked
+    // In a real implementation, this would be saved server-side or handled in the email verification flow
+    localStorage.setItem('emailForSignIn', email);
+    
     // Save the invite ID in the URL
     const finalUrl = actionCodeSettings.url + `?inviteId=${inviteId}`;
     const customActionCodeSettings = {
@@ -104,11 +117,12 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
       url: finalUrl
     };
     
-    // Send the email
+    // Send the email - Firebase will handle this with a default template
+    // We use sendSignInLinkToEmail which creates a passwordless sign-in link
     await sendSignInLinkToEmail(auth, email, customActionCodeSettings);
     
-    // In a real implementation, you would use Firebase Functions or a backend server
-    // to handle the email sending in a more customized way
+    // In a full implementation, you'd use Firebase Functions or a backend server
+    // to send fully customized HTML emails with your branding
     
     return { success: true, inviteId };
   } catch (error) {
@@ -171,55 +185,6 @@ export const completeRegistration = async (name, password, inviteId) => {
     } else {
       throw new Error('Invalid sign-in link');
     }
-  } catch (error) {
-    throw error;
-  }
-};
-
-// Send invite with email link
-export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
-  try {
-    // Create the invite record first
-    const inviteData = {
-      email: email,
-      role: role, // 'Employee' or 'Manager'
-      status: 'pending',
-      sentAt: new Date(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
-      senderUid: senderUid
-    };
-    
-    const inviteRef = await addDoc(invitesCollection, inviteData);
-    const inviteId = inviteRef.id;
-    
-    // Save the email to localStorage to be retrieved when the link is clicked
-    localStorage.setItem('emailForSignIn', email);
-    
-    // Save the invite ID in the URL
-    const finalUrl = actionCodeSettings.url + `?inviteId=${inviteId}`;
-    const customActionCodeSettings = {
-      ...actionCodeSettings,
-      url: finalUrl,
-      // This doesn't fully customize the email, but it adds a bit more context
-      // For full customization, you'd need a server-side solution
-      handleCodeInApp: true,
-      iOS: {
-        bundleId: 'com.restaurantgroup.loyalty'
-      },
-      android: {
-        packageName: 'com.restaurantgroup.loyalty',
-        installApp: true
-      },
-      dynamicLinkDomain: 'restaurantloyalty.page.link'
-    };
-    
-    // Send the email
-    await sendSignInLinkToEmail(auth, email, customActionCodeSettings);
-    
-    // In a full implementation, you'd use Firebase Functions or a backend server
-    // to send fully customized HTML emails with your branding
-    
-    return { success: true, inviteId };
   } catch (error) {
     throw error;
   }
