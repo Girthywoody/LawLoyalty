@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { completeRegistration } from './firebase';
+import { completeRegistration, isSignInWithEmailLink, auth } from './firebase';
 import { User, Shield, CheckCircle, XCircle, Mail, Coffee } from 'lucide-react';
 
 const CompleteSignup = () => {
@@ -12,23 +12,51 @@ const CompleteSignup = () => {
   const [inviteId, setInviteId] = useState('');
   const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
+  const [invalidLink, setInvalidLink] = useState(false);
   
   const location = useLocation();
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Get inviteId from URL query params
-    const params = new URLSearchParams(location.search);
-    const id = params.get('inviteId');
-    if (id) {
-      setInviteId(id);
-    }
+    const checkLink = async () => {
+      // Get parameters from URL
+      const params = new URLSearchParams(location.search);
+      const id = params.get('inviteId');
+      const emailParam = params.get('email');
+      
+      // Set the invite ID
+      if (id) {
+        setInviteId(id);
+      } else {
+        setInvalidLink(true);
+        setError('Invalid invite link. Missing invite ID.');
+        return;
+      }
+      
+      // Set the email
+      if (emailParam) {
+        setEmail(emailParam);
+        // Store it in localStorage as a backup
+        localStorage.setItem('emailForSignIn', emailParam);
+      } else {
+        // Try to get from localStorage
+        const storedEmail = localStorage.getItem('emailForSignIn');
+        if (storedEmail) {
+          setEmail(storedEmail);
+        } else {
+          setInvalidLink(true);
+          setError('Email address not found. Please go back to your email and click the link again.');
+        }
+      }
+      
+      // Check if this is a valid sign-in link
+      if (!isSignInWithEmailLink(auth, window.location.href)) {
+        setInvalidLink(true);
+        setError('Invalid sign-in link. Please request a new invitation.');
+      }
+    };
     
-    // Get email from localStorage (saved when invite link was sent)
-    const storedEmail = localStorage.getItem('emailForSignIn');
-    if (storedEmail) {
-      setEmail(storedEmail);
-    }
+    checkLink();
   }, [location]);
   
   const handleSubmit = async (e) => {
@@ -45,6 +73,7 @@ const CompleteSignup = () => {
     }
     
     setIsLoading(true);
+    setError('');
     
     try {
       await completeRegistration(name, password, inviteId);
@@ -63,6 +92,41 @@ const CompleteSignup = () => {
       setIsLoading(false);
     }
   };
+  
+  // Invalid link state
+  if (invalidLink) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+          <div className="text-center">
+            <div className="flex justify-center">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center mb-4 shadow-lg">
+                <XCircle size={36} className="text-white" />
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800">Invalid Link</h1>
+            <p className="mt-2 text-gray-500">There was a problem with your invitation link</p>
+          </div>
+          
+          <div className="bg-red-50 p-6 rounded-lg border border-red-100 mt-6">
+            <p className="text-red-700 font-medium mb-2">We couldn't process your invitation</p>
+            <p className="text-red-600 text-sm">
+              {error}
+            </p>
+          </div>
+          
+          <div className="mt-6">
+            <button
+              onClick={() => navigate('/')}
+              className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors font-medium"
+            >
+              Return to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Success state
   if (success) {

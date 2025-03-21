@@ -46,51 +46,7 @@ const employeesCollection = collection(db, 'employees');
 const restaurantsCollection = collection(db, 'restaurants');
 const invitesCollection = collection(db, 'invites');
 
-// Configure actionCodeSettings for the email link
-const actionCodeSettings = {
-  // URL you want to redirect to after email verification
-  url: window.location.origin + '/complete-signup',
-  handleCodeInApp: true,
-  // Additional settings to make the email look more professional
-  iOS: {
-    bundleId: 'com.restaurantgroup.loyalty'
-  },
-  android: {
-    packageName: 'com.restaurantgroup.loyalty',
-    installApp: true
-  },
-  dynamicLinkDomain: 'restaurantloyalty.page.link'
-};
-
-// Auth functions
-export const loginWithEmailAndPassword = async (email, password) => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const logoutUser = async () => {
-  try {
-    await signOut(auth);
-    return true;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const createUser = async (email, password) => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
-  } catch (error) {
-    throw error;
-  }
-};
-
-// Send invite with email link - updated to create a simpler welcome email
+// Send invite with email link - simplified version
 export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
     // Create the invite record first
@@ -106,24 +62,24 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) =>
     const inviteRef = await addDoc(invitesCollection, inviteData);
     const inviteId = inviteRef.id;
     
-    // Save the invite ID in the URL
-    const finalUrl = actionCodeSettings.url + `?inviteId=${inviteId}`;
+    // Build the URL for the complete signup page
+    const completeSignupUrl = `${window.location.origin}/complete-signup?inviteId=${inviteId}&email=${encodeURIComponent(email)}`;
     
-    // Simplified actionCodeSettings without the dynamic link domain
-    const customActionCodeSettings = {
-      url: finalUrl,
+    // Basic action code settings without any dynamic link domains
+    const actionCodeSettings = {
+      url: completeSignupUrl,
       handleCodeInApp: true
     };
     
-    // Send the email
-    await sendSignInLinkToEmail(auth, email, customActionCodeSettings);
+    // Send the email with the link
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
     
-    // Save the email to localStorage for the specific user being invited
-    // Note: In a production environment, you might want a more robust solution
-    localStorage.setItem(`emailForSignIn_${inviteId}`, email);
+    // Store the email in localStorage so it can be retrieved when the user clicks the link
+    localStorage.setItem('emailForSignIn', email);
     
     return { success: true, inviteId };
   } catch (error) {
+    console.error("Error sending invite:", error);
     throw error;
   }
 };
@@ -136,10 +92,17 @@ export const completeRegistration = async (name, password, inviteId) => {
       // Get the email from localStorage
       let email = localStorage.getItem('emailForSignIn');
       
-      // If email not found in localStorage, prompt user for it
+      // If email not found in localStorage, try to get it from URL
       if (!email) {
-        // This would be handled by your UI
-        throw new Error('Email not found. Please reopen the invite link from your email.');
+        const urlParams = new URLSearchParams(window.location.search);
+        email = urlParams.get('email');
+        
+        if (!email) {
+          throw new Error('Email not found. Please reopen the invite link from your email.');
+        }
+        
+        // Save it to localStorage for the authentication process
+        localStorage.setItem('emailForSignIn', email);
       }
       
       // Sign in with email link
@@ -183,6 +146,35 @@ export const completeRegistration = async (name, password, inviteId) => {
     } else {
       throw new Error('Invalid sign-in link');
     }
+  } catch (error) {
+    console.error("Complete registration error:", error);
+    throw error;
+  }
+};
+
+// Auth functions
+export const loginWithEmailAndPassword = async (email, password) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    await signOut(auth);
+    return true;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const createUser = async (email, password) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
   } catch (error) {
     throw error;
   }

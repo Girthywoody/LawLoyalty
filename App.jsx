@@ -1184,69 +1184,6 @@ if (view === 'register') {
                 </div>
               </div>
 
-                // Add a new state for the invite email
-
-// Add this to your manager view, perhaps below the employee list:
-<div className="mt-8 pt-6 border-t border-gray-200">
-  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
-    Invite Employees
-  </h4>
-  <div className="space-y-4">
-    <div className="flex-grow">
-      <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">
-        Email Address
-      </label>
-      <input
-        type="email"
-        id="inviteEmail"
-        placeholder="Enter email to invite"
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-        value={inviteEmail}
-        onChange={(e) => setInviteEmail(e.target.value)}
-      />
-    </div>
-    <div className="flex-grow">
-      <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">
-        Role
-      </label>
-      <select
-        id="inviteRole"
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-        value={inviteRole}
-        onChange={(e) => setInviteRole(e.target.value)}
-      >
-        <option value="Employee">Employee</option>
-        <option value="Manager">Manager</option>
-      </select>
-    </div>
-    <button
-      type="button"
-      onClick={handleSendInvite}
-      disabled={isLoading}
-      className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-    >
-      {isLoading ? (
-        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-      ) : (
-        <Mail size={16} className="mr-2" />
-      )}
-      Send Invite Email
-    </button>
-    
-    {inviteSuccess && (
-      <div className="bg-green-50 p-3 rounded-lg border border-green-100 text-sm flex items-center">
-        <CheckCircle size={16} className="mr-2 text-green-500" />
-        <span className="text-green-700">
-          Invite sent successfully! The user will receive an email with setup instructions.
-        </span>
-      </div>
-    )}
-  </div>
-</div>
-                
                 {/* Discount rules info */}
                 <div className="mt-8 pt-6 border-t border-gray-200">
                   <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
