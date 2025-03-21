@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
 import { X, Copy, CheckCircle, Share2, MessageSquare, Mail, Phone, ChevronDown } from 'lucide-react';
 import { generateInviteLink } from './firebase';
+import React, { useState } from 'react';
 
 const TextInviteModal = ({ isOpen, onClose, currentUser, selectedRestaurant = null }) => {
   const [contactMethod, setContactMethod] = useState('email'); // 'email' or 'phone'
@@ -12,8 +12,8 @@ const TextInviteModal = ({ isOpen, onClose, currentUser, selectedRestaurant = nu
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  
+  const dropdownRef = React.useRef(null);
+    
   // Reset state when modal is opened
   React.useEffect(() => {
     if (isOpen) {
