@@ -547,6 +547,82 @@ const handleRegister = async (e) => {
     }, 3000);
   };
 
+
+  // Add these modified handler functions to your App.jsx
+
+// Handler for sending invites via both email and SMS
+const handleUnifiedInvite = async (contactInfo, role) => {
+  if ((!contactInfo.email && contactInfo.method === 'email') || 
+      (!contactInfo.phone && contactInfo.method === 'phone')) {
+    showNotification('Please enter valid contact information', 'error');
+    return;
+  }
+  
+  setIsLoading(true);
+  
+  try {
+    if (contactInfo.method === 'email') {
+      // Handle email invites using your existing function
+      if (currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
+        await sendEmployeeInvite(contactInfo.email, 'Employee', currentUser.id);
+        showNotification(`Invite sent to ${contactInfo.email} as Employee for ${currentUser.restaurantName}`, 'success');
+      } else if (currentUser.jobTitle === 'Admin') {
+        if (role === 'Manager') {
+          if (!selectedManagerRestaurant) {
+            throw new Error('Please select a restaurant for the manager');
+          }
+          
+          await sendManagerInvite(
+            contactInfo.email, 
+            'Manager',
+            currentUser.id,
+            selectedManagerRestaurant.id
+          );
+          showNotification(`Manager invite sent to ${contactInfo.email} for ${selectedManagerRestaurant.name}`, 'success');
+        } else {
+          await sendEmployeeInvite(contactInfo.email, role, currentUser.id);
+          showNotification(`Invite sent to ${contactInfo.email} as ${role}`, 'success');
+        }
+      }
+    } else {
+      // Handle SMS invites
+      // Generate invitation link
+      let restaurantId = null;
+      
+      if (currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
+        restaurantId = currentUser.restaurantId;
+      } else if (currentUser.jobTitle === 'Admin' && selectedManagerRestaurant) {
+        restaurantId = selectedManagerRestaurant.id;
+      }
+      
+      const result = await generateInviteLink(
+        contactInfo.email, // Use the email address we created for the phone number
+        role,
+        currentUser.id,
+        restaurantId
+      );
+      
+      // Generate the SMS message
+      const restaurantName = currentUser.restaurantName || selectedManagerRestaurant?.name || "our restaurant";
+      const message = `You've been invited to join ${restaurantName} as a ${role}! Click this link to set up your account: ${result.inviteLink}`;
+      
+      // Open SMS link
+      window.open(`sms:${contactInfo.phone}?body=${encodeURIComponent(message)}`);
+      
+      showNotification(`SMS invite ready for ${contactInfo.phone}`, 'success');
+    }
+    
+    setInviteSuccess(true);
+    setTimeout(() => {
+      setInviteSuccess(false);
+    }, 5000);
+  } catch (error) {
+    console.error("Error sending invite:", error);
+    showNotification(error.message || "Failed to send invite", "error");
+  } finally {
+    setIsLoading(false);
+  }
+};
   // Notification component
   const Notification = ({ message, type }) => {
     const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
@@ -606,6 +682,182 @@ const getRestaurantName = (restaurantId) => {
   }
   
   return "Unknown Restaurant";
+};
+
+// Add this component to your App.jsx file
+
+const UnifiedInviteComponent = ({ currentUser, selectedManagerRestaurant, onSendInvite }) => {
+  const [contactMethod, setContactMethod] = useState('email'); // 'email' or 'phone'
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [inviteRole, setInviteRole] = useState('Employee');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  
+  // Handle outside click to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
+  
+  const handlePhoneNumberChange = (e) => {
+    // Only allow numbers, parentheses, dashes and spaces
+    const value = e.target.value.replace(/[^\d\s()-]/g, '');
+    setPhoneNumber(value);
+  };
+  
+  const handleSendInvite = () => {
+    // Determine contact info based on selected method
+    const contactInfo = contactMethod === 'email' 
+      ? { email: inviteEmail, method: 'email' } 
+      : { email: `${phoneNumber.replace(/\D/g, '')}@text.invite`, phone: phoneNumber, method: 'phone' };
+      
+    // Call the parent handler with the collected information
+    onSendInvite(contactInfo, inviteRole);
+    
+    // Reset form
+    if (contactMethod === 'email') {
+      setInviteEmail('');
+    } else {
+      setPhoneNumber('');
+    }
+  };
+  
+  return (
+    <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-12">
+      <div className="sm:col-span-4 relative" ref={dropdownRef}>
+        <label htmlFor="inviteContact" className="block text-xs font-medium text-gray-500 mb-1">
+          Contact Information
+        </label>
+        <div className="flex items-center">
+          <div className="relative z-10">
+            <button
+              type="button"
+              className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              {contactMethod === 'email' ? (
+                <Mail size={16} className="text-indigo-600" />
+              ) : (
+                <Phone size={16} className="text-indigo-600" />
+              )}
+              <ChevronDown size={14} className="ml-1 text-gray-400" />
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="absolute left-0 mt-1 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                <div className="py-1">
+                  <button
+                    type="button"
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => {
+                      setContactMethod('email');
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    <Mail size={16} className="mr-2 text-indigo-600" />
+                    Email
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => {
+                      setContactMethod('phone');
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    <Phone size={16} className="mr-2 text-indigo-600" />
+                    Phone
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {contactMethod === 'email' ? (
+            <input
+              id="inviteEmail"
+              type="email"
+              placeholder="employee@example.com"
+              className="flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+            />
+          ) : (
+            <input
+              id="invitePhone"
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9\s\-\(\)]+"
+              placeholder="(555) 123-4567"
+              className="flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+              value={phoneNumber}
+              onChange={handlePhoneNumberChange}
+            />
+          )}
+        </div>
+        <p className="mt-1 text-xs text-gray-500">
+          {contactMethod === 'email' 
+            ? "Email will be linked to their account" 
+            : "Enter the phone number to send an SMS invitation"}
+        </p>
+      </div>
+
+      <div className="sm:col-span-3">
+        <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
+        <select
+          id="inviteRole"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+          value={inviteRole}
+          onChange={(e) => setInviteRole(e.target.value)}
+        >
+          <option value="Employee">Employee</option>
+          {currentUser.jobTitle === 'Admin' && (
+            <option value="Manager">Manager</option>
+          )}
+        </select>
+      </div>
+
+      {currentUser.jobTitle === 'Admin' && inviteRole === 'Manager' && (
+        <div className="sm:col-span-4">
+          <label htmlFor="restaurant" className="block text-xs font-medium text-gray-500 mb-1">Restaurant</label>
+          <select
+            id="restaurant"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+            value={selectedManagerRestaurant ? selectedManagerRestaurant.id : ''}
+            onChange={(e) => {
+              const restaurant = RESTAURANTS.find(r => r.id === e.target.value);
+              setSelectedManagerRestaurant(restaurant);
+            }}
+          >
+            <option value="">Select Restaurant</option>
+            {RESTAURANTS.map(r => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="sm:col-span-1 flex items-end">
+        <button
+          type="button"
+          onClick={handleSendInvite}
+          disabled={contactMethod === 'email' ? !inviteEmail : !phoneNumber}
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {contactMethod === 'email' ? 'Email' : 'Text'}
+        </button>
+      </div>
+    </div>
+  );
 };
 
 
@@ -768,102 +1020,39 @@ if (view === 'admin') {
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
         {/* User Management Panel */}
-        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
-          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">
-              User Management
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Add new users and assign them to restaurants
-            </p>
-          </div>
-          
-          <div className="px-6 py-5">
-            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-12">
-              <div className="sm:col-span-4">
-                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  id="inviteEmail"
-                  placeholder="user@example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                />
-              </div>
-              <div className="sm:col-span-3">
-                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
-                <select
-                  id="inviteRole"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                >
-                  <option value="Employee">Employee</option>
-                  <option value="Manager">Manager</option>
-                </select>
-              </div>
-              <div className="sm:col-span-4">
-                <label htmlFor="restaurant" className="block text-xs font-medium text-gray-500 mb-1">Restaurant</label>
-                <select
-                  id="restaurant"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={selectedManagerRestaurant ? selectedManagerRestaurant.id : ''}
-                  onChange={(e) => {
-                    const restaurant = RESTAURANTS.find(r => r.id === e.target.value);
-                    setSelectedManagerRestaurant(restaurant);
-                  }}
-                >
-                  <option value="">Select Restaurant</option>
-                  {RESTAURANTS.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="sm:col-span-1 flex items-end space-x-2">
-                <button
-                  type="button"
-                  onClick={handleSendInvite}
-                  disabled={isLoading || !inviteEmail}
-                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                >
-                  {isLoading ? (
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    'Email'
-                  )}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setShowTextInviteModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <MessageSquare size={16} className="mr-1" />
-                  Text
-                </button>
-              </div>
+          <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+              <h3 className="text-lg font-medium leading-6 text-gray-900">
+                User Management
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Add new users and assign them to restaurants
+              </p>
             </div>
             
-            {inviteSuccess && (
-              <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-green-800">
-                      Invitation sent successfully! The user will receive an email with instructions.
-                    </p>
+            <div className="px-6 py-5">
+              <UnifiedInviteComponent 
+                currentUser={currentUser}
+                selectedManagerRestaurant={selectedManagerRestaurant}
+                onSendInvite={handleUnifiedInvite}
+              />
+              
+              {inviteSuccess && (
+                <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-green-800">
+                        Invitation sent successfully!
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
+              )}
+            </div>
+          </div>    
 
         {/* Employee management section */}
         <div className="w-full">
@@ -1571,68 +1760,22 @@ if (view === 'manager') {
           </div>
         </div>
 
-        {/* Invite employee form - only for this restaurant */}
+        {/* Replace the existing invite employee form in manager view */}
         <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
           <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
             <h3 className="text-lg font-medium leading-6 text-gray-900">
               Invite New Employee
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Send an email invitation to join your restaurant
+              Send an invitation to join your restaurant
             </p>
           </div>
           
           <div className="px-6 py-5">
-            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
-              <div className="sm:col-span-4">
-                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  id="inviteEmail"
-                  placeholder="employee@example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                />
-              </div>
-              <div className="sm:col-span-1">
-                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
-                <select
-                  id="inviteRole"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                >
-                  <option value="Employee">Employee</option>
-                </select>
-              </div>
-              <div className="sm:col-span-1 flex items-end space-x-2">
-                <button
-                  type="button"
-                  onClick={handleSendInvite}
-                  disabled={isLoading || !inviteEmail}
-                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isLoading || !inviteEmail ? 'opacity-70 cursor-not-allowed' : ''}`}
-                >
-                  {isLoading ? (
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    'Email'
-                  )}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setShowTextInviteModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <MessageSquare size={16} className="mr-1" />
-                  Text
-                </button>
-              </div>
-            </div>
+            <UnifiedInviteComponent 
+              currentUser={currentUser}
+              onSendInvite={handleUnifiedInvite}
+            />
             
             {inviteSuccess && (
               <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
@@ -1642,7 +1785,7 @@ if (view === 'manager') {
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-green-800">
-                      Invitation sent successfully! The employee will receive an email with instructions.
+                      Invitation sent successfully!
                     </p>
                   </div>
                 </div>
@@ -1650,6 +1793,7 @@ if (view === 'manager') {
             )}
           </div>
         </div>
+
 
         {/* Employee management section - filtered by restaurant */}
         <div className="w-full">
