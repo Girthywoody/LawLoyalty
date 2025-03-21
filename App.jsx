@@ -19,6 +19,8 @@ import {
 
 import { Store } from 'lucide-react';
 
+import TextInviteModal from './TextInviteModal';
+
 
 import { createUser, sendEmployeeInvite } from './firebase';
 
@@ -76,6 +78,8 @@ const RestaurantLoyaltyApp = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteDetails, setInviteDetails] = useState(null);
   const [selectedManagerRestaurant, setSelectedManagerRestaurant] = useState(null);
+  const [showTextInviteModal, setShowTextInviteModal] = useState(false);
+
 
   // Data
   const RESTAURANTS = [
@@ -813,8 +817,8 @@ if (view === 'admin') {
                   ))}
                 </select>
               </div>
-              <div className="sm:col-span-1 flex items-end">
-              <button
+              <div className="sm:col-span-1 flex items-end space-x-2">
+                <button
                   type="button"
                   onClick={handleSendInvite}
                   disabled={isLoading || !inviteEmail}
@@ -826,8 +830,17 @@ if (view === 'admin') {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                   ) : (
-                    'Invite'
+                    'Email'
                   )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowTextInviteModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <MessageSquare size={16} className="mr-1" />
+                  Text
                 </button>
               </div>
             </div>
@@ -1052,17 +1065,8 @@ if (view === 'admin') {
           </div>
         </div>
       </main>
-      
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-4 mt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-xs text-center text-gray-500">
-            &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
-          </p>
-        </div>
-      </footer>
     </div>
-  );
+);
 }
 
 
@@ -1599,12 +1603,12 @@ if (view === 'manager') {
                   <option value="Employee">Employee</option>
                 </select>
               </div>
-              <div className="sm:col-span-1 flex items-end">
+              <div className="sm:col-span-1 flex items-end space-x-2">
                 <button
                   type="button"
                   onClick={handleSendInvite}
-                  disabled={isLoading || !inviteEmail || (inviteRole === 'Manager' && !selectedManagerRestaurant)}
-                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center ${isLoading || !inviteEmail || (inviteRole === 'Manager' && !selectedManagerRestaurant) ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  disabled={isLoading || !inviteEmail}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isLoading || !inviteEmail ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
                   {isLoading ? (
                     <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1612,8 +1616,17 @@ if (view === 'manager') {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                   ) : (
-                    'Invite'
+                    'Email'
                   )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowTextInviteModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <MessageSquare size={16} className="mr-1" />
+                  Text
                 </button>
               </div>
             </div>
@@ -1802,6 +1815,14 @@ if (view === 'manager') {
               </table>
             </div>
           </div>
+          {showTextInviteModal && 
+            <TextInviteModal 
+              isOpen={showTextInviteModal} 
+              onClose={() => setShowTextInviteModal(false)} 
+              currentUser={currentUser}
+              selectedRestaurant={selectedManagerRestaurant} 
+            />
+          }
         </div>
       </main>
       

@@ -223,6 +223,55 @@ export const getRestaurantName = (restaurantId) => {
   return "Unknown Restaurant";
 };
 
+// Add this function to generate invitation links for text messages
+export const generateInviteLink = async (email, role = 'Employee', senderUid, restaurantId = null) => {
+  try {
+    // Generate a unique invite code
+    const inviteCode = generateUniqueId();
+    
+    // If we have a senderUid but no restaurantId, try to get the sender's restaurant
+    if (senderUid && !restaurantId) {
+      const employeesRef = collection(db, 'employees');
+      const q = query(employeesRef, where("uid", "==", senderUid));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const senderData = querySnapshot.docs[0].data();
+        restaurantId = senderData.restaurantId || null;
+      }
+    }
+    
+    // Create the invite record with restaurant info
+    const inviteData = {
+      email: email,
+      role: role,
+      status: 'pending',
+      sentAt: new Date(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+      senderUid: senderUid,
+      restaurantId: restaurantId,
+      restaurantName: restaurantId ? getRestaurantName(restaurantId) : null,
+      code: inviteCode,
+      inviteMethod: 'text' // Mark this as a text invitation
+    };
+    
+    const inviteRef = await addDoc(invitesCollection, inviteData);
+    
+    // Generate the invitation link
+    const inviteLink = `${window.location.origin}/complete-signup?mode=complete&email=${encodeURIComponent(email)}&inviteId=${inviteCode}`;
+    
+    return { 
+      success: true, 
+      inviteId: inviteRef.id,
+      inviteLink: inviteLink,
+      inviteCode: inviteCode
+    };
+  } catch (error) {
+    console.error("Error generating invite link:", error);
+    throw error;
+  }
+};
+
 // Modify the sendEmployeeInvite function to include restaurant assignment
 export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
