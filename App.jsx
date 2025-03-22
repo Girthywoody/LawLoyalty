@@ -37,8 +37,7 @@ import {
   deleteEmployee, 
   subscribeToEmployees,
   completeRegistration,
-  db,
-  sendPasswordResetEmail
+  db
 } from './firebase';
 
 import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports

@@ -23,7 +23,9 @@ import {
   isSignInWithEmailLink,
   signInWithEmailLink,
   updatePassword,
-  updateProfile  // Add this missing import
+  updateProfile,
+  sendPasswordResetEmail
+
 } from 'firebase/auth';
 
 // Replace this with your Firebase configuration
@@ -49,7 +51,7 @@ const employeesCollection = collection(db, 'employees');
 const restaurantsCollection = collection(db, 'restaurants');
 const invitesCollection = collection(db, 'invites');
 
-export { db, auth, isSignInWithEmailLink };
+export { db, auth, isSignInWithEmailLink, sendPasswordResetEmail};
 
 
 
