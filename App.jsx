@@ -616,10 +616,8 @@ const getRestaurantName = (restaurantId) => {
   return "Unknown Restaurant";
 };
 
-
 useEffect(() => {
   const filtered = employees.filter(emp => 
-    // Add null checks for name and jobTitle
     ((emp.name && emp.name.toLowerCase().includes(searchTerm.toLowerCase())) || 
     (emp.jobTitle && emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()))) &&
     // Only show approved employees in the main list
@@ -1550,50 +1548,49 @@ if (view === 'completeSignup') {
 // MANAGER VIEW
 if (view === 'manager') {
 
-// PendingEmployeeApprovals with manual refresh button
-const PendingEmployeeApprovals = ({ currentUser }) => {
-  const [pendingEmployees, setPendingEmployees] = useState([]);
-  const [notification, setNotification] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [hasCheckedOnce, setHasCheckedOnce] = useState(false);
-  
-  // Load pending employees only when refresh is clicked
-  const loadPendingEmployees = async () => {
-    if (!currentUser?.restaurantId) {
-      return;
-    }
+  const PendingEmployeeApprovals = ({ currentUser }) => {
+    const [pendingEmployees, setPendingEmployees] = useState([]);
+    const [notification, setNotification] = useState(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [hasCheckedOnce, setHasCheckedOnce] = useState(false);
     
-    try {
-      setIsRefreshing(true);
-      
-      const employeesRef = collection(db, 'employees');
-      const q = query(
-        employeesRef, 
-        where("restaurantId", "==", currentUser.restaurantId),
-        where("status", "==", "pending")
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const pendingData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      setPendingEmployees(pendingData);
-      setHasCheckedOnce(true);
-      setIsRefreshing(false);
-      
-      if (pendingData.length > 0) {
-        showNotification(`Found ${pendingData.length} pending application(s)`, "info");
-      } else {
-        showNotification("No pending applications found", "info");
+    // Load pending employees only when refresh is clicked
+    const loadPendingEmployees = async () => {
+      if (!currentUser?.restaurantId) {
+        return;
       }
-    } catch (error) {
-      console.error("Error loading pending employees:", error);
-      showNotification("Failed to load pending employees", "error");
-      setIsRefreshing(false);
-    }
-  };
+      
+      try {
+        setIsRefreshing(true);
+        
+        const employeesRef = collection(db, 'employees');
+        const q = query(
+          employeesRef, 
+          where("restaurantId", "==", currentUser.restaurantId),
+          where("status", "==", "pending")
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const pendingData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        setPendingEmployees(pendingData);
+        setHasCheckedOnce(true);
+        setIsRefreshing(false);
+        
+        if (pendingData.length > 0) {
+          showNotification(`Found ${pendingData.length} pending application(s)`, "info");
+        } else {
+          showNotification("No pending applications found", "info");
+        }
+      } catch (error) {
+        console.error("Error loading pending employees:", error);
+        showNotification("Failed to load pending employees", "error");
+        setIsRefreshing(false);
+      }
+    };
 
   // Show notification
   const showNotification = (message, type = 'info') => {
@@ -1604,21 +1601,21 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
   };
 
   // Approve an employee
-  const handleApprove = async (employeeId) => {
-    try {
-      await updateEmployee(employeeId, {
-        status: 'approved',
-        updatedAt: new Date()
-      });
-      
-      // Remove from the local state immediately
-      setPendingEmployees(prev => prev.filter(emp => emp.id !== employeeId));
-      showNotification("Employee approved successfully", "success");
-    } catch (error) {
-      console.error("Error approving employee:", error);
-      showNotification("Failed to approve employee", "error");
-    }
-  };
+const handleApprove = async (employeeId) => {
+  try {
+    await updateEmployee(employeeId, {
+      status: 'approved',
+      updatedAt: new Date()
+    });
+    
+    // Remove from the local state immediately
+    setPendingEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+    showNotification("Employee approved successfully", "success");
+  } catch (error) {
+    console.error("Error approving employee:", error);
+    showNotification("Failed to approve employee", "error");
+  }
+};
 
   // Decline/reject an employee
   const handleDecline = async (employeeId) => {
