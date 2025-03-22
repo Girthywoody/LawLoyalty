@@ -1553,6 +1553,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
   const [pendingEmployees, setPendingEmployees] = useState([]);
   const [notification, setNotification] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasCheckedOnce, setHasCheckedOnce] = useState(false);
   
   // Load pending employees only when refresh is clicked
   const loadPendingEmployees = async () => {
@@ -1577,6 +1578,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
       }));
       
       setPendingEmployees(pendingData);
+      setHasCheckedOnce(true);
       setIsRefreshing(false);
       
       if (pendingData.length > 0) {
@@ -1671,9 +1673,13 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
         </button>
       </div>
       
-      {pendingEmployees.length === 0 ? (
+      {!hasCheckedOnce ? (
         <div className="p-6 text-center text-gray-500">
           Click the refresh button to check for pending applications.
+        </div>
+      ) : pendingEmployees.length === 0 ? (
+        <div className="p-6 text-center text-gray-500">
+          No pending applications found.
         </div>
       ) : (
         <div className="overflow-x-auto">
