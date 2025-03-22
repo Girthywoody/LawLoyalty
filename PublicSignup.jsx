@@ -123,7 +123,7 @@ const PublicSignup = () => {
           <div className="text-center">
             <div className="flex justify-center">
               <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4">
-                <img src="/logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
+                <img src="logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-800">Registration Submitted!</h1>
@@ -151,7 +151,7 @@ const PublicSignup = () => {
         <div className="text-center">
           <div className="flex justify-center">
             <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4">
-              <img src="/logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
+              <img src="logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-800">Create Your Account</h1>
