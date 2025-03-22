@@ -1091,7 +1091,7 @@ if (view === 'admin') {
           <div className="text-center">
             <div className="flex justify-center">
               <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4">
-                <img src="/logo.png" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
+                <img src="/logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-800">Restaurant Loyalty</h1>
@@ -1555,12 +1555,13 @@ if (view === 'manager') {
 const PendingEmployeeApprovals = ({ currentUser }) => {
   const [pendingEmployees, setPendingEmployees] = useState([]);
   const [notification, setNotification] = useState(null);
-  const [processingIds, setProcessingIds] = useState(new Set());
 
-  // Load pending employees for the current manager's restaurant
+  // Load pending employees only once when component mounts or when currentUser changes
   useEffect(() => {
+    let isMounted = true;
+    
     const loadPendingEmployees = async () => {
-      if (!currentUser || !currentUser.restaurantId) return;
+      if (!currentUser?.restaurantId) return;
       
       try {
         const employeesRef = collection(db, 'employees');
@@ -1571,66 +1572,60 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
         );
         
         const querySnapshot = await getDocs(q);
-        const pendingData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        
-        setPendingEmployees(pendingData);
+        if (isMounted) {
+          const pendingData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setPendingEmployees(pendingData);
+        }
       } catch (error) {
         console.error("Error loading pending employees:", error);
-        showNotification("Failed to load pending employees", "error");
+        if (isMounted) {
+          showNotification("Failed to load pending employees", "error");
+        }
       }
     };
     
     loadPendingEmployees();
-  }, [currentUser]);
+
+    // Cleanup function to prevent state updates if component unmounts
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.restaurantId]); // Only depend on restaurantId
 
   // Approve an employee
   const handleApprove = async (employeeId) => {
-    setProcessingIds(prev => new Set([...prev, employeeId]));
     try {
       await updateEmployee(employeeId, {
         status: 'approved',
         updatedAt: new Date()
       });
       
-      // Remove from the list
+      // Remove from the local state immediately
       setPendingEmployees(prev => prev.filter(emp => emp.id !== employeeId));
       showNotification("Employee approved successfully", "success");
     } catch (error) {
       console.error("Error approving employee:", error);
       showNotification("Failed to approve employee", "error");
-    } finally {
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(employeeId);
-        return newSet;
-      });
     }
   };
 
   // Decline/reject an employee
   const handleDecline = async (employeeId) => {
-    setProcessingIds(prev => new Set([...prev, employeeId]));
     try {
       await updateEmployee(employeeId, {
         status: 'rejected',
         updatedAt: new Date()
       });
       
-      // Remove from the list
+      // Remove from the local state immediately
       setPendingEmployees(prev => prev.filter(emp => emp.id !== employeeId));
       showNotification("Employee application declined", "success");
     } catch (error) {
       console.error("Error declining employee:", error);
       showNotification("Failed to decline employee", "error");
-    } finally {
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(employeeId);
-        return newSet;
-      });
     }
   };
 
@@ -1712,10 +1707,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
                     onClick={() => handleApprove(employee.id)}
-                    disabled={processingIds.has(employee.id)}
-                    className={`text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md mr-2 ${
-                      processingIds.has(employee.id) ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                    className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md mr-2"
                     aria-label="Approve employee"
                   >
                     <CheckCircle size={14} className="inline mr-1" />
@@ -1723,10 +1715,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
                   </button>
                   <button
                     onClick={() => handleDecline(employee.id)}
-                    disabled={processingIds.has(employee.id)}
-                    className={`text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md ${
-                      processingIds.has(employee.id) ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md"
                     aria-label="Decline employee"
                   >
                     <XCircle size={14} className="inline mr-1" />
