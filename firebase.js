@@ -82,6 +82,7 @@ export const createManagerWithRestaurant = async (email, password, name, restaur
   }
 };
 
+
 // Add this function to your firebase.js file
 export const completeRegistration = async (name, password, inviteCode) => {
   try {
