@@ -43,6 +43,7 @@ import {
 
 import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
 
+window.showAppNotification = null;
 
 
 const RestaurantLoyaltyApp = () => {
@@ -79,6 +80,7 @@ const RestaurantLoyaltyApp = () => {
   const [inviteDetails, setInviteDetails] = useState(null);
   const [selectedManagerRestaurant, setSelectedManagerRestaurant] = useState(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  
 
   // Data
   const RESTAURANTS = [
@@ -1579,6 +1581,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
       
       setPendingEmployees(pendingData);
       setHasCheckedOnce(true);
+      setIsRefreshing(false);
       
       if (pendingData.length > 0) {
         showNotification(`Found ${pendingData.length} pending application(s)`, "info");
@@ -1588,7 +1591,6 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
     } catch (error) {
       console.error("Error loading pending employees:", error);
       showNotification("Failed to load pending employees", "error");
-    } finally {
       setIsRefreshing(false);
     }
   };
@@ -1633,24 +1635,6 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
       console.error("Error declining employee:", error);
       showNotification("Failed to decline employee", "error");
     }
-  };
-  
-  // Separate component for notification to avoid affecting the main content
-  const Notification = ({ message, type }) => {
-    const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
-                     type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
-                     'bg-blue-100 border-blue-400 text-blue-700';
-    
-    const icon = type === 'success' ? <CheckCircle size={20} className="text-green-500" /> :
-                 type === 'error' ? <XCircle size={20} className="text-red-500" /> :
-                 null;
-    
-    return (
-      <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg border ${bgColor} shadow-lg flex items-center z-50`}>
-        {icon && <span className="mr-2">{icon}</span>}
-        <span>{message}</span>
-      </div>
-    );
   };
 
   // Render with refresh button
