@@ -1548,22 +1548,26 @@ if (view === 'completeSignup') {
 // MANAGER VIEW
 if (view === 'manager') {
 
-  // Add this to the App.jsx file in the manager view section
-// Find the section for the manager dashboard, likely around line 4600-4800
-
-// Add this component inside the manager view
+// Updated PendingEmployeeApprovals component
 const PendingEmployeeApprovals = ({ currentUser }) => {
   const [pendingEmployees, setPendingEmployees] = useState([]);
   const [notification, setNotification] = useState(null);
-
+  const [isLoading, setIsLoading] = useState(true);
+  
   // Load pending employees only once when component mounts or when currentUser changes
   useEffect(() => {
     let isMounted = true;
     
     const loadPendingEmployees = async () => {
-      if (!currentUser?.restaurantId) return;
+      if (!currentUser?.restaurantId) {
+        if (isMounted) setIsLoading(false);
+        return;
+      }
       
       try {
+        // Set loading state first
+        if (isMounted) setIsLoading(true);
+        
         const employeesRef = collection(db, 'employees');
         const q = query(
           employeesRef, 
@@ -1578,11 +1582,13 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
             ...doc.data()
           }));
           setPendingEmployees(pendingData);
+          setIsLoading(false);
         }
       } catch (error) {
         console.error("Error loading pending employees:", error);
         if (isMounted) {
           showNotification("Failed to load pending employees", "error");
+          setIsLoading(false);
         }
       }
     };
@@ -1637,9 +1643,29 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
     }, 3000);
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6 animate-pulse">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+          <h3 className="text-lg font-medium leading-6 text-gray-900">
+            Loading Pending Applications...
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Please wait while we check for pending approvals
+          </p>
+        </div>
+        <div className="p-6 flex justify-center">
+          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // If no pending employees, show a simple message
   if (pendingEmployees.length === 0) {
     return (
-      <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+      <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6 transition-all duration-300 ease-in-out">
         <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
           <h3 className="text-lg font-medium leading-6 text-gray-900">
             Pending Applications
@@ -1656,7 +1682,8 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
   }
 
   return (
-    <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+    <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6 transition-all duration-300 ease-in-out">
+      {notification && <Notification message={notification.message} type={notification.type} />}
       <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
         <h3 className="text-lg font-medium leading-6 text-gray-900">
           Pending Applications
