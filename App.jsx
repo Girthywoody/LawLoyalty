@@ -1090,8 +1090,8 @@ if (view === 'admin') {
         <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
           <div className="text-center">
             <div className="flex justify-center">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
-                <Shield size={36} className="text-white" />
+              <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4">
+                <img src="/logo.png" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-800">Restaurant Loyalty</h1>
@@ -1555,6 +1555,7 @@ if (view === 'manager') {
 const PendingEmployeeApprovals = ({ currentUser }) => {
   const [pendingEmployees, setPendingEmployees] = useState([]);
   const [notification, setNotification] = useState(null);
+  const [processingIds, setProcessingIds] = useState(new Set());
 
   // Load pending employees for the current manager's restaurant
   useEffect(() => {
@@ -1587,7 +1588,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
 
   // Approve an employee
   const handleApprove = async (employeeId) => {
-    setIsLoading(true);
+    setProcessingIds(prev => new Set([...prev, employeeId]));
     try {
       await updateEmployee(employeeId, {
         status: 'approved',
@@ -1601,13 +1602,17 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
       console.error("Error approving employee:", error);
       showNotification("Failed to approve employee", "error");
     } finally {
-      setIsLoading(false);
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(employeeId);
+        return newSet;
+      });
     }
   };
 
   // Decline/reject an employee
   const handleDecline = async (employeeId) => {
-    setIsLoading(true);
+    setProcessingIds(prev => new Set([...prev, employeeId]));
     try {
       await updateEmployee(employeeId, {
         status: 'rejected',
@@ -1621,7 +1626,11 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
       console.error("Error declining employee:", error);
       showNotification("Failed to decline employee", "error");
     } finally {
-      setIsLoading(false);
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(employeeId);
+        return newSet;
+      });
     }
   };
 
@@ -1703,7 +1712,10 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
                     onClick={() => handleApprove(employee.id)}
-                    className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md mr-2"
+                    disabled={processingIds.has(employee.id)}
+                    className={`text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md mr-2 ${
+                      processingIds.has(employee.id) ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                     aria-label="Approve employee"
                   >
                     <CheckCircle size={14} className="inline mr-1" />
@@ -1711,7 +1723,10 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
                   </button>
                   <button
                     onClick={() => handleDecline(employee.id)}
-                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md"
+                    disabled={processingIds.has(employee.id)}
+                    className={`text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md ${
+                      processingIds.has(employee.id) ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                     aria-label="Decline employee"
                   >
                     <XCircle size={14} className="inline mr-1" />

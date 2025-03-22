@@ -122,8 +122,8 @@ const PublicSignup = () => {
         <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
           <div className="text-center">
             <div className="flex justify-center">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-4 shadow-lg">
-                <CheckCircle size={36} className="text-white" />
+              <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4">
+                <img src="/logo.png" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-800">Registration Submitted!</h1>
@@ -150,8 +150,8 @@ const PublicSignup = () => {
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
         <div className="text-center">
           <div className="flex justify-center">
-            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
-              <Coffee size={36} className="text-white" />
+            <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4">
+              <img src="/logo.png" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-800">Create Your Account</h1>
