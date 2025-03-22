@@ -620,8 +620,8 @@ useEffect(() => {
     // Add null checks for name and jobTitle
     ((emp.name && emp.name.toLowerCase().includes(searchTerm.toLowerCase())) || 
     (emp.jobTitle && emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-    // Only show approved or undefined status (for backward compatibility)
-    (emp.status === 'approved' || emp.status === undefined)
+    // Only show approved employees in the main list
+    emp.status === 'approved'
   );
   setFilteredEmployees(filtered);
 }, [searchTerm, employees]);
