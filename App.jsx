@@ -611,8 +611,8 @@ const getRestaurantName = (restaurantId) => {
 
 useEffect(() => {
   const filtered = employees.filter(emp => 
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
+    (emp.name && emp.name.toLowerCase().includes(searchTerm.toLowerCase())) || 
+    (emp.jobTitle && emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   setFilteredEmployees(filtered);
 }, [searchTerm, employees]);
