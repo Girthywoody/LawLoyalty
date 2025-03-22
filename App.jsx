@@ -560,6 +560,25 @@ const handleRegister = async (e) => {
     );
   };
 
+  // Add this function to handle password reset
+const handleForgotPassword = async () => {
+  if (!email) {
+    setLoginError('Please enter your email address first');
+    return;
+  }
+  
+  setIsLoading(true);
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showNotification('Password reset email sent. Please check your inbox.', 'success');
+  } catch (error) {
+    console.error("Password reset error:", error);
+    setLoginError(error.message || 'Failed to send password reset email');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
   // User profile badge
   const UserProfileBadge = ({ user }) => (
     <div className="flex items-center">
@@ -1167,7 +1186,17 @@ if (view === 'admin') {
             </div>
           </form>
         </div>
-        
+
+        {/* Add Forgot Password link below login form */}
+        <div className="mt-2 text-center">
+          <button 
+            onClick={() => handleForgotPassword()}
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+          >
+            Forgot your password?
+          </button>
+        </div>
+                
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
             &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved

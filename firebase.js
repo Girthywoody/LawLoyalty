@@ -5,13 +5,14 @@ import {
   collection, 
   getDocs, 
   addDoc, 
+  setDoc,
   deleteDoc, 
   doc, 
+  getDoc,
   updateDoc, 
   query, 
   where, 
-  onSnapshot,
-  getDoc
+  onSnapshot 
 } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -53,23 +54,62 @@ export { db, auth, isSignInWithEmailLink };
 
 
 
-// === STEP 1: Update firebase.js with restaurant assignments ===
+// For employees, use a combination of name and restaurant
+export const addEmployee = async (employeeData) => {
+  try {
+    // Create a meaningful ID based on name and restaurant (if available)
+    const nameSlug = employeeData.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    let customId = `employee-${nameSlug}`;
+    
+    if (employeeData.restaurantId) {
+      customId = `${employeeData.restaurantId}-${nameSlug}`;
+    }
+    
+    // Check if a document with this ID already exists
+    const docRef = doc(db, 'employees', customId);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      // Append a timestamp if the ID already exists
+      customId += `-${Date.now()}`;
+    }
+    
+    // Use setDoc with a custom ID instead of addDoc
+    await setDoc(doc(db, 'employees', customId), {
+      ...employeeData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    return {
+      id: customId,
+      ...employeeData
+    };
+  } catch (error) {
+    console.error("Error adding employee:", error);
+    throw error;
+  }
+};
 
-// Add this to your firebase.js file
+// For restaurant managers
 export const createManagerWithRestaurant = async (email, password, name, restaurantId) => {
   try {
     // Create the user in Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
-    // Add user to employees collection as a manager with restaurant assignment
-    await addEmployee({
+    // Generate a meaningful ID for this manager
+    const nameSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const customId = `manager-${restaurantId}-${nameSlug}`;
+    
+    // Add user to employees collection with custom ID
+    await setDoc(doc(db, 'employees', customId), {
       name: name,
       email: email,
       jobTitle: 'Manager',
       discount: 40,
-      restaurantId: restaurantId, // Add restaurant assignment
-      restaurantName: getRestaurantName(restaurantId), // We'll implement this function
+      restaurantId: restaurantId,
+      restaurantName: getRestaurantName(restaurantId),
       createdAt: new Date(),
       updatedAt: new Date(),
       uid: user.uid
@@ -78,6 +118,69 @@ export const createManagerWithRestaurant = async (email, password, name, restaur
     return user;
   } catch (error) {
     console.error("Error creating manager:", error);
+    throw error;
+  }
+};
+
+// For invites
+export const sendEmployeeInvite = async (email, role = 'Employee', senderUid, restaurantId = null) => {
+  try {
+    let restaurantName = null;
+    
+    // If a restaurant ID is provided, get its name
+    if (restaurantId) {
+      restaurantName = getRestaurantName(restaurantId);
+    } else {
+      // Try to get sender's restaurant info
+      const employeesRef = collection(db, 'employees');
+      const q = query(employeesRef, where("uid", "==", senderUid));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const senderData = querySnapshot.docs[0].data();
+        restaurantId = senderData.restaurantId || null;
+        restaurantName = senderData.restaurantName || null;
+      }
+    }
+    
+    // Generate a unique invite code
+    const inviteCode = generateUniqueId();
+    
+    // Create a meaningful ID for this invite
+    const emailSlug = email.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    let customId = `invite-${emailSlug}`;
+    
+    if (restaurantId) {
+      customId = `invite-${restaurantId}-${emailSlug}`;
+    }
+    
+    // Create the invite record with a custom ID
+    const inviteData = {
+      email: email,
+      role: role,
+      status: 'pending',
+      sentAt: new Date(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      senderUid: senderUid,
+      restaurantId: restaurantId,
+      restaurantName: restaurantName,
+      code: inviteCode
+    };
+    
+    await setDoc(doc(db, 'invites', customId), inviteData);
+    
+    // Generate magic link for email
+    const actionCodeSettings = {
+      url: `${window.location.origin}/complete-signup?mode=complete&email=${email}&inviteId=${inviteCode}`,
+      handleCodeInApp: true
+    };
+    
+    // Send the email invitation
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    
+    return { success: true, inviteId: customId };
+  } catch (error) {
+    console.error("Error sending invite:", error);
     throw error;
   }
 };
@@ -174,8 +277,10 @@ export const sendManagerInvite = async (email, role, senderUid, restaurantId) =>
   }
 };
 
-// Helper function to get restaurant name by ID
+// Enhanced getRestaurantName function
 export const getRestaurantName = (restaurantId) => {
+  if (!restaurantId) return "No Restaurant Assigned";
+  
   const RESTAURANTS = [
     { id: "montanas", name: "Montana's" },
     { id: "kelseys", name: "Kelsey's" },
@@ -204,18 +309,18 @@ export const getRestaurantName = (restaurantId) => {
     }
   ];
   
+  // First check if it's a direct restaurant match
   const restaurant = RESTAURANTS.find(r => r.id === restaurantId);
-  
   if (restaurant) {
     return restaurant.name;
   }
   
-  // For location-specific IDs
-  for (const restaurant of RESTAURANTS) {
-    if (restaurant.locations) {
-      const location = restaurant.locations.find(l => l.id === restaurantId);
+  // Then check for a location within a restaurant
+  for (const r of RESTAURANTS) {
+    if (r.locations) {
+      const location = r.locations.find(l => l.id === restaurantId);
       if (location) {
-        return `${restaurant.name} - ${location.name}`;
+        return `${r.name} - ${location.name}`;
       }
     }
   }
@@ -223,56 +328,6 @@ export const getRestaurantName = (restaurantId) => {
   return "Unknown Restaurant";
 };
 
-// Modify the sendEmployeeInvite function to include restaurant assignment
-export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
-  try {
-    let restaurantId = null;
-    let restaurantName = null;
-    
-    // Try to get sender's restaurant info
-    const employeesRef = collection(db, 'employees');
-    const q = query(employeesRef, where("uid", "==", senderUid));
-    const querySnapshot = await getDocs(q);
-    
-    if (!querySnapshot.empty) {
-      const senderData = querySnapshot.docs[0].data();
-      restaurantId = senderData.restaurantId || null;
-      restaurantName = senderData.restaurantName || null;
-    }
-    
-    // Generate a unique invite code
-    const inviteCode = generateUniqueId();
-    
-    // Create the invite record
-    const inviteData = {
-      email: email,
-      role: role,
-      status: 'pending',
-      sentAt: new Date(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      senderUid: senderUid,
-      restaurantId: restaurantId,
-      restaurantName: restaurantName,
-      code: inviteCode
-    };
-    
-    const inviteRef = await addDoc(invitesCollection, inviteData);
-    
-    // Generate magic link for email - using the same URL format as manager invites
-    const actionCodeSettings = {
-      url: `${window.location.origin}/complete-signup?mode=complete&email=${email}&inviteId=${inviteCode}`,
-      handleCodeInApp: true
-    };
-    
-    // Send the email invitation
-    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    
-    return { success: true, inviteId: inviteRef.id };
-  } catch (error) {
-    console.error("Error sending invite:", error);
-    throw error;
-  }
-};
 
 // Helper function to generate a unique ID for invites
 export const generateUniqueId = () => {
@@ -346,17 +401,6 @@ export const getEmployees = async () => {
   }));
 };
 
-export const addEmployee = async (employeeData) => {
-  try {
-    const docRef = await addDoc(employeesCollection, employeeData);
-    return {
-      id: docRef.id,
-      ...employeeData
-    };
-  } catch (error) {
-    throw error;
-  }
-};
 
 export const updateEmployee = async (id, updatedData) => {
   try {
