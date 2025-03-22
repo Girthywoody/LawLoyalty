@@ -1135,6 +1135,12 @@ if (view === 'admin') {
               </p>
             </div>
 
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-500">
+                New users can <a href="/signup" className="text-indigo-600 hover:text-indigo-800 font-medium">sign up here</a>.
+              </p>
+            </div>
+
             {/* Add helpful tooltips */}
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex items-center">
