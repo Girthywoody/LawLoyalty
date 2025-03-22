@@ -43,6 +43,7 @@ import {
 
 import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
 
+import PendingEmployeeApprovals from './PendingEmployeeApprovals';
 window.showAppNotification = null;
 
 
@@ -1547,6 +1548,8 @@ if (view === 'completeSignup') {
 
 // MANAGER VIEW
 if (view === 'manager') {
+
+  <PendingEmployeeApprovals currentUser={currentUser} />
 
   const PendingEmployeeApprovals = ({ currentUser }) => {
     const [pendingEmployees, setPendingEmployees] = useState([]);
