@@ -609,14 +609,13 @@ const getRestaurantName = (restaurantId) => {
 };
 
 
-  // Add this effect to handle search filtering
-  useEffect(() => {
-    const filtered = employees.filter(emp => 
-      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredEmployees(filtered);
-  }, [searchTerm, employees]);
+useEffect(() => {
+  const filtered = employees.filter(emp => 
+    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  setFilteredEmployees(filtered);
+}, [searchTerm, employees]);
 
   // REGISTRATION VIEW
 if (view === 'register') {
