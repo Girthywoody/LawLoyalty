@@ -82,7 +82,6 @@ export const createManagerWithRestaurant = async (email, password, name, restaur
   }
 };
 
-
 // Add this function to your firebase.js file
 export const completeRegistration = async (name, password, inviteCode) => {
   try {
@@ -143,7 +142,7 @@ export const completeRegistration = async (name, password, inviteCode) => {
 };
 
 // Modify the sendManagerInvite function to direct to the signup page
-export const sendManagerInvite = async (email, role, senderUid, restaurantId, restaurantName) => {
+export const sendManagerInvite = async (email, role, senderUid, restaurantId) => {
   try {
     // Generate a unique invite code
     const inviteCode = generateUniqueId();
@@ -154,7 +153,6 @@ export const sendManagerInvite = async (email, role, senderUid, restaurantId, re
       role,
       senderUid, // Keep this for tracking, but don't validate against employees
       restaurantId,
-      restaurantName,
       status: 'pending',
       createdAt: new Date(),
       code: inviteCode
@@ -225,37 +223,21 @@ export const getRestaurantName = (restaurantId) => {
   return "Unknown Restaurant";
 };
 
-// Modify the sendEmployeeInvite function to be more robust
-export const sendEmployeeInvite = async (email, role, senderUid, restaurantId, restaurantName) => {
+// Modify the sendEmployeeInvite function to include restaurant assignment
+export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
-    // Try to get the sender's restaurant assignment, but don't fail if sender isn't found
-    let restaurantId = null;
-    let restaurantName = null;
+    // Get the sender's restaurant assignment
+    const employeesRef = collection(db, 'employees');
+    const q = query(employeesRef, where("uid", "==", senderUid));
+    const querySnapshot = await getDocs(q);
     
-    try {
-      const employeesRef = collection(db, 'employees');
-      const q = query(employeesRef, where("uid", "==", senderUid));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const senderData = querySnapshot.docs[0].data();
-        restaurantId = senderData.restaurantId || null;
-        restaurantName = senderData.restaurantName || null;
-      } else {
-        // Alternative approach: try searching by current user's ID as document ID
-        const employeeDoc = await getDoc(doc(db, 'employees', senderUid));
-        if (employeeDoc.exists()) {
-          const senderData = employeeDoc.data();
-          restaurantId = senderData.restaurantId || null;
-          restaurantName = senderData.restaurantName || null;
-        }
-        // If still not found, we'll continue with null restaurantId
-        console.log("Warning: Sender not found in employees database, continuing with null restaurant");
-      }
-    } catch (error) {
-      console.warn("Error finding sender:", error);
-      // Continue with null restaurantId rather than failing
+    if (querySnapshot.empty) {
+      throw new Error('Sender not found in employees database');
     }
+    
+    const senderData = querySnapshot.docs[0].data();
+    const restaurantId = senderData.restaurantId || null;
+    const restaurantName = senderData.restaurantName || null;
     
     // Generate a unique invite code
     const inviteCode = generateUniqueId();
@@ -270,12 +252,12 @@ export const sendEmployeeInvite = async (email, role, senderUid, restaurantId, r
       senderUid: senderUid,
       restaurantId: restaurantId,
       restaurantName: restaurantName,
-      code: inviteCode
+      code: inviteCode // Add the code here
     };
     
     const inviteRef = await addDoc(invitesCollection, inviteData);
     
-    // Generate magic link for email
+    // Generate magic link for email - using the same URL format as manager invites
     const actionCodeSettings = {
       url: `${window.location.origin}/complete-signup?mode=complete&email=${email}&inviteId=${inviteCode}`,
       handleCodeInApp: true

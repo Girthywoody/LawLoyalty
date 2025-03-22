@@ -337,14 +337,8 @@ if (employeeData.jobTitle === 'Admin') {
     try {
       // If the user is a manager, they can only invite to their restaurant
       if (currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
-        // Use the current user's restaurant details
-        await sendEmployeeInvite(
-          inviteEmail, 
-          'Employee', 
-          currentUser.id,
-          currentUser.restaurantId,
-          currentUser.restaurantName
-        );
+        // Use the current user's ID as senderUid and pass the selected role
+        await sendEmployeeInvite(inviteEmail, 'Employee', currentUser.id);
         showNotification(`Invite sent to ${inviteEmail} as Employee for ${currentUser.restaurantName}`, 'success');
       } else if (currentUser.jobTitle === 'Admin') {
         // Admin can invite with custom role and restaurant
@@ -357,29 +351,18 @@ if (employeeData.jobTitle === 'Admin') {
             inviteEmail, 
             'Manager',
             currentUser.id,
-            selectedManagerRestaurant.id,
-            selectedManagerRestaurant.name
+            selectedManagerRestaurant.id
           );
           showNotification(`Manager invite sent to ${inviteEmail} for ${selectedManagerRestaurant.name}`, 'success');
         } else {
-          // For regular employees, use selected restaurant if available
-          if (!selectedManagerRestaurant) {
-            throw new Error('Please select a restaurant for the employee');
-          }
-          
-          await sendEmployeeInvite(
-            inviteEmail, 
-            inviteRole, 
-            currentUser.id,
-            selectedManagerRestaurant.id,
-            selectedManagerRestaurant.name
-          );
-          showNotification(`Invite sent to ${inviteEmail} as ${inviteRole} for ${selectedManagerRestaurant.name}`, 'success');
+          // For employees without a specific restaurant assignment (admin's choice)
+          await sendEmployeeInvite(inviteEmail, inviteRole, currentUser.id);
+          showNotification(`Invite sent to ${inviteEmail} as ${inviteRole}`, 'success');
         }
       }
       
       setInviteEmail('');
-      setInviteSuccess(true);
+      setInviteSuccess(true); // Show success message
       
       // Hide the success message after 5 seconds
       setTimeout(() => {
