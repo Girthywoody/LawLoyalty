@@ -143,7 +143,7 @@ export const completeRegistration = async (name, password, inviteCode) => {
 };
 
 // Modify the sendManagerInvite function to direct to the signup page
-export const sendManagerInvite = async (email, role, senderUid, restaurantId) => {
+export const sendManagerInvite = async (email, role, senderUid, restaurantId, restaurantName) => {
   try {
     // Generate a unique invite code
     const inviteCode = generateUniqueId();
@@ -154,6 +154,7 @@ export const sendManagerInvite = async (email, role, senderUid, restaurantId) =>
       role,
       senderUid, // Keep this for tracking, but don't validate against employees
       restaurantId,
+      restaurantName,
       status: 'pending',
       createdAt: new Date(),
       code: inviteCode
@@ -225,7 +226,7 @@ export const getRestaurantName = (restaurantId) => {
 };
 
 // Modify the sendEmployeeInvite function to be more robust
-export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
+export const sendEmployeeInvite = async (email, role, senderUid, restaurantId, restaurantName) => {
   try {
     // Try to get the sender's restaurant assignment, but don't fail if sender isn't found
     let restaurantId = null;
