@@ -1548,11 +1548,11 @@ if (view === 'completeSignup') {
 // MANAGER VIEW
 if (view === 'manager') {
 
-// Updated PendingEmployeeApprovals component
+// Revised PendingEmployeeApprovals component - no loading state flicker
 const PendingEmployeeApprovals = ({ currentUser }) => {
   const [pendingEmployees, setPendingEmployees] = useState([]);
   const [notification, setNotification] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   
   // Load pending employees only once when component mounts or when currentUser changes
   useEffect(() => {
@@ -1560,14 +1560,11 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
     
     const loadPendingEmployees = async () => {
       if (!currentUser?.restaurantId) {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) setDataLoaded(true);
         return;
       }
       
       try {
-        // Set loading state first
-        if (isMounted) setIsLoading(true);
-        
         const employeesRef = collection(db, 'employees');
         const q = query(
           employeesRef, 
@@ -1582,13 +1579,13 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
             ...doc.data()
           }));
           setPendingEmployees(pendingData);
-          setIsLoading(false);
+          setDataLoaded(true);
         }
       } catch (error) {
         console.error("Error loading pending employees:", error);
         if (isMounted) {
           showNotification("Failed to load pending employees", "error");
-          setIsLoading(false);
+          setDataLoaded(true);
         }
       }
     };
@@ -1599,7 +1596,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
     return () => {
       isMounted = false;
     };
-  }, [currentUser?.restaurantId]); // Only depend on restaurantId
+  }, [currentUser?.restaurantId]);
 
   // Approve an employee
   const handleApprove = async (employeeId) => {
@@ -1643,29 +1640,16 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
     }, 3000);
   };
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6 animate-pulse">
-        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">
-            Loading Pending Applications...
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Please wait while we check for pending approvals
-          </p>
-        </div>
-        <div className="p-6 flex justify-center">
-          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
+  // Don't render anything until data is loaded
+  if (!dataLoaded) {
+    return null;
   }
 
+  // Only render the component after data is loaded
   // If no pending employees, show a simple message
   if (pendingEmployees.length === 0) {
     return (
-      <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6 transition-all duration-300 ease-in-out">
+      <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
         <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
           <h3 className="text-lg font-medium leading-6 text-gray-900">
             Pending Applications
@@ -1682,7 +1666,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
   }
 
   return (
-    <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6 transition-all duration-300 ease-in-out">
+    <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
       {notification && <Notification message={notification.message} type={notification.type} />}
       <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
         <h3 className="text-lg font-medium leading-6 text-gray-900">
