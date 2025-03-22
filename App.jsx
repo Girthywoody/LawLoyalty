@@ -1553,12 +1553,10 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
   const [pendingEmployees, setPendingEmployees] = useState([]);
   const [notification, setNotification] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
   
-  // Load pending employees on mount and when refresh is clicked
+  // Load pending employees only when refresh is clicked
   const loadPendingEmployees = async () => {
     if (!currentUser?.restaurantId) {
-      setInitialLoadDone(true);
       return;
     }
     
@@ -1579,11 +1577,12 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
       }));
       
       setPendingEmployees(pendingData);
-      setInitialLoadDone(true);
       setIsRefreshing(false);
       
       if (pendingData.length > 0) {
         showNotification(`Found ${pendingData.length} pending application(s)`, "info");
+      } else {
+        showNotification("No pending applications found", "info");
       }
     } catch (error) {
       console.error("Error loading pending employees:", error);
@@ -1591,13 +1590,14 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
       setIsRefreshing(false);
     }
   };
-  
-  // Initial load on mount
-  useEffect(() => {
-    if (!initialLoadDone) {
-      loadPendingEmployees();
-    }
-  }, [currentUser?.restaurantId, initialLoadDone]);
+
+  // Show notification
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
 
   // Approve an employee
   const handleApprove = async (employeeId) => {
@@ -1633,14 +1633,6 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
     }
   };
 
-  // Show notification
-  const showNotification = (message, type = 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => {
-      setNotification(null);
-    }, 3000);
-  };
-
   // Render with refresh button
   return (
     <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
@@ -1652,7 +1644,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
             Pending Applications
           </h3>
           <p className="mt-1 text-sm text-gray-500">
-            Review new employee applications
+            Click refresh to check for new applications
           </p>
         </div>
         <button 
@@ -1673,19 +1665,15 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Refresh
+              Check for Applications
             </>
           )}
         </button>
       </div>
       
-      {!initialLoadDone ? (
+      {pendingEmployees.length === 0 ? (
         <div className="p-6 text-center text-gray-500">
-          Loading applications...
-        </div>
-      ) : pendingEmployees.length === 0 ? (
-        <div className="p-6 text-center text-gray-500">
-          No pending applications at this time.
+          Click the refresh button to check for pending applications.
         </div>
       ) : (
         <div className="overflow-x-auto">
