@@ -1554,7 +1554,6 @@ if (view === 'manager') {
 // Add this component inside the manager view
 const PendingEmployeeApprovals = ({ currentUser }) => {
   const [pendingEmployees, setPendingEmployees] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState(null);
 
   // Load pending employees for the current manager's restaurant
@@ -1562,7 +1561,6 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
     const loadPendingEmployees = async () => {
       if (!currentUser || !currentUser.restaurantId) return;
       
-      setIsLoading(true);
       try {
         const employeesRef = collection(db, 'employees');
         const q = query(
@@ -1581,8 +1579,6 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
       } catch (error) {
         console.error("Error loading pending employees:", error);
         showNotification("Failed to load pending employees", "error");
-      } finally {
-        setIsLoading(false);
       }
     };
     
@@ -1637,7 +1633,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
     }, 3000);
   };
 
-  if (pendingEmployees.length === 0 && !isLoading) {
+  if (pendingEmployees.length === 0) {
     return (
       <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
         <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
@@ -1684,59 +1680,46 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading ? (
-              <tr>
-                <td colSpan="4" className="px-6 py-4 text-center">
-                  <div className="flex justify-center">
-                    <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+            {pendingEmployees.map(employee => (
+              <tr key={employee.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                      <User size={14} className="text-indigo-600" />
+                    </div>
+                    <div className="ml-3">
+                      <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                    </div>
                   </div>
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {employee.email}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {employee.createdAt?.toDate
+                    ? employee.createdAt.toDate().toLocaleDateString()
+                    : new Date(employee.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    onClick={() => handleApprove(employee.id)}
+                    className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md mr-2"
+                    aria-label="Approve employee"
+                  >
+                    <CheckCircle size={14} className="inline mr-1" />
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleDecline(employee.id)}
+                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md"
+                    aria-label="Decline employee"
+                  >
+                    <XCircle size={14} className="inline mr-1" />
+                    Decline
+                  </button>
+                </td>
               </tr>
-            ) : (
-              pendingEmployees.map(employee => (
-                <tr key={employee.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <User size={14} className="text-indigo-600" />
-                      </div>
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">{employee.name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {employee.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {employee.createdAt?.toDate
-                      ? employee.createdAt.toDate().toLocaleDateString()
-                      : new Date(employee.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleApprove(employee.id)}
-                      className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md mr-2"
-                      aria-label="Approve employee"
-                    >
-                      <CheckCircle size={14} className="inline mr-1" />
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleDecline(employee.id)}
-                      className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md"
-                      aria-label="Decline employee"
-                    >
-                      <XCircle size={14} className="inline mr-1" />
-                      Decline
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>
