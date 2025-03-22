@@ -1,24 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createUser, addEmployee } from './firebase';
-import { User, Shield, CheckCircle, XCircle, Mail, Coffee } from 'lucide-react';
+import { createUser, addEmployee, collection, getDocs, db } from './firebase';
+import { User, Shield, CheckCircle, XCircle, Mail, Coffee, Store } from 'lucide-react';
 
 const PublicSignup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [selectedRestaurant, setSelectedRestaurant] = useState('');
+  const [restaurants, setRestaurants] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   
   const navigate = useNavigate();
+
+  // Fetch restaurants for dropdown
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        // Using predefined restaurants from App.jsx for consistency
+        const RESTAURANTS = [
+          { id: "montanas", name: "Montana's", discount: "20%" },
+          { id: "kelseys", name: "Kelsey's", discount: "20%" },
+          { id: "coras", name: "Cora's Breakfast", discount: "10%" },
+          { id: "js-roadhouse", name: "J's Roadhouse", discount: "20%" },
+          { id: "swiss-chalet", name: "Swiss Chalet", discount: "20%" },
+          {
+            id: "overtime-bar",
+            name: "Overtime Bar",
+            discount: "20%",
+            locations: [
+              { id: "overtime-sudbury", name: "Sudbury" },
+              { id: "overtime-val-caron", name: "Val Caron" },
+              { id: "overtime-chelmsford", name: "Chelmsford" }
+            ]
+          },
+          { id: "lot-88", name: "Lot 88 Steakhouse", discount: "20%" },
+          { id: "poke-bar", name: "Poke Bar", discount: "20%" },
+          {
+            id: "happy-life",
+            name: "Happy Life",
+            discount: "10%",
+            locations: [
+              { id: "happy-life-kingsway", name: "Kingsway" },
+              { id: "happy-life-val-caron", name: "Val Caron" },
+              { id: "happy-life-chelmsford", name: "Chelmsford" }
+            ]
+          }
+        ];
+        
+        setRestaurants(RESTAURANTS);
+      } catch (err) {
+        console.error("Error fetching restaurants:", err);
+        setError("Failed to load restaurants. Please try again later.");
+      }
+    };
+
+    fetchRestaurants();
+  }, []);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill in all fields');
+    if (!name || !email || !password || !confirmPassword || !selectedRestaurant) {
+      setError('Please fill in all fields and select a restaurant');
       return;
     }
     
@@ -31,15 +78,23 @@ const PublicSignup = () => {
     setError('');
     
     try {
+      // Get restaurant details
+      const restaurantParts = selectedRestaurant.split('|');
+      const restaurantId = restaurantParts[0];
+      const restaurantName = restaurantParts[1];
+      
       // Create the user in Firebase Auth
       const user = await createUser(email, password);
       
-      // Add user to Firestore with Employee role
+      // Add user to Firestore with pending status
       await addEmployee({
         name: name,
         email: email,
         jobTitle: 'Employee', // Default to Employee role
         discount: 20, // Default discount
+        restaurantId: restaurantId,
+        restaurantName: restaurantName,
+        status: 'pending', // Add pending status
         createdAt: new Date(),
         updatedAt: new Date(),
         uid: user.uid
@@ -51,7 +106,7 @@ const PublicSignup = () => {
       // Navigate to the login page after successful registration (with a delay)
       setTimeout(() => {
         navigate('/');
-      }, 3000);
+      }, 5000);
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.message || 'Failed to create account. Please try again.');
@@ -71,14 +126,14 @@ const PublicSignup = () => {
                 <CheckCircle size={36} className="text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-800">Registration Complete!</h1>
-            <p className="mt-2 text-gray-500">Your account has been successfully created</p>
+            <h1 className="text-3xl font-bold text-gray-800">Registration Submitted!</h1>
+            <p className="mt-2 text-gray-500">Your account is pending approval</p>
           </div>
           
           <div className="bg-green-50 p-6 rounded-lg border border-green-100 mt-6">
-            <p className="text-green-700 font-medium mb-2">Your registration has been submitted!</p>
+            <p className="text-green-700 font-medium mb-2">Thank you for registering!</p>
             <p className="text-green-600 text-sm">
-              You can now log in with your credentials. A manager will need to assign you to a restaurant before you can access restaurant-specific features.
+              Your registration has been submitted to the restaurant manager for approval. You'll be notified by email once your account is approved. Please check your email inbox (including spam folders) for updates.
             </p>
           </div>
           
@@ -139,6 +194,49 @@ const PublicSignup = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-1">Select Restaurant</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Store size={18} className="text-gray-400" />
+                </div>
+                <select
+                  id="restaurant"
+                  name="restaurant"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  value={selectedRestaurant}
+                  onChange={(e) => setSelectedRestaurant(e.target.value)}
+                >
+                  <option value="">Select your restaurant</option>
+                  {restaurants.map(restaurant => {
+                    if (restaurant.locations) {
+                      return (
+                        <optgroup key={restaurant.id} label={restaurant.name}>
+                          {restaurant.locations.map(location => (
+                            <option 
+                              key={location.id} 
+                              value={`${location.id}|${restaurant.name} - ${location.name}`}
+                            >
+                              {restaurant.name} - {location.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      );
+                    } else {
+                      return (
+                        <option 
+                          key={restaurant.id} 
+                          value={`${restaurant.id}|${restaurant.name}`}
+                        >
+                          {restaurant.name}
+                        </option>
+                      );
+                    }
+                  })}
+                </select>
               </div>
             </div>
             <div>

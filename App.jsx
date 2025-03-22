@@ -235,7 +235,7 @@ const RestaurantLoyaltyApp = () => {
     });
   };
 
-// Make sure isLoading is properly reset if there's an error during login
+// Replace or update the handleLogin function in App.jsx
 const handleLogin = async (e) => {
   e.preventDefault();
   
@@ -266,28 +266,34 @@ const handleLogin = async (e) => {
     // Get the employee data
     const employeeData = querySnapshot.docs[0].data();
     
-    // Set current user from Firebase response and Firestore data
-// Set current user from Firebase response and Firestore data
-setCurrentUser({
-  id: user.uid,
-  name: employeeData.name || user.displayName || email,
-  email: user.email,
-  jobTitle: employeeData.jobTitle || 'Employee',
-  discount: employeeData.discount || 20,
-  restaurantId: employeeData.restaurantId || null,
-  restaurantName: employeeData.restaurantName || null
-});
-
-// Navigate to the appropriate view based on role
-if (employeeData.jobTitle === 'Admin') {
-  setView('admin');
-} else if (employeeData.jobTitle === 'Manager') {
-  setView('manager');
-} else {
-  setView('employee');
-}
+    // Check if the user has been approved
+    if (employeeData.status === 'pending') {
+      throw new Error('Your account is still pending approval from the restaurant manager.');
+    }
     
+    if (employeeData.status === 'rejected') {
+      throw new Error('Your application has been declined. Please contact the restaurant manager for more information.');
+    }
+    
+    // Set current user from Firebase response and Firestore data
+    setCurrentUser({
+      id: user.uid,
+      name: employeeData.name || user.displayName || email,
+      email: user.email,
+      jobTitle: employeeData.jobTitle || 'Employee',
+      discount: employeeData.discount || 20,
+      restaurantId: employeeData.restaurantId || null,
+      restaurantName: employeeData.restaurantName || null
+    });
 
+    // Navigate to the appropriate view based on role
+    if (employeeData.jobTitle === 'Admin') {
+      setView('admin');
+    } else if (employeeData.jobTitle === 'Manager') {
+      setView('manager');
+    } else {
+      setView('employee');
+    }
     
     showNotification('Login successful', 'success');
   } catch (error) {
@@ -611,8 +617,11 @@ const getRestaurantName = (restaurantId) => {
 
 useEffect(() => {
   const filtered = employees.filter(emp => 
-    (emp.name && emp.name.toLowerCase().includes(searchTerm.toLowerCase())) || 
-    (emp.jobTitle && emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()))
+    // Add null checks for name and jobTitle
+    ((emp.name && emp.name.toLowerCase().includes(searchTerm.toLowerCase())) || 
+    (emp.jobTitle && emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()))) &&
+    // Only show approved or undefined status (for backward compatibility)
+    (emp.status === 'approved' || emp.status === undefined)
   );
   setFilteredEmployees(filtered);
 }, [searchTerm, employees]);
@@ -1538,6 +1547,205 @@ if (view === 'completeSignup') {
 
 // MANAGER VIEW
 if (view === 'manager') {
+
+  // Add this to the App.jsx file in the manager view section
+// Find the section for the manager dashboard, likely around line 4600-4800
+
+// Add this component inside the manager view
+const PendingEmployeeApprovals = ({ currentUser }) => {
+  const [pendingEmployees, setPendingEmployees] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  // Load pending employees for the current manager's restaurant
+  useEffect(() => {
+    const loadPendingEmployees = async () => {
+      if (!currentUser || !currentUser.restaurantId) return;
+      
+      setIsLoading(true);
+      try {
+        const employeesRef = collection(db, 'employees');
+        const q = query(
+          employeesRef, 
+          where("restaurantId", "==", currentUser.restaurantId),
+          where("status", "==", "pending")
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const pendingData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        setPendingEmployees(pendingData);
+      } catch (error) {
+        console.error("Error loading pending employees:", error);
+        showNotification("Failed to load pending employees", "error");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadPendingEmployees();
+  }, [currentUser]);
+
+  // Approve an employee
+  const handleApprove = async (employeeId) => {
+    setIsLoading(true);
+    try {
+      await updateEmployee(employeeId, {
+        status: 'approved',
+        updatedAt: new Date()
+      });
+      
+      // Remove from the list
+      setPendingEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+      showNotification("Employee approved successfully", "success");
+    } catch (error) {
+      console.error("Error approving employee:", error);
+      showNotification("Failed to approve employee", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Decline/reject an employee
+  const handleDecline = async (employeeId) => {
+    setIsLoading(true);
+    try {
+      await updateEmployee(employeeId, {
+        status: 'rejected',
+        updatedAt: new Date()
+      });
+      
+      // Remove from the list
+      setPendingEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+      showNotification("Employee application declined", "success");
+    } catch (error) {
+      console.error("Error declining employee:", error);
+      showNotification("Failed to decline employee", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Show notification
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
+
+  if (pendingEmployees.length === 0 && !isLoading) {
+    return (
+      <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+          <h3 className="text-lg font-medium leading-6 text-gray-900">
+            Pending Applications
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Review new employee applications
+          </p>
+        </div>
+        <div className="p-6 text-center text-gray-500">
+          No pending applications at this time.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+      <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <h3 className="text-lg font-medium leading-6 text-gray-900">
+          Pending Applications
+        </h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Review new employee applications for approval
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Name
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Email
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date Applied
+              </th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {isLoading ? (
+              <tr>
+                <td colSpan="4" className="px-6 py-4 text-center">
+                  <div className="flex justify-center">
+                    <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              pendingEmployees.map(employee => (
+                <tr key={employee.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <User size={14} className="text-indigo-600" />
+                      </div>
+                      <div className="ml-3">
+                        <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {employee.email}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {employee.createdAt?.toDate
+                      ? employee.createdAt.toDate().toLocaleDateString()
+                      : new Date(employee.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleApprove(employee.id)}
+                      className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md mr-2"
+                      aria-label="Approve employee"
+                    >
+                      <CheckCircle size={14} className="inline mr-1" />
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleDecline(employee.id)}
+                      className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md"
+                      aria-label="Decline employee"
+                    >
+                      <XCircle size={14} className="inline mr-1" />
+                      Decline
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// To add this component to the manager view, insert this line right after the restaurant info card:
+// <PendingEmployeeApprovals currentUser={currentUser} />
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {notification && <Notification message={notification.message} type={notification.type} />}
@@ -1582,6 +1790,8 @@ if (view === 'manager') {
             <UserProfileBadge user={currentUser} />
           </div>
         </div>
+          
+        <PendingEmployeeApprovals currentUser={currentUser} />
 
         {/* Invite employee form - only for this restaurant */}
         <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
