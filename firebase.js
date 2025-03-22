@@ -226,33 +226,34 @@ export const getRestaurantName = (restaurantId) => {
 // Modify the sendEmployeeInvite function to include restaurant assignment
 export const sendEmployeeInvite = async (email, role = 'Employee', senderUid) => {
   try {
-    // Get the sender's restaurant assignment
+    let restaurantId = null;
+    let restaurantName = null;
+    
+    // Try to get sender's restaurant info
     const employeesRef = collection(db, 'employees');
     const q = query(employeesRef, where("uid", "==", senderUid));
     const querySnapshot = await getDocs(q);
     
-    if (querySnapshot.empty) {
-      throw new Error('Sender not found in employees database');
+    if (!querySnapshot.empty) {
+      const senderData = querySnapshot.docs[0].data();
+      restaurantId = senderData.restaurantId || null;
+      restaurantName = senderData.restaurantName || null;
     }
-    
-    const senderData = querySnapshot.docs[0].data();
-    const restaurantId = senderData.restaurantId || null;
-    const restaurantName = senderData.restaurantName || null;
     
     // Generate a unique invite code
     const inviteCode = generateUniqueId();
     
-    // Create the invite record with restaurant info
+    // Create the invite record
     const inviteData = {
       email: email,
       role: role,
       status: 'pending',
       sentAt: new Date(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       senderUid: senderUid,
       restaurantId: restaurantId,
       restaurantName: restaurantName,
-      code: inviteCode // Add the code here
+      code: inviteCode
     };
     
     const inviteRef = await addDoc(invitesCollection, inviteData);
