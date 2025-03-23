@@ -177,7 +177,6 @@ const RestaurantLoyaltyApp = () => {
     // Only load employees if we're in manager or admin view
     if (view === 'manager' || view === 'admin') {
       loadEmployees();
-      <PendingEmployeeApprovals currentUser={currentUser} />
 
     }
   }, [view, currentUser]);
@@ -750,6 +749,9 @@ if (view === 'register') {
 
 // ADMIN VIEW
 if (view === 'admin') {
+
+  <PendingEmployeeApprovals currentUser={currentUser} />
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {notification && <Notification message={notification.message} type={notification.type} />}
