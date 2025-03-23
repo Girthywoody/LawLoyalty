@@ -780,6 +780,9 @@ if (view === 'admin') {
         </div>
       </header>
 
+      <PendingEmployeeApprovals currentUser={currentUser} />
+
+
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
         {/* User Management Panel */}
@@ -793,7 +796,6 @@ if (view === 'admin') {
             </p>
           </div>
 
-          <PendingEmployeeApprovals currentUser={currentUser} />
 
           
           <div className="px-6 py-5">
@@ -1104,7 +1106,7 @@ if (view === 'admin') {
               <img src="/logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-800">Restaurant Loyalty</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Law Loyalty</h1>
             <p className="mt-2 text-gray-500">Employee Discount System</p>
           </div>
           
