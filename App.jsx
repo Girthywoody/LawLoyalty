@@ -179,6 +179,9 @@ const RestaurantLoyaltyApp = () => {
       loadEmployees();
     }
   }, [view, currentUser]);
+  
+  <PendingEmployeeApprovals currentUser={currentUser} />
+
 
   const handleCompleteSignup = async (e) => {
     e.preventDefault();
