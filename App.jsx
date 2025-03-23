@@ -792,6 +792,9 @@ if (view === 'admin') {
               Add new users and assign them to restaurants
             </p>
           </div>
+
+          <PendingEmployeeApprovals currentUser={currentUser} />
+
           
           <div className="px-6 py-5">
             <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-12">
@@ -1557,8 +1560,7 @@ if (view === 'manager') {
 
   <PendingEmployeeApprovals currentUser={currentUser} />
 
-// To add this component to the manager view, insert this line right after the restaurant info card:
-// <PendingEmployeeApprovals currentUser={currentUser} />
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {notification && <Notification message={notification.message} type={notification.type} />}
