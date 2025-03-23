@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUser, addEmployee, collection, getDocs, db } from './firebase';
-import { User, Shield, CheckCircle, XCircle, Mail, Coffee, Store } from 'lucide-react';
+import { User, Shield, CheckCircle, XCircle, Mail, Coffee, Store, ChevronDown } from 'lucide-react';
 
 const PublicSignup = () => {
   const [name, setName] = useState('');
@@ -13,8 +13,26 @@ const PublicSignup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showRestaurantDropdown, setShowRestaurantDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRestaurantName, setSelectedRestaurantName] = useState('Select your restaurant');
   
   const navigate = useNavigate();
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdownElement = document.getElementById('restaurant-dropdown');
+      if (dropdownElement && !dropdownElement.contains(event.target)) {
+        setShowRestaurantDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch restaurants for dropdown
   useEffect(() => {
@@ -60,6 +78,24 @@ const PublicSignup = () => {
 
     fetchRestaurants();
   }, []);
+  
+  const handleSelectRestaurant = (restaurantId, displayName) => {
+    setSelectedRestaurant(restaurantId);
+    setSelectedRestaurantName(displayName);
+    setShowRestaurantDropdown(false);
+    setSearchQuery('');
+  };
+  
+  const filteredRestaurants = () => {
+    if (!searchQuery) return restaurants;
+    
+    return restaurants.filter(restaurant => 
+      restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (restaurant.locations && restaurant.locations.some(location => 
+        `${restaurant.name} - ${location.name}`.toLowerCase().includes(searchQuery.toLowerCase())
+      ))
+    );
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -122,8 +158,8 @@ const PublicSignup = () => {
         <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
           <div className="text-center">
             <div className="flex justify-center">
-              <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4">
-                <img src="logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-4 shadow-lg">
+                <CheckCircle size={36} className="text-white" />
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-800">Registration Submitted!</h1>
@@ -147,19 +183,19 @@ const PublicSignup = () => {
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+      <div className="w-full max-w-md p-6 sm:p-8 space-y-6 sm:space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
         <div className="text-center">
           <div className="flex justify-center">
-            <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4">
-              <img src="logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+              <img src="logo.jpg" alt="Restaurant Logo" className="h-16 w-16 sm:h-20 sm:w-20 object-contain" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">Create Your Account</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Create Your Account</h1>
           <p className="mt-2 text-gray-500">Sign up to access employee discounts</p>
         </div>
         
-        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-5">
+        <form className="mt-4 sm:mt-6 space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4 sm:space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Your Full Name</label>
               <div className="relative">
@@ -196,49 +232,96 @@ const PublicSignup = () => {
                 />
               </div>
             </div>
-            <div>
+            
+            {/* Enhanced Mobile-Friendly Restaurant Dropdown */}
+            <div className="relative" id="restaurant-dropdown">
               <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-1">Select Restaurant</label>
-              <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowRestaurantDropdown(!showRestaurantDropdown)}
+                className="w-full flex items-center justify-between pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white transition-colors"
+                aria-haspopup="listbox"
+                aria-expanded={showRestaurantDropdown}
+              >
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Store size={18} className="text-gray-400" />
                 </div>
-                <select
-                  id="restaurant"
-                  name="restaurant"
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  value={selectedRestaurant}
-                  onChange={(e) => setSelectedRestaurant(e.target.value)}
-                >
-                  <option value="">Select your restaurant</option>
-                  {restaurants.map(restaurant => {
-                    if (restaurant.locations) {
-                      return (
-                        <optgroup key={restaurant.id} label={restaurant.name}>
-                          {restaurant.locations.map(location => (
-                            <option 
-                              key={location.id} 
-                              value={`${location.id}|${restaurant.name} - ${location.name}`}
+                <span className={`text-left truncate ${selectedRestaurant ? 'text-gray-900' : 'text-gray-500'}`}>
+                  {selectedRestaurantName}
+                </span>
+                <ChevronDown 
+                  size={18} 
+                  className={`text-gray-400 transition-transform duration-200 ${showRestaurantDropdown ? 'transform rotate-180' : ''}`} 
+                />
+              </button>
+              
+              {showRestaurantDropdown && (
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="p-2 border-b border-gray-200">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Search restaurants..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto max-h-52">
+                    {filteredRestaurants().length === 0 ? (
+                      <div className="p-4 text-sm text-gray-500 text-center">
+                        No restaurants match your search
+                      </div>
+                    ) : (
+                      filteredRestaurants().map(restaurant => (
+                        <div key={restaurant.id} className="px-1 py-1">
+                          {!restaurant.locations ? (
+                            <button
+                              type="button"
+                              className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2"
+                              onClick={() => handleSelectRestaurant(`${restaurant.id}|${restaurant.name}`, restaurant.name)}
                             >
-                              {restaurant.name} - {location.name}
-                            </option>
-                          ))}
-                        </optgroup>
-                      );
-                    } else {
-                      return (
-                        <option 
-                          key={restaurant.id} 
-                          value={`${restaurant.id}|${restaurant.name}`}
-                        >
-                          {restaurant.name}
-                        </option>
-                      );
-                    }
-                  })}
-                </select>
-              </div>
+                              <Store size={16} className="text-indigo-600 flex-shrink-0" />
+                              <div>
+                                <div className="font-medium text-gray-900">{restaurant.name}</div>
+                                <div className="text-xs text-gray-500">Discount: {restaurant.discount}</div>
+                              </div>
+                            </button>
+                          ) : (
+                            <>
+                              <div className="px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-md mx-2">
+                                {restaurant.name}
+                              </div>
+                              <div className="ml-4 mt-1 space-y-1">
+                                {restaurant.locations.map(location => (
+                                  <button
+                                    key={location.id}
+                                    type="button"
+                                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2"
+                                    onClick={() => handleSelectRestaurant(
+                                      `${location.id}|${restaurant.name} - ${location.name}`,
+                                      `${restaurant.name} - ${location.name}`
+                                    )}
+                                  >
+                                    <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
+                                    <div>
+                                      <div className="font-medium text-gray-900">{location.name}</div>
+                                      <div className="text-xs text-gray-500">Discount: {restaurant.discount}</div>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+            
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Create Password</label>
               <div className="relative">
@@ -305,7 +388,7 @@ const PublicSignup = () => {
           </div>
         </form>
         
-        <div className="mt-6 text-center">
+        <div className="mt-4 sm:mt-6 text-center">
           <button 
             className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
             onClick={() => navigate('/')}
@@ -314,7 +397,7 @@ const PublicSignup = () => {
           </button>
         </div>
         
-        <div className="text-center text-sm text-gray-500 mt-4">
+        <div className="text-center text-sm text-gray-500 mt-2 sm:mt-4">
           <p>By creating an account, you'll get access to exclusive employee discounts at all participating restaurants after approval!</p>
         </div>
       </div>
