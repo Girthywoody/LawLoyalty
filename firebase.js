@@ -485,3 +485,102 @@ export const subscribeToRestaurants = (callback) => {
   });
 };
 
+
+// Assign a restaurant to a manager
+export const assignRestaurantToManager = async (managerId, restaurantId, adminId) => {
+  try {
+    const employeeDoc = doc(db, 'employees', managerId);
+    
+    // Get current employee data
+    const employeeSnap = await getDoc(employeeDoc);
+    if (!employeeSnap.exists()) {
+      throw new Error('Manager not found');
+    }
+    
+    const employeeData = employeeSnap.data();
+    
+    // Create or update the managedRestaurants array
+    const managedRestaurants = employeeData.managedRestaurants || [];
+    
+    // Only add if not already assigned
+    if (!managedRestaurants.includes(restaurantId)) {
+      managedRestaurants.push(restaurantId);
+    }
+    
+    // Update the employee document
+    await updateDoc(employeeDoc, {
+      managedRestaurants: managedRestaurants,
+      jobTitle: 'General Manager', // Upgrade to General Manager
+      updatedAt: new Date(),
+      updatedBy: adminId
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Error assigning restaurant to manager:", error);
+    throw error;
+  }
+};
+
+// Remove a restaurant from a manager
+export const removeRestaurantFromManager = async (managerId, restaurantId) => {
+  try {
+    const employeeDoc = doc(db, 'employees', managerId);
+    
+    // Get current employee data
+    const employeeSnap = await getDoc(employeeDoc);
+    if (!employeeSnap.exists()) {
+      throw new Error('Manager not found');
+    }
+    
+    const employeeData = employeeSnap.data();
+    
+    // Remove restaurant from the managedRestaurants array
+    const managedRestaurants = employeeData.managedRestaurants || [];
+    const updatedRestaurants = managedRestaurants.filter(id => id !== restaurantId);
+    
+    const updateData = {
+      managedRestaurants: updatedRestaurants,
+      updatedAt: new Date()
+    };
+    
+    // If no restaurants left, downgrade to regular Manager
+    if (updatedRestaurants.length === 0) {
+      updateData.jobTitle = 'Manager';
+    }
+    
+    // Update the employee document
+    await updateDoc(employeeDoc, updateData);
+    
+    return true;
+  } catch (error) {
+    console.error("Error removing restaurant from manager:", error);
+    throw error;
+  }
+};
+
+// Add this function to let General Managers fetch employees from all their assigned restaurants
+export const getEmployeesForGeneralManager = async (managedRestaurantIds) => {
+  try {
+    // Create an array to hold all employees
+    let allEmployees = [];
+    
+    // For each managed restaurant, fetch its employees
+    for (const restaurantId of managedRestaurantIds) {
+      const q = query(collection(db, 'employees'), where("restaurantId", "==", restaurantId));
+      const querySnapshot = await getDocs(q);
+      
+      const restaurantEmployees = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      allEmployees = [...allEmployees, ...restaurantEmployees];
+    }
+    
+    return allEmployees;
+  } catch (error) {
+    console.error("Error fetching employees for general manager:", error);
+    throw error;
+  }
+};

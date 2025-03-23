@@ -43,6 +43,9 @@ import {
 
 import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
 
+import GeneralManagerManagement from './GeneralManagerManagement';
+import RestaurantSelector from './RestaurantSelector';
+
 import PendingEmployeeApprovals from './PendingEmployeeApprovals';
 window.showAppNotification = null;
 
@@ -81,6 +84,8 @@ const RestaurantLoyaltyApp = () => {
   const [inviteDetails, setInviteDetails] = useState(null);
   const [selectedManagerRestaurant, setSelectedManagerRestaurant] = useState(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [activeRestaurant, setActiveRestaurant] = useState(null);
+
   
 
   // Data
@@ -141,22 +146,32 @@ const RestaurantLoyaltyApp = () => {
     const loadEmployees = async () => {
       setIsLoading(true);
       
-      // Set up the appropriate listener based on user role
       let unsubscribe;
       
       if (currentUser && currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
-        // Restaurant manager - only see employees from their restaurant
+        // Regular manager - only see employees from their restaurant
         unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
-          // Filter out any managers/admins unless the user is an admin
           const filteredData = employeesData.filter(emp => 
             emp.jobTitle === 'Employee' || 
-            emp.id === currentUser.id // Always include the current user
+            emp.id === currentUser.id
           );
           
           setEmployees(filteredData);
           setFilteredEmployees(filteredData);
           setIsLoading(false);
         }, currentUser.restaurantId);
+      } else if (currentUser && currentUser.jobTitle === 'General Manager' && activeRestaurant) {
+        // General manager - see employees for the currently selected restaurant
+        unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
+          const filteredData = employeesData.filter(emp => 
+            emp.jobTitle === 'Employee' || 
+            emp.id === currentUser.id
+          );
+          
+          setEmployees(filteredData);
+          setFilteredEmployees(filteredData);
+          setIsLoading(false);
+        }, activeRestaurant.id);
       } else if (currentUser && currentUser.jobTitle === 'Admin') {
         // Admin - see all employees
         unsubscribe = subscribeToEmployees((employeesData) => {
@@ -166,7 +181,6 @@ const RestaurantLoyaltyApp = () => {
         });
       }
       
-      // Clean up listener when component unmounts
       return () => {
         if (unsubscribe) {
           unsubscribe();
@@ -174,13 +188,10 @@ const RestaurantLoyaltyApp = () => {
       };
     };
     
-    // Only load employees if we're in manager or admin view
     if (view === 'manager' || view === 'admin') {
       loadEmployees();
-
     }
-  }, [view, currentUser]);
-  
+  }, [view, currentUser, activeRestaurant]);
 
 
   const handleCompleteSignup = async (e) => {
@@ -241,7 +252,7 @@ const RestaurantLoyaltyApp = () => {
     });
   };
 
-// Replace or update the handleLogin function in App.jsx
+// Update the handleLogin function
 const handleLogin = async (e) => {
   e.preventDefault();
   
@@ -281,8 +292,8 @@ const handleLogin = async (e) => {
       throw new Error('Your application has been declined. Please contact the restaurant manager for more information.');
     }
     
-    // Set current user from Firebase response and Firestore data
-    setCurrentUser({
+    // Build the current user object
+    const currentUserData = {
       id: user.uid,
       name: employeeData.name || user.displayName || email,
       email: user.email,
@@ -290,12 +301,19 @@ const handleLogin = async (e) => {
       discount: employeeData.discount || 20,
       restaurantId: employeeData.restaurantId || null,
       restaurantName: employeeData.restaurantName || null
-    });
+    };
+    
+    // Add managed restaurants for general managers
+    if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
+      currentUserData.managedRestaurants = employeeData.managedRestaurants;
+    }
+    
+    setCurrentUser(currentUserData);
 
     // Navigate to the appropriate view based on role
     if (employeeData.jobTitle === 'Admin') {
       setView('admin');
-    } else if (employeeData.jobTitle === 'Manager') {
+    } else if (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager') {
       setView('manager');
     } else {
       setView('employee');
@@ -309,6 +327,7 @@ const handleLogin = async (e) => {
     setIsLoading(false);
   }
 };
+
 
   // Handle logout
   const handleLogout = async () => {
@@ -506,40 +525,45 @@ const handleRegister = async (e) => {
     setIsEditingEmployee(true);
   };
   
-  const saveEmployeeEditToFirebase = async () => {
-    if (editEmployee && editEmployee.id) {
-      try {
-        setIsLoading(true);
-        
-        // Create an update object with all necessary fields
-        const updateData = {
-          name: editEmployee.name,
-          email: editEmployee.email,
-          jobTitle: editEmployee.jobTitle,
-          discount: parseInt(editEmployee.discount) || 0,
-          updatedAt: new Date()
-        };
-        
-        // Preserve restaurant assignment if it exists
-        if (editEmployee.restaurantId) {
-          updateData.restaurantId = editEmployee.restaurantId;
-          updateData.restaurantName = editEmployee.restaurantName;
-        }
-        
-        // Update in Firebase
-        await updateEmployee(editEmployee.id, updateData);
-        
-        setIsEditingEmployee(false);
-        setEditEmployee(null);
-        showNotification('Employee updated successfully!', 'success');
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error updating employee:", error);
-        showNotification("Failed to update employee", "error");
-        setIsLoading(false);
+// Update the saveEmployeeEditToFirebase function
+const saveEmployeeEditToFirebase = async () => {
+  if (editEmployee && editEmployee.id) {
+    try {
+      setIsLoading(true);
+      
+      // Create an update object with all necessary fields
+      const updateData = {
+        name: editEmployee.name,
+        email: editEmployee.email,
+        jobTitle: editEmployee.jobTitle,
+        updatedAt: new Date()
+      };
+      
+      // Only admins can update the discount
+      if (currentUser.jobTitle === 'Admin') {
+        updateData.discount = parseInt(editEmployee.discount) || 0;
       }
+      
+      // Preserve restaurant assignment if it exists
+      if (editEmployee.restaurantId) {
+        updateData.restaurantId = editEmployee.restaurantId;
+        updateData.restaurantName = editEmployee.restaurantName;
+      }
+      
+      // Update in Firebase
+      await updateEmployee(editEmployee.id, updateData);
+      
+      setIsEditingEmployee(false);
+      setEditEmployee(null);
+      showNotification('Employee updated successfully!', 'success');
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      showNotification("Failed to update employee", "error");
+      setIsLoading(false);
     }
-  };
+  }
+};
   
   // Cancel employee edit
   const cancelEdit = () => {
@@ -752,6 +776,8 @@ if (view === 'admin') {
 
   <PendingEmployeeApprovals currentUser={currentUser} />
 
+
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {notification && <Notification message={notification.message} type={notification.type} />}
@@ -780,6 +806,9 @@ if (view === 'admin') {
         </div>
       </header>
 
+      <GeneralManagerManagement currentUser={currentUser} />
+
+
       <PendingEmployeeApprovals currentUser={currentUser} />
 
 
@@ -796,6 +825,9 @@ if (view === 'admin') {
             </p>
           </div>
 
+          {currentUser && currentUser.jobTitle === 'Admin' && (
+            <GeneralManagerManagement currentUser={currentUser} />
+          )}
 
           
           <div className="px-6 py-5">
@@ -941,12 +973,18 @@ if (view === 'admin') {
                   {isEditingEmployee && editEmployee ? (
                     <tr className="bg-indigo-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="text"
-                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                          value={editEmployee.name}
-                          onChange={(e) => setEditEmployee({...editEmployee, name: e.target.value})}
-                        />
+                        {currentUser.jobTitle === 'Admin' ? (
+                          <input
+                            type="number"
+                            className="w-20 px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            value={editEmployee.discount}
+                            onChange={(e) => setEditEmployee({...editEmployee, discount: parseInt(e.target.value) || 0})}
+                          />
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {editEmployee.discount}%
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
@@ -1560,6 +1598,8 @@ if (view === 'completeSignup') {
 // MANAGER VIEW
 if (view === 'manager') {
 
+  const [activeRestaurant, setActiveRestaurant] = useState(null);
+
   <PendingEmployeeApprovals currentUser={currentUser} />
 
 
@@ -1590,6 +1630,20 @@ if (view === 'manager') {
           </div>
         </div>
       </header>
+
+
+      {currentUser && (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Admin') && (
+        <RestaurantSelector 
+          currentUser={currentUser}
+          restaurants={RESTAURANTS}
+          onSelectRestaurant={setActiveRestaurant}
+        />
+      )}
+      <RestaurantSelector 
+        currentUser={currentUser}
+        restaurants={RESTAURANTS}
+        onSelectRestaurant={setActiveRestaurant}
+      />
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
@@ -1765,12 +1819,9 @@ if (view === 'manager') {
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="number"
-                          className="w-20 px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                          value={editEmployee.discount}
-                          onChange={(e) => setEditEmployee({...editEmployee, discount: parseInt(e.target.value) || 0})}
-                        />
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {editEmployee.discount}%
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
