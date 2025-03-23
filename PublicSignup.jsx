@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUser, addEmployee, collection, getDocs, db } from './firebase';
-import { User, Shield, CheckCircle, XCircle, Mail, Coffee, Store, ChevronDown } from 'lucide-react';
+import { User, Shield, CheckCircle, XCircle, Mail, Coffee, Store, ChevronDown, MapPin } from 'lucide-react';
 
 const PublicSignup = () => {
   const [name, setName] = useState('');
