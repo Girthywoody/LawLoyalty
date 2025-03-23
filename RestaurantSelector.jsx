@@ -4,10 +4,11 @@ import { Store, ChevronDown } from 'lucide-react';
 const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   
-  // Initialize with current restaurant or first managed restaurant
+  // Initialize with current restaurant or first managed restaurant - only on first load
   useEffect(() => {
-    if (currentUser) {
+    if (!initialLoadDone && currentUser) {
       if (currentUser.jobTitle === 'General Manager' && currentUser.managedRestaurants?.length > 0) {
         // For general managers, start with the first managed restaurant
         const firstRestaurantId = currentUser.managedRestaurants[0];
@@ -24,8 +25,10 @@ const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) =>
         setSelectedRestaurant(restaurant);
         onSelectRestaurant(restaurant);
       }
+      
+      setInitialLoadDone(true);
     }
-  }, [currentUser, restaurants, onSelectRestaurant]);
+  }, [currentUser, restaurants, onSelectRestaurant, initialLoadDone]);
   
   // Filter restaurants to only show those the user manages
   const getAvailableRestaurants = () => {
@@ -49,11 +52,10 @@ const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) =>
     return [];
   };
   
-// In RestaurantSelector.jsx, update the handleSelectRestaurant function:
-const handleSelectRestaurant = (restaurant) => {
+  const handleSelectRestaurant = (restaurant) => {
+    console.log("Selecting restaurant:", restaurant);
     setSelectedRestaurant(restaurant);
     setShowDropdown(false);
-    console.log("Selecting restaurant:", restaurant);
     onSelectRestaurant(restaurant);
   };
   
