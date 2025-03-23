@@ -1598,8 +1598,6 @@ if (view === 'completeSignup') {
 // MANAGER VIEW
 if (view === 'manager') {
 
-  const [activeRestaurant, setActiveRestaurant] = useState(null);
-
   <PendingEmployeeApprovals currentUser={currentUser} />
 
 
@@ -1639,11 +1637,7 @@ if (view === 'manager') {
           onSelectRestaurant={setActiveRestaurant}
         />
       )}
-      <RestaurantSelector 
-        currentUser={currentUser}
-        restaurants={RESTAURANTS}
-        onSelectRestaurant={setActiveRestaurant}
-      />
+
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
