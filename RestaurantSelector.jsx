@@ -49,9 +49,11 @@ const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) =>
     return [];
   };
   
-  const handleSelectRestaurant = (restaurant) => {
+// In RestaurantSelector.jsx, update the handleSelectRestaurant function:
+const handleSelectRestaurant = (restaurant) => {
     setSelectedRestaurant(restaurant);
     setShowDropdown(false);
+    console.log("Selecting restaurant:", restaurant);
     onSelectRestaurant(restaurant);
   };
   

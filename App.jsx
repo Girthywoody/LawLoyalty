@@ -142,57 +142,58 @@ const RestaurantLoyaltyApp = () => {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const loadEmployees = async () => {
-      setIsLoading(true);
-      
-      let unsubscribe;
-      
-      if (currentUser && currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
-        // Regular manager - only see employees from their restaurant
-        unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
-          const filteredData = employeesData.filter(emp => 
-            emp.jobTitle === 'Employee' || 
-            emp.id === currentUser.id
-          );
-          
-          setEmployees(filteredData);
-          setFilteredEmployees(filteredData);
-          setIsLoading(false);
-        }, currentUser.restaurantId);
-      } else if (currentUser && currentUser.jobTitle === 'General Manager' && activeRestaurant) {
-        // General manager - see employees for the currently selected restaurant
-        unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
-          const filteredData = employeesData.filter(emp => 
-            emp.jobTitle === 'Employee' || 
-            emp.id === currentUser.id
-          );
-          
-          setEmployees(filteredData);
-          setFilteredEmployees(filteredData);
-          setIsLoading(false);
-        }, activeRestaurant.id);
-      } else if (currentUser && currentUser.jobTitle === 'Admin') {
-        // Admin - see all employees
-        unsubscribe = subscribeToEmployees((employeesData) => {
-          setEmployees(employeesData);
-          setFilteredEmployees(employeesData);
-          setIsLoading(false);
-        });
-      }
-      
-      return () => {
-        if (unsubscribe) {
-          unsubscribe();
-        }
-      };
-    };
+useEffect(() => {
+  const loadEmployees = async () => {
+    setIsLoading(true);
     
-    if (view === 'manager' || view === 'admin') {
-      loadEmployees();
+    let unsubscribe;
+    
+    if (currentUser && currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
+      // Regular manager - only see employees from their restaurant
+      unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
+        const filteredData = employeesData.filter(emp => 
+          emp.jobTitle === 'Employee' || 
+          emp.id === currentUser.id
+        );
+        
+        setEmployees(filteredData);
+        setFilteredEmployees(filteredData);
+        setIsLoading(false);
+      }, currentUser.restaurantId);
+    } else if (currentUser && currentUser.jobTitle === 'General Manager' && activeRestaurant) {
+      // General manager - see employees for the currently selected restaurant
+      console.log("Loading employees for restaurant:", activeRestaurant.id);
+      unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
+        const filteredData = employeesData.filter(emp => 
+          emp.jobTitle === 'Employee' || 
+          emp.jobTitle === 'Manager' ||
+          emp.id === currentUser.id
+        );
+        
+        setEmployees(filteredData);
+        setFilteredEmployees(filteredData);
+        setIsLoading(false);
+      }, activeRestaurant.id);
+    } else if (currentUser && currentUser.jobTitle === 'Admin') {
+      // Admin - see all employees
+      unsubscribe = subscribeToEmployees((employeesData) => {
+        setEmployees(employeesData);
+        setFilteredEmployees(employeesData);
+        setIsLoading(false);
+      });
     }
-  }, [view, currentUser, activeRestaurant]);
-
+    
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  };
+  
+  if ((view === 'manager' || view === 'admin') && currentUser) {
+    loadEmployees();
+  }
+}, [view, currentUser, activeRestaurant]);
 
   const handleCompleteSignup = async (e) => {
     e.preventDefault();
@@ -649,7 +650,7 @@ useEffect(() => {
     ((emp.name && emp.name.toLowerCase().includes(searchTerm.toLowerCase())) || 
     (emp.jobTitle && emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()))) &&
     // Only show approved employees in the main list
-    emp.status === 'approved'
+    (!emp.status || emp.status === 'approved')
   );
   setFilteredEmployees(filtered);
 }, [searchTerm, employees]);
@@ -774,8 +775,10 @@ if (view === 'register') {
 // ADMIN VIEW
 if (view === 'admin') {
 
-  <PendingEmployeeApprovals currentUser={currentUser} />
-
+<PendingEmployeeApprovals 
+  currentUser={currentUser} 
+  activeRestaurant={activeRestaurant}
+/>
 
 
   return (
@@ -809,8 +812,10 @@ if (view === 'admin') {
       <GeneralManagerManagement currentUser={currentUser} />
 
 
-      <PendingEmployeeApprovals currentUser={currentUser} />
-
+      <PendingEmployeeApprovals 
+        currentUser={currentUser} 
+        activeRestaurant={activeRestaurant}
+      />
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
@@ -1598,8 +1603,10 @@ if (view === 'completeSignup') {
 // MANAGER VIEW
 if (view === 'manager') {
 
-  <PendingEmployeeApprovals currentUser={currentUser} />
-
+<PendingEmployeeApprovals 
+  currentUser={currentUser} 
+  activeRestaurant={activeRestaurant}
+/>
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -1634,7 +1641,10 @@ if (view === 'manager') {
         <RestaurantSelector 
           currentUser={currentUser}
           restaurants={RESTAURANTS}
-          onSelectRestaurant={setActiveRestaurant}
+          onSelectRestaurant={(restaurant) => {
+            console.log("Restaurant selected:", restaurant);
+            setActiveRestaurant(restaurant);
+          }}
         />
       )}
 
@@ -1656,8 +1666,10 @@ if (view === 'manager') {
           </div>
         </div>
           
-        <PendingEmployeeApprovals currentUser={currentUser} />
-
+        <PendingEmployeeApprovals 
+  currentUser={currentUser} 
+  activeRestaurant={activeRestaurant}
+/>
         {/* Invite employee form - only for this restaurant */}
         <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
           <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
