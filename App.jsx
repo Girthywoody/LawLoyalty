@@ -177,10 +177,11 @@ const RestaurantLoyaltyApp = () => {
     // Only load employees if we're in manager or admin view
     if (view === 'manager' || view === 'admin') {
       loadEmployees();
+      <PendingEmployeeApprovals currentUser={currentUser} />
+
     }
   }, [view, currentUser]);
   
-  <PendingEmployeeApprovals currentUser={currentUser} />
 
 
   const handleCompleteSignup = async (e) => {

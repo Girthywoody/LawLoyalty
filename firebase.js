@@ -484,3 +484,253 @@ export const subscribeToRestaurants = (callback) => {
     callback(restaurantsData);
   });
 };
+
+// Add these functions to firebase.js
+
+// Get a list of restaurants managed by a user
+export const getRestaurantsByManager = async (userId) => {
+  try {
+    // Direct restaurant management (regular managers)
+    const employeesRef = collection(db, 'employees');
+    const employeeSnapshot = await getDoc(doc(employeesRef, userId));
+    
+    if (!employeeSnapshot.exists()) {
+      throw new Error('User not found');
+    }
+    
+    const userData = employeeSnapshot.data();
+    
+    // For General Managers, return the array of managed restaurants
+    if (userData.jobTitle === 'General Manager' && userData.managedRestaurants) {
+      return userData.managedRestaurants;
+    }
+    
+    // For regular managers, return their single restaurant
+    if (userData.restaurantId) {
+      return [userData.restaurantId];
+    }
+    
+    // For admins or if no restaurants are assigned
+    return [];
+  } catch (error) {
+    console.error("Error fetching managed restaurants:", error);
+    throw error;
+  }
+};
+
+// Assign a restaurant to a General Manager
+export const assignRestaurantToManager = async (managerId, restaurantId, adminUserId) => {
+  try {
+    // Get the manager's document
+    const managerRef = doc(db, 'employees', managerId);
+    const managerSnapshot = await getDoc(managerRef);
+    
+    if (!managerSnapshot.exists()) {
+      throw new Error('Manager not found');
+    }
+    
+    const managerData = managerSnapshot.data();
+    
+    // If not already a General Manager, update the role
+    if (managerData.jobTitle !== 'General Manager') {
+      await updateDoc(managerRef, {
+        jobTitle: 'General Manager',
+        updatedAt: new Date()
+      });
+    }
+    
+    // Add the restaurant to the managedRestaurants array if not already present
+    const managedRestaurants = managerData.managedRestaurants || [];
+    if (!managedRestaurants.includes(restaurantId)) {
+      await updateDoc(managerRef, {
+        managedRestaurants: [...managedRestaurants, restaurantId],
+        updatedAt: new Date()
+      });
+    }
+    
+    // Add a record to the restaurantAccess collection
+    const accessRef = collection(db, 'restaurantAccess');
+    await addDoc(accessRef, {
+      userId: managerId,
+      restaurantId: restaurantId,
+      accessLevel: 'general_manager',
+      grantedBy: adminUserId,
+      grantedAt: new Date()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Error assigning restaurant to manager:", error);
+    throw error;
+  }
+};
+
+// Remove a restaurant assignment from a General Manager
+export const removeRestaurantFromManager = async (managerId, restaurantId) => {
+  try {
+    // Get the manager's document
+    const managerRef = doc(db, 'employees', managerId);
+    const managerSnapshot = await getDoc(managerRef);
+    
+    if (!managerSnapshot.exists()) {
+      throw new Error('Manager not found');
+    }
+    
+    const managerData = managerSnapshot.data();
+    
+    // Remove the restaurant from the managedRestaurants array
+    const managedRestaurants = managerData.managedRestaurants || [];
+    const updatedRestaurants = managedRestaurants.filter(id => id !== restaurantId);
+    
+    await updateDoc(managerRef, {
+      managedRestaurants: updatedRestaurants,
+      updatedAt: new Date()
+    });
+    
+    // If they no longer manage any restaurants, downgrade to regular manager
+    if (updatedRestaurants.length === 0) {
+      await updateDoc(managerRef, {
+        jobTitle: 'Manager',
+        updatedAt: new Date()
+      });
+    }
+    
+    // Delete the record from the restaurantAccess collection
+    const accessRef = collection(db, 'restaurantAccess');
+    const q = query(accessRef, 
+      where("userId", "==", managerId),
+      where("restaurantId", "==", restaurantId)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach(async (doc) => {
+      await deleteDoc(doc.ref);
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Error removing restaurant from manager:", error);
+    throw error;
+  }
+};
+
+// Subscribe to all restaurants a user can manage
+export const subscribeToManagerRestaurants = (callback, userId) => {
+  // First, get the user document to check their role
+  const userRef = doc(db, 'employees', userId);
+  
+  return onSnapshot(userRef, (userDoc) => {
+    if (!userDoc.exists()) {
+      callback([]);
+      return;
+    }
+    
+    const userData = userDoc.data();
+    
+    // If they're an admin, subscribe to all restaurants
+    if (userData.jobTitle === 'Admin') {
+      const restaurantsRef = collection(db, 'restaurants');
+      onSnapshot(restaurantsRef, (snapshot) => {
+        const restaurantsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        callback(restaurantsData);
+      });
+      return;
+    }
+    
+    // If they're a General Manager, get their managed restaurants
+    if (userData.jobTitle === 'General Manager' && userData.managedRestaurants && userData.managedRestaurants.length > 0) {
+      callback(userData.managedRestaurants);
+      return;
+    }
+    
+    // For regular managers, return their single restaurant
+    if (userData.restaurantId) {
+      callback([userData.restaurantId]);
+      return;
+    }
+    
+    // Default case - no managed restaurants
+    callback([]);
+  });
+};
+
+// Modified sendManagerInvite function to support multiple restaurants
+export const sendMultiRestaurantManagerInvite = async (email, role, senderUid, restaurantIds) => {
+  try {
+    // Generate a unique invite code
+    const inviteCode = generateUniqueId();
+    
+    // Store the invitation in Firestore
+    const inviteRef = await addDoc(collection(db, 'invites'), {
+      email,
+      role,
+      senderUid,
+      restaurantIds, // Array of restaurant IDs
+      status: 'pending',
+      createdAt: new Date(),
+      code: inviteCode
+    });
+    
+    // Generate magic link for email
+    const actionCodeSettings = {
+      url: `${window.location.origin}/complete-signup?mode=complete&email=${email}&inviteId=${inviteCode}`,
+      handleCodeInApp: true
+    };
+    
+    // Send the email invitation
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    
+    return inviteRef.id;
+  } catch (error) {
+    console.error("Error sending multi-restaurant manager invite:", error);
+    throw error;
+  }
+};
+
+// Modified completeRegistration to handle multi-restaurant invites
+// Add this logic to the completeRegistration function
+// This would be part of the existing function, not a separate one
+
+  // Check if it's a multi-restaurant invite
+  if (inviteData.restaurantIds && inviteData.restaurantIds.length > 0) {
+    // For General Manager role, add to managedRestaurants
+    if (inviteData.role === 'General Manager') {
+      await addDoc(collection(db, 'employees'), {
+        name,
+        email,
+        jobTitle: 'General Manager',
+        managedRestaurants: inviteData.restaurantIds,
+        discount: 40,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        uid: user.uid
+      });
+      
+      // Also add individual access records
+      for (const restaurantId of inviteData.restaurantIds) {
+        await addDoc(collection(db, 'restaurantAccess'), {
+          userId: user.uid,
+          restaurantId: restaurantId,
+          accessLevel: 'general_manager',
+          grantedBy: inviteData.senderUid,
+          grantedAt: new Date()
+        });
+      }
+    } else {
+      // Regular manager with just one restaurant
+      await addDoc(collection(db, 'employees'), {
+        name,
+        email,
+        jobTitle: inviteData.role,
+        restaurantId: inviteData.restaurantIds[0],
+        restaurantName: getRestaurantName(inviteData.restaurantIds[0]),
+        discount: inviteData.role === 'Manager' ? 40 : 20,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        uid: user.uid
+      });
+    }
+  }
