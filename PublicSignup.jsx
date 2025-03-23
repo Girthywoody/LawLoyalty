@@ -187,7 +187,7 @@ const PublicSignup = () => {
         <div className="text-center">
           <div className="flex justify-center">
             <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center mb-3 sm:mb-4">
-              <img src="logo.jpg" alt="Restaurant Logo" className="h-16 w-16 sm:h-20 sm:w-20 object-contain" />
+            <img src="/logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
             </div>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Create Your Account</h1>
