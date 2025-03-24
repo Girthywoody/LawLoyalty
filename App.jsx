@@ -371,20 +371,24 @@ const handleLogin = async (e) => {
   }
 };
 
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logoutUser(); // Firebase logout
-      setView('login');
-      setEmail('');
-      setPassword('');
-      setSelectedLocation('');
-      setCurrentUser(null);
-    } catch (error) {
-      console.error("Logout error:", error);
-      showNotification("Error logging out", "error");
-    }
-  };
+// Handle logout
+const handleLogout = async () => {
+  try {
+    await logoutUser(); // Firebase logout
+    // Clear localStorage
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('currentView');
+    
+    setView('login');
+    setEmail('');
+    setPassword('');
+    setSelectedLocation('');
+    setCurrentUser(null);
+  } catch (error) {
+    console.error("Logout error:", error);
+    showNotification("Error logging out", "error");
+  }
+};
 
   const getDiscount = (location) => {
     // First check for direct restaurant match by name
