@@ -53,22 +53,23 @@ const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) =>
     return [];
   };
   
-// Replace the handleSelectRestaurant function in RestaurantSelector.jsx with this:
-const handleSelectRestaurant = (restaurant) => {
-    // Check if the restaurant has locations
-    const restaurantObj = restaurants.find(r => r.id === restaurant.id);
-    
-    if (restaurantObj && restaurantObj.locations) {
-      // If the restaurant has locations, just set the selectedRestaurant but don't select a location yet
-      setSelectedRestaurant(restaurantObj);
-      // Call the parent component's callback with the restaurant
-      onSelectRestaurant(restaurantObj);
-    } else {
-      // If no locations, proceed as normal
-      setSelectedRestaurant(restaurant);
-      onSelectRestaurant(restaurant);
-      setShowDropdown(false);
+  const handleSelectRestaurant = (restaurant) => {
+    // First check if user is in cooldown period
+    if (cooldownInfo && cooldownInfo.inCooldown) {
+      const cooldownEnds = new Date(cooldownInfo.cooldownUntil);
+      const hoursLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60 * 60));
+      const minutesLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60)) % 60;
+      
+      showNotification(
+        `You already selected ${cooldownInfo.visitedRestaurant}. Please wait ${hoursLeft}h ${minutesLeft}m before selecting another restaurant.`, 
+        'error'
+      );
+      return;
     }
+    
+    // Otherwise show the verification popup
+    setPendingRestaurant(restaurant);
+    setShowVerification(true);
   };
   
   // If user only has one restaurant, don't show selector

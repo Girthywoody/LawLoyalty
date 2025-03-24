@@ -19,6 +19,10 @@ import {
 
 import { Store } from 'lucide-react';
 
+import VerificationPopup from './VerificationPopup';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import { recordRestaurantVisit, checkCooldownPeriod } from './RestaurantAnalytics';
+
 import ForgotPasswordModal from './ForgotPasswordModal';
 
 import { createUser, sendEmployeeInvite } from './firebase';
@@ -86,7 +90,10 @@ const RestaurantLoyaltyApp = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [activeRestaurant, setActiveRestaurant] = useState(null);
   const [managerView, setManagerView] = useState('manage'); // New state for manager view toggle
-  
+  const [showVerification, setShowVerification] = useState(false);
+  const [pendingRestaurant, setPendingRestaurant] = useState(null);
+  const [cooldownInfo, setCooldownInfo] = useState(null);
+  const [cooldownChecked, setCooldownChecked] = useState(false);
 
 
   const RESTAURANTS = [
@@ -283,6 +290,63 @@ useEffect(() => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const checkUserCooldown = async () => {
+      if (currentUser && !cooldownChecked) {
+        try {
+          const cooldown = await checkCooldownPeriod(currentUser.id);
+          setCooldownInfo(cooldown);
+          setCooldownChecked(true);
+        } catch (error) {
+          console.error("Error checking cooldown:", error);
+          // Still mark as checked to prevent constant retries
+          setCooldownChecked(true);
+        }
+      }
+    };
+    
+    checkUserCooldown();
+  }, [currentUser, cooldownChecked]);
+
+  const handleConfirmRestaurant = async () => {
+    if (!pendingRestaurant) return;
+    
+    try {
+      // Record the visit
+      await recordRestaurantVisit(
+        currentUser.id,
+        currentUser.restaurantName || "Not Specified",
+        pendingRestaurant.name
+      );
+      
+      // Update local state
+      setSelectedRestaurant(pendingRestaurant);
+      setSelectedLocation(pendingRestaurant.name);
+      setShowRestaurantDropdown(false);
+      
+      // Update cooldown information
+      setCooldownInfo({
+        inCooldown: true,
+        cooldownUntil: new Date(Date.now() + 3 * 60 * 60 * 1000),
+        visitedRestaurant: pendingRestaurant.name
+      });
+      
+      // Show notification
+      showNotification(`You've selected ${pendingRestaurant.name}. This selection will be locked for 3 hours.`, 'success');
+    } catch (error) {
+      console.error("Error confirming restaurant:", error);
+      showNotification("Failed to record your restaurant selection", "error");
+    } finally {
+      setShowVerification(false);
+      setPendingRestaurant(null);
+    }
+  };
+  
+  const handleCancelVerification = () => {
+    setShowVerification(false);
+    setPendingRestaurant(null);
   };
 
   useEffect(() => {
@@ -881,97 +945,6 @@ if (view === 'admin') {
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
-        {/* User Management Panel */}
-        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
-          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">
-              User Management
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Add new users and assign them to restaurants
-            </p>
-          </div>
-
-
-          
-          <div className="px-6 py-5">
-            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-12">
-              <div className="sm:col-span-4">
-                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  id="inviteEmail"
-                  placeholder="user@example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                />
-              </div>
-              <div className="sm:col-span-3">
-                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
-                <select
-                  id="inviteRole"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                >
-                  <option value="Employee">Employee</option>
-                  <option value="Manager">Manager</option>
-                </select>
-              </div>
-              <div className="sm:col-span-4">
-                <label htmlFor="restaurant" className="block text-xs font-medium text-gray-500 mb-1">Restaurant</label>
-                <select
-                  id="restaurant"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={selectedManagerRestaurant ? selectedManagerRestaurant.id : ''}
-                  onChange={(e) => {
-                    const restaurant = RESTAURANTS.find(r => r.id === e.target.value);
-                    setSelectedManagerRestaurant(restaurant);
-                  }}
-                >
-                  <option value="">Select Restaurant</option>
-                  {RESTAURANTS.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="sm:col-span-1 flex items-end">
-              <button
-                  type="button"
-                  onClick={handleSendInvite}
-                  disabled={isLoading || !inviteEmail}
-                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                >
-                  {isLoading ? (
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    'Invite'
-                  )}
-                </button>
-              </div>
-            </div>
-            
-            {inviteSuccess && (
-              <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-green-800">
-                      Invitation sent successfully! The user will receive an email with instructions.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Employee management section */}
         <div className="w-full">
           <div className="mb-6 flex items-center justify-between">
@@ -1161,6 +1134,10 @@ if (view === 'admin') {
           </div>
         </div>
       </main>
+
+      {currentUser && currentUser.jobTitle === 'Admin' && (
+        <AnalyticsDashboard />
+      )}
       
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-4 mt-8">
@@ -1468,7 +1445,21 @@ if (view === 'employee') {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setShowRestaurantDropdown(!showRestaurantDropdown)}
+                onClick={() => {
+                  if (cooldownInfo && cooldownInfo.inCooldown) {
+                    const cooldownEnds = new Date(cooldownInfo.cooldownUntil);
+                    const hoursLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60 * 60));
+                    const minutesLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60)) % 60;
+                    
+                    showNotification(
+                      `You already selected ${cooldownInfo.visitedRestaurant}. Please wait ${hoursLeft}h ${minutesLeft}m before selecting another restaurant.`, 
+                      'error'
+                    );
+                    return;
+                  }
+                  
+                  setShowRestaurantDropdown(!showRestaurantDropdown);
+                }}
                 className="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <div className="flex items-center justify-between">
@@ -2150,6 +2141,13 @@ if (view === 'manager') {
                 </p>
               </div>
             )}
+              {showVerification && (
+                <VerificationPopup
+                  restaurantName={pendingRestaurant?.name}
+                  onConfirm={handleConfirmRestaurant}
+                  onCancel={handleCancelVerification}
+                />
+              )}
           </div>
         )}
       </main>
