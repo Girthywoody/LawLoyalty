@@ -775,10 +775,7 @@ if (view === 'register') {
 // ADMIN VIEW
 if (view === 'admin') {
 
-<PendingEmployeeApprovals 
-  currentUser={currentUser} 
-  activeRestaurant={activeRestaurant}
-/>
+
 
 
   return (
@@ -810,7 +807,6 @@ if (view === 'admin') {
       </header>
 
       <GeneralManagerManagement currentUser={currentUser} />
-
 
       <PendingEmployeeApprovals 
         currentUser={currentUser} 
