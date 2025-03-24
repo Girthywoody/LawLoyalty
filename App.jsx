@@ -497,6 +497,25 @@ const getDiscount = (locationName) => {
   return 20; // Default discount
 };
 
+const handleSelectRestaurant = (restaurant) => {
+  // First check if user is in cooldown period
+  if (cooldownInfo && cooldownInfo.inCooldown) {
+    const cooldownEnds = new Date(cooldownInfo.cooldownUntil);
+    const hoursLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60 * 60));
+    const minutesLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60)) % 60;
+    
+    showNotification(
+      `You already selected ${cooldownInfo.visitedRestaurant}. Please wait ${hoursLeft}h ${minutesLeft}m before selecting another restaurant.`, 
+      'error'
+    );
+    return;
+  }
+  
+  // Show the verification popup
+  setPendingRestaurant(restaurant);
+  setShowVerification(true);
+};
+
 
   const handleSendInvite = async () => {
     if (!inviteEmail) {
@@ -1491,15 +1510,7 @@ if (view === 'employee') {
             <button
               type="button"
               className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-              onClick={() => {
-                setSelectedRestaurant(restaurant);
-                setSelectedLocation(restaurant.name);
-                setShowRestaurantDropdown(false);
-                // Update activeRestaurant if in manager view
-                if (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Manager') {
-                  setActiveRestaurant(restaurant);
-                }
-              }}
+              onClick={() => handleSelectRestaurant(restaurant)}
             >
               <Store size={16} className="text-indigo-600 flex-shrink-0" />
               <div>
@@ -1530,10 +1541,13 @@ if (view === 'employee') {
                 type="button"
                 className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
                 onClick={() => {
-                  // Set both the location name and the parent restaurant
-                  setSelectedLocation(location.name);
-                  setSelectedRestaurant(restaurant); // Make sure we update the parent restaurant too
-                  setShowRestaurantDropdown(false);
+                  // We need to create a combined restaurant+location object
+                  const restaurantWithLocation = {
+                    ...restaurant,
+                    name: `${restaurant.name} - ${location.name}`,
+                    locationName: location.name
+                  };
+                  handleSelectRestaurant(restaurantWithLocation);
                 }}
               >
                 <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
