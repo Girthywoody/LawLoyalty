@@ -339,15 +339,24 @@ const handleLogin = async (e) => {
       throw new Error('Your application has been declined. Please contact the restaurant manager for more information.');
     }
     
-    // Build the current user object - without discount field
-    const currentUserData = {
-      id: user.uid,
-      name: employeeData.name || user.displayName || email,
-      email: user.email,
-      jobTitle: employeeData.jobTitle || 'Employee',
-      restaurantId: employeeData.restaurantId || null,
-      restaurantName: employeeData.restaurantName || null
-    };
+// Modify the handleLogin function by changing this part:
+// After this line:
+const currentUserData = {
+  id: user.uid,
+  name: employeeData.name || user.displayName || email,
+  email: user.email,
+  jobTitle: employeeData.jobTitle || 'Employee',
+  restaurantId: employeeData.restaurantId || null,
+  restaurantName: employeeData.restaurantName || null
+};
+
+// And after this line:
+setCurrentUser(currentUserData);
+
+// Add this line to save to localStorage (use currentUserData which is now defined):
+localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+localStorage.setItem('currentView', employeeData.jobTitle === 'Admin' ? 'admin' : 
+  (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 'manager' : 'employee'));
     
     // Add managed restaurants for general managers
     if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
