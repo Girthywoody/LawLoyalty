@@ -2192,4 +2192,13 @@ if (view === 'manager') {
 }
   return null;
 };
+
+// Add this function after other utility functions but before the return statement in RestaurantLoyaltyApp component
+const handleRefreshData = async () => {
+  try {
+    showNotification('Refreshing data...', 'info');
+    
+    // Reload relevant data based on user type and current page
+    if (currentUser) {
+      if (currentUser.jobTitle === 'manager' || currentUser.jobTitle === 'admin') {
 export default RestaurantLoyaltyApp;
