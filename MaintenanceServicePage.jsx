@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Tool, 
+  Wrench, 
   Calendar as CalendarIcon, 
   PlusCircle, 
   AlertTriangle, 
@@ -509,7 +509,7 @@ const MaintenanceServicePage = ({ currentUser }) => {
       case 'in-progress':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            <Tool size={12} className="mr-1" />
+            <Wrench size={12} className="mr-1" />
             In Progress
           </span>
         );
@@ -626,7 +626,7 @@ const MaintenanceServicePage = ({ currentUser }) => {
       <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 flex justify-between items-center">
         <div>
           <h3 className="text-lg font-medium leading-6 text-gray-900 flex items-center">
-            <Tool size={20} className="text-indigo-600 mr-2" />
+            <Wrench size={20} className="text-indigo-600 mr-2" />
             Maintenance Services
           </h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -648,7 +648,7 @@ const MaintenanceServicePage = ({ currentUser }) => {
                   : 'bg-white text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <Tool size={16} className="inline-block mr-1" />
+              <Wrench size={16} className="inline-block mr-1" />
               Issues
             </button>
             <button
@@ -756,7 +756,7 @@ const MaintenanceServicePage = ({ currentUser }) => {
               </div>
             ) : filteredIssues.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <Tool size={48} className="mx-auto text-gray-300 mb-4" />
+                <Wrench size={48} className="mx-auto text-gray-300 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900">No maintenance issues found</h3>
                 <p className="mt-2 text-sm text-gray-500">
                   {searchTerm || filterUrgency > 0 || filterStatus !== 'all'
@@ -1199,7 +1199,7 @@ const MaintenanceServicePage = ({ currentUser }) => {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
-                        <Tool size={12} className="inline-block mr-1" />
+                        <Wrench size={12} className="inline-block mr-1" />
                         In Progress
                       </button>
                       <button
