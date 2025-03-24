@@ -1167,7 +1167,7 @@ if (view === 'admin') {
       <footer className="bg-white border-t border-gray-200 py-4 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-xs text-center text-gray-500">
-            &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
+            &copy; {new Date().getFullYear()} Josh Law • All rights reserved
           </p>
         </div>
       </footer>
@@ -1299,7 +1299,7 @@ if (view === 'admin') {
         )}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
+            &copy; {new Date().getFullYear()} Josh Law • All rights reserved
           </p>
         </div>
       </div>
@@ -2183,7 +2183,7 @@ if (view === 'manager') {
       <footer className="bg-white border-t border-gray-200 py-4 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <p className="text-xs text-center text-gray-500">
-            &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
+            &copy; {new Date().getFullYear()} Josh Law • All rights reserved
           </p>
         </div>
       </footer>
