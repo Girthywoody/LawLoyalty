@@ -793,10 +793,6 @@ if (view === 'admin') {
             <h1 className="text-xl font-semibold text-indigo-700">Admin Dashboard</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="hidden md:flex items-center text-gray-700 bg-gray-100 py-1 px-3 rounded-lg">
-              <Clock size={18} className="mr-2 text-indigo-600" />
-              <span className="font-mono font-medium">{formatTime(currentTime)}</span>
-            </div>
             <button 
               onClick={handleLogout}
               className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
@@ -1379,10 +1375,6 @@ if (view === 'employee') {
             <h1 className="text-xl font-semibold text-indigo-700">Employee Portal</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="hidden md:flex items-center text-gray-700 bg-gray-100 py-1 px-3 rounded-lg">
-              <Clock size={18} className="mr-2 text-indigo-600" />
-              <span className="font-mono font-medium">{formatTime(currentTime)}</span>
-            </div>
             <button 
               onClick={handleLogout}
               className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
