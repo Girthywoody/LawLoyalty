@@ -56,7 +56,6 @@ export { db, auth, isSignInWithEmailLink, sendPasswordResetEmail};
 
 
 
-// For employees, use a combination of name and restaurant
 export const addEmployee = async (employeeData) => {
   try {
     // Create a meaningful ID based on name and restaurant (if available)
@@ -76,16 +75,19 @@ export const addEmployee = async (employeeData) => {
       customId += `-${Date.now()}`;
     }
     
+    // Remove discount field from employee data
+    const { discount, ...employeeDataWithoutDiscount } = employeeData;
+    
     // Use setDoc with a custom ID instead of addDoc
     await setDoc(doc(db, 'employees', customId), {
-      ...employeeData,
+      ...employeeDataWithoutDiscount,
       createdAt: new Date(),
       updatedAt: new Date()
     });
     
     return {
       id: customId,
-      ...employeeData
+      ...employeeDataWithoutDiscount
     };
   } catch (error) {
     console.error("Error adding employee:", error);
@@ -109,7 +111,6 @@ export const createManagerWithRestaurant = async (email, password, name, restaur
       name: name,
       email: email,
       jobTitle: 'Manager',
-      discount: 40,
       restaurantId: restaurantId,
       restaurantName: getRestaurantName(restaurantId),
       createdAt: new Date(),

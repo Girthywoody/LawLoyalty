@@ -293,13 +293,12 @@ const handleLogin = async (e) => {
       throw new Error('Your application has been declined. Please contact the restaurant manager for more information.');
     }
     
-    // Build the current user object
+    // Build the current user object - without discount field
     const currentUserData = {
       id: user.uid,
       name: employeeData.name || user.displayName || email,
       email: user.email,
       jobTitle: employeeData.jobTitle || 'Employee',
-      discount: employeeData.discount || 20,
       restaurantId: employeeData.restaurantId || null,
       restaurantName: employeeData.restaurantName || null
     };
@@ -532,18 +531,13 @@ const saveEmployeeEditToFirebase = async () => {
     try {
       setIsLoading(true);
       
-      // Create an update object with all necessary fields
+      // Create an update object with necessary fields
       const updateData = {
         name: editEmployee.name,
         email: editEmployee.email,
         jobTitle: editEmployee.jobTitle,
         updatedAt: new Date()
       };
-      
-      // Only admins can update the discount
-      if (currentUser.jobTitle === 'Admin') {
-        updateData.discount = parseInt(editEmployee.discount) || 0;
-      }
       
       // Preserve restaurant assignment if it exists
       if (editEmployee.restaurantId) {
@@ -958,9 +952,6 @@ if (view === 'admin') {
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Restaurant
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Discount
                     </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -1835,11 +1826,6 @@ if (view === 'manager') {
                           <option value="Employee">Employee</option>
                           <option value="Manager">Manager</option>
                         </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {editEmployee.discount}%
-                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
