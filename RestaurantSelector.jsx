@@ -53,11 +53,22 @@ const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) =>
     return [];
   };
   
-  const handleSelectRestaurant = (restaurant) => {
-    console.log("Selecting restaurant:", restaurant);
-    setSelectedRestaurant(restaurant);
-    setShowDropdown(false);
-    onSelectRestaurant(restaurant);
+// In App.jsx, replace the handleSelectRestaurant function in the employee view
+const handleSelectRestaurant = (restaurant) => {
+    // Check if the restaurant has locations
+    const restaurantObj = RESTAURANTS.find(r => r.id === restaurant.id);
+    
+    if (restaurantObj && restaurantObj.locations) {
+      // If the restaurant has locations, just set the selectedRestaurant but don't select a location yet
+      setSelectedRestaurant(restaurantObj);
+      // Expand the dropdown to show locations
+      setShowRestaurantDropdown(true);
+    } else {
+      // If no locations, proceed as normal
+      setSelectedRestaurant(restaurant);
+      setSelectedLocation(restaurant.name);
+      setShowRestaurantDropdown(false);
+    }
   };
   
   // If user only has one restaurant, don't show selector

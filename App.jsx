@@ -146,6 +146,48 @@ const RestaurantLoyaltyApp = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Add this useEffect at the top level of your App component
+useEffect(() => {
+  // Check for stored user data on component mount
+  const storedUser = localStorage.getItem('currentUser');
+  const storedView = localStorage.getItem('currentView');
+  
+  if (storedUser) {
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      setCurrentUser(parsedUser);
+      
+      if (storedView) {
+        setView(storedView);
+      } else {
+        // Set appropriate view based on user role
+        if (parsedUser.jobTitle === 'Admin') {
+          setView('admin');
+        } else if (parsedUser.jobTitle === 'Manager' || parsedUser.jobTitle === 'General Manager') {
+          setView('manager');
+        } else {
+          setView('employee');
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing stored user:", error);
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('currentView');
+    }
+  }
+}, []);
+
+// Modify your handleLogin function to save user data
+// Add these lines after setting currentUser and view
+localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+localStorage.setItem('currentView', employeeData.jobTitle === 'Admin' ? 'admin' : 
+  (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 'manager' : 'employee'));
+
+// Modify your handleLogout function to clear stored data
+// Add these lines after setCurrentUser(null)
+localStorage.removeItem('currentUser');
+localStorage.removeItem('currentView');
+
 useEffect(() => {
   const loadEmployees = async () => {
     setIsLoading(true);
