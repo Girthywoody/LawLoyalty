@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createUser, addEmployee, collection, getDocs, db } from './firebase';
+import { createUser, addEmployee, collection, getDocs, db, sendEmailVerification, auth } from './firebase';
 import { User, Shield, CheckCircle, XCircle, Mail, Coffee, Store, ChevronDown, MapPin, CreditCard } from 'lucide-react';
 
 const PublicSignup = () => {
@@ -68,8 +68,6 @@ const PublicSignup = () => {
                 { id: "overtime-chelmsford", name: "Chelmsford" }
               ]
             },
-        
-            { id: "lot-88", name: "Lot 88 Steakhouse" },
             { id: "poke-bar", name: "Poke Bar" },
             {
               id: "happy-life",
@@ -175,7 +173,7 @@ const PublicSignup = () => {
     }
   };
   
-  // Update the success message to mention email verification
+  // Success state
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -197,36 +195,6 @@ const PublicSignup = () => {
             </p>
             <p className="text-green-600 text-sm">
               After verifying your email, your registration will be submitted to the restaurant manager for approval. You'll be notified once your account is approved.
-            </p>
-          </div>
-          
-          <div className="flex items-center justify-center mt-6">
-            <span className="text-indigo-600 animate-pulse">Redirecting to login...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Success state
-  if (success) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
-          <div className="text-center">
-            <div className="flex justify-center">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-4 shadow-lg">
-                <CheckCircle size={36} className="text-white" />
-              </div>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-800">Registration Submitted!</h1>
-            <p className="mt-2 text-gray-500">Your account is pending approval</p>
-          </div>
-          
-          <div className="bg-green-50 p-6 rounded-lg border border-green-100 mt-6">
-            <p className="text-green-700 font-medium mb-2">Thank you for registering!</p>
-            <p className="text-green-600 text-sm">
-              Your registration has been submitted to the restaurant manager for approval. You'll be notified by email once your account is approved. Please check your email inbox (including spam folders) for updates.
             </p>
           </div>
           
@@ -374,7 +342,6 @@ const PublicSignup = () => {
                               <Store size={16} className="text-indigo-600 flex-shrink-0" />
                               <div>
                                 <div className="font-medium text-gray-900">{restaurant.name}</div>
-                                <div className="text-xs text-gray-500">Discount: {restaurant.discount}</div>
                               </div>
                             </button>
                           ) : (
@@ -396,7 +363,6 @@ const PublicSignup = () => {
                                     <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
                                     <div>
                                       <div className="font-medium text-gray-900">{location.name}</div>
-                                      <div className="text-xs text-gray-500">Discount: {restaurant.discount}</div>
                                     </div>
                                   </button>
                                 ))}

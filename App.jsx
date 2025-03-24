@@ -117,8 +117,6 @@ const RestaurantLoyaltyApp = () => {
         { id: "overtime-chelmsford", name: "Chelmsford" }
       ]
     },
-
-    { id: "lot-88", name: "Lot 88 Steakhouse" },
     { id: "poke-bar", name: "Poke Bar" },
     {
       id: "happy-life",
