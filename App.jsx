@@ -299,7 +299,7 @@ useEffect(() => {
     });
   };
 
-// Update the handleLogin function
+// Replace your entire handleLogin function with this version:
 const handleLogin = async (e) => {
   e.preventDefault();
   
@@ -339,40 +339,34 @@ const handleLogin = async (e) => {
       throw new Error('Your application has been declined. Please contact the restaurant manager for more information.');
     }
     
-// Modify the handleLogin function by changing this part:
-// After this line:
-const currentUserData = {
-  id: user.uid,
-  name: employeeData.name || user.displayName || email,
-  email: user.email,
-  jobTitle: employeeData.jobTitle || 'Employee',
-  restaurantId: employeeData.restaurantId || null,
-  restaurantName: employeeData.restaurantName || null
-};
-
-// And after this line:
-setCurrentUser(currentUserData);
-
-// Add this line to save to localStorage (use currentUserData which is now defined):
-localStorage.setItem('currentUser', JSON.stringify(currentUserData));
-localStorage.setItem('currentView', employeeData.jobTitle === 'Admin' ? 'admin' : 
-  (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 'manager' : 'employee'));
+    // Build the current user object - without discount field
+    const userData = {
+      id: user.uid,
+      name: employeeData.name || user.displayName || email,
+      email: user.email,
+      jobTitle: employeeData.jobTitle || 'Employee',
+      restaurantId: employeeData.restaurantId || null,
+      restaurantName: employeeData.restaurantName || null
+    };
     
     // Add managed restaurants for general managers
     if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
-      currentUserData.managedRestaurants = employeeData.managedRestaurants;
+      userData.managedRestaurants = employeeData.managedRestaurants;
     }
     
-    setCurrentUser(currentUserData);
+    setCurrentUser(userData);
 
-    // Navigate to the appropriate view based on role
-    if (employeeData.jobTitle === 'Admin') {
-      setView('admin');
-    } else if (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager') {
-      setView('manager');
-    } else {
-      setView('employee');
-    }
+    // Determine which view to show
+    const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
+                    (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
+                    'manager' : 'employee');
+    
+    // Set the view
+    setView(userView);
+    
+    // Save to localStorage
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    localStorage.setItem('currentView', userView);
     
     showNotification('Login successful', 'success');
   } catch (error) {
@@ -382,7 +376,6 @@ localStorage.setItem('currentView', employeeData.jobTitle === 'Admin' ? 'admin' 
     setIsLoading(false);
   }
 };
-
 
   // Handle logout
   const handleLogout = async () => {
