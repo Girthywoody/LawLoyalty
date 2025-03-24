@@ -806,12 +806,14 @@ if (view === 'admin') {
         </div>
       </header>
 
-      <GeneralManagerManagement currentUser={currentUser} />
-
       <PendingEmployeeApprovals 
         currentUser={currentUser} 
         activeRestaurant={activeRestaurant}
       />
+
+{currentUser && currentUser.jobTitle === 'Admin' && (
+            <GeneralManagerManagement currentUser={currentUser} />
+          )}
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
@@ -826,9 +828,6 @@ if (view === 'admin') {
             </p>
           </div>
 
-          {currentUser && currentUser.jobTitle === 'Admin' && (
-            <GeneralManagerManagement currentUser={currentUser} />
-          )}
 
           
           <div className="px-6 py-5">
@@ -1814,6 +1813,7 @@ if (view === 'manager') {
                           onChange={(e) => setEditEmployee({...editEmployee, jobTitle: e.target.value})}
                         >
                           <option value="Employee">Employee</option>
+                          <option value="Manager">Manager</option>
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
