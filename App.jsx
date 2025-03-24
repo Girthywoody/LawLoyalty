@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Clock, 
   User, 
@@ -94,6 +95,8 @@ const RestaurantLoyaltyApp = () => {
   const [pendingRestaurant, setPendingRestaurant] = useState(null);
   const [cooldownInfo, setCooldownInfo] = useState(null);
   const [cooldownChecked, setCooldownChecked] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [employeesPerPage] = useState(10);
 
 
   const RESTAURANTS = [
@@ -999,7 +1002,8 @@ if (view === 'admin') {
                 </div>
                 <div>
                   <span className="text-sm text-gray-500">
-                    Showing {filteredEmployees.length} of {employees.length} users
+                    Showing {Math.min(currentPage * employeesPerPage, filteredEmployees.length)} of {employees.length} users
+                    (Page {currentPage})
                   </span>
                 </div>
               </div>
@@ -1822,7 +1826,8 @@ if (view === 'manager') {
                     </div>
                     <div>
                       <span className="text-sm text-gray-500">
-                        Showing {filteredEmployees.length} of {employees.length} employees
+                        Showing {Math.min(currentPage * employeesPerPage, filteredEmployees.length)} of {employees.length} employees
+                        (Page {currentPage})
                       </span>
                     </div>
                   </div>
@@ -2192,13 +2197,4 @@ if (view === 'manager') {
 }
   return null;
 };
-
-// Add this function after other utility functions but before the return statement in RestaurantLoyaltyApp component
-const handleRefreshData = async () => {
-  try {
-    showNotification('Refreshing data...', 'info');
-    
-    // Reload relevant data based on user type and current page
-    if (currentUser) {
-      if (currentUser.jobTitle === 'manager' || currentUser.jobTitle === 'admin') {
 export default RestaurantLoyaltyApp;
