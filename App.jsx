@@ -1747,6 +1747,7 @@ if (view === 'manager') {
                 managerView === 'service' 
                   ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  
               }`}
             >
               <div className="flex items-center">
@@ -1786,7 +1787,7 @@ if (view === 'manager') {
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
-        {/* Conditionally render either Manage view or Discount view */}
+        {/* Conditionally render based on managerView */}
         {managerView === 'manage' ? (
           <>
             {/* Restaurant info */}
@@ -1967,6 +1968,9 @@ if (view === 'manager') {
               </div>
             </div>
           </>
+        ) : managerView === 'service' ? (
+          // Render MaintenanceServicePage when service view is selected
+          <MaintenanceServicePage currentUser={currentUser} />
         ) : (
           // Discount View - Adapted from employee view with visual improvements
           <div className="bg-white shadow-lg rounded-xl overflow-hidden">
