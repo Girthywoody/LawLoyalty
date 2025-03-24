@@ -171,17 +171,11 @@ useEffect(() => {
       }
     } catch (error) {
       console.error("Error parsing stored user:", error);
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('currentView');
+
     }
   }
 }, []);
 
-// Modify your handleLogin function to save user data
-// Add these lines after setting currentUser and view
-localStorage.setItem('currentUser', JSON.stringify(currentUserData));
-localStorage.setItem('currentView', employeeData.jobTitle === 'Admin' ? 'admin' : 
-  (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 'manager' : 'employee'));
 
 // Modify your handleLogout function to clear stored data
 // Add these lines after setCurrentUser(null)
