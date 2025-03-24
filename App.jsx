@@ -1375,219 +1375,241 @@ if (view === 'completeSignup') {
   );
 }
 
-  // EMPLOYEE VIEW
-  if (view === 'employee') {
-    const currentDiscount = selectedLocation ? 
-      getDiscount(selectedLocation) : 0;
+// EMPLOYEE VIEW
+if (view === 'employee') {
+  const currentDiscount = selectedLocation ? 
+    getDiscount(selectedLocation) : 0;
+    
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {notification && <Notification message={notification.message} type={notification.type} />}
       
-    return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        {notification && <Notification message={notification.message} type={notification.type} />}
-        
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <div className="flex items-center">
-              <Shield size={24} className="text-indigo-600 mr-2" />
-              <h1 className="text-xl font-semibold text-indigo-700">Employee Portal</h1>
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <div className="flex items-center">
+            <Shield size={24} className="text-indigo-600 mr-2" />
+            <h1 className="text-xl font-semibold text-indigo-700">Employee Portal</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center text-gray-700 bg-gray-100 py-1 px-3 rounded-lg">
+              <Clock size={18} className="mr-2 text-indigo-600" />
+              <span className="font-mono font-medium">{formatTime(currentTime)}</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="hidden md:flex items-center text-gray-700 bg-gray-100 py-1 px-3 rounded-lg">
-                <Clock size={18} className="mr-2 text-indigo-600" />
-                <span className="font-mono font-medium">{formatTime(currentTime)}</span>
-              </div>
-              <button 
-                onClick={handleLogout}
-                className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
-                aria-label="Logout"
+            <button 
+              onClick={handleLogout}
+              className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+              aria-label="Logout"
+            >
+              <LogOut size={18} className="mr-1" />
+              <span className="hidden md:inline">Logout</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="flex-grow max-w-5xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+          {/* User info card */}
+          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+            <UserProfileBadge user={currentUser} />
+          </div>
+
+          {/* Location selector */}
+          <div className="p-6 border-b border-gray-200">
+            <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-4">
+              Select Restaurant Location
+            </label>
+            
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowRestaurantDropdown(!showRestaurantDropdown)}
+                className="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
-                <LogOut size={18} className="mr-1" />
-                <span className="hidden md:inline">Logout</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Building size={20} className="text-gray-400 mr-3" />
+                    <span className="text-gray-700">
+                      {selectedRestaurant ? selectedRestaurant.name : 'Select a restaurant'}
+                    </span>
+                  </div>
+                  <svg
+                    className={`h-5 w-5 text-gray-400 transform transition-transform duration-200 ${
+                      showRestaurantDropdown ? 'rotate-180' : ''
+                    }`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
               </button>
+
+              {/* Dropdown menu */}
+              {showRestaurantDropdown && (
+                <div className="absolute z-10 mt-2 w-full rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                  <div className="max-h-60 overflow-auto">
+                    {RESTAURANTS.map((restaurant) => (
+                      <div key={restaurant.id}>
+                        <button
+                          onClick={() => {
+                            setSelectedRestaurant(restaurant);
+                            if (!restaurant.locations) {
+                              setSelectedLocation(restaurant.name);
+                            }
+                            setShowRestaurantDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center justify-between group"
+                        >
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center mr-3 group-hover:bg-indigo-100">
+                              <Building size={16} className="text-indigo-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{restaurant.name}</p>
+                              <p className="text-xs text-gray-500">{restaurant.discount} discount</p>
+                            </div>
+                          </div>
+                          {restaurant.locations && (
+                            <MapPin size={16} className="text-gray-400 group-hover:text-indigo-500" />
+                          )}
+                        </button>
+
+                        {/* Location sub-menu */}
+                        {selectedRestaurant?.id === restaurant.id && restaurant.locations && (
+                          <div className="ml-12 border-l border-gray-100">
+                            {restaurant.locations.map((location) => (
+                              <button
+                                key={location.id}
+                                onClick={() => {
+                                  setSelectedLocation(location.name);
+                                  setShowRestaurantDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center"
+                              >
+                                <MapPin size={14} className="text-gray-400 mr-2" />
+                                <span className="text-sm text-gray-700">{location.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </header>
 
-        {/* Main content */}
-        <main className="flex-grow max-w-5xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-            {/* User info card */}
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-              <UserProfileBadge user={currentUser} />
-            </div>
-
-            {/* Location selector */}
-            <div className="p-6 border-b border-gray-200">
-              <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-4">
-                Select Restaurant Location
-              </label>
-              
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowRestaurantDropdown(!showRestaurantDropdown)}
-                  className="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <div className="flex items-center justify-between">
+          {/* Discount display */}
+          {selectedLocation ? (
+            <div className="p-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Your Discount</h3>
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg overflow-hidden">
+                {/* Header section */}
+                <div className="px-5 py-4 border-b border-indigo-400 border-opacity-30">
+                  <h4 className="text-white text-xl font-bold">Employee Verification</h4>
+                  <p className="text-indigo-100 text-sm">Show this screen to receive your discount</p>
+                </div>
+                
+                {/* Employee information section */}
+                <div className="px-5 py-4 space-y-4">
+                  {/* Employee name with ID verification note */}
+                  <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
+                    <p className="text-indigo-100 text-xs mb-1">Employee Name (Must Match ID)</p>
                     <div className="flex items-center">
-                      <Building size={20} className="text-gray-400 mr-3" />
-                      <span className="text-gray-700">
-                        {selectedRestaurant ? selectedRestaurant.name : 'Select a restaurant'}
-                      </span>
-                    </div>
-                    <svg
-                      className={`h-5 w-5 text-gray-400 transform transition-transform duration-200 ${
-                        showRestaurantDropdown ? 'rotate-180' : ''
-                      }`}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                </button>
-
-                {/* Dropdown menu */}
-                {showRestaurantDropdown && (
-                  <div className="absolute z-10 mt-2 w-full rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                    <div className="max-h-60 overflow-auto">
-                      {RESTAURANTS.map((restaurant) => (
-                        <div key={restaurant.id}>
-                          <button
-                            onClick={() => {
-                              setSelectedRestaurant(restaurant);
-                              if (!restaurant.locations) {
-                                setSelectedLocation(restaurant.name);
-                              }
-                              setShowRestaurantDropdown(false);
-                            }}
-                            className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center justify-between group"
-                          >
-                            <div className="flex items-center">
-                              <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center mr-3 group-hover:bg-indigo-100">
-                                <Building size={16} className="text-indigo-600" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{restaurant.name}</p>
-                                <p className="text-xs text-gray-500">{restaurant.discount} discount</p>
-                              </div>
-                            </div>
-                            {restaurant.locations && (
-                              <MapPin size={16} className="text-gray-400 group-hover:text-indigo-500" />
-                            )}
-                          </button>
-
-                          {/* Location sub-menu */}
-                          {selectedRestaurant?.id === restaurant.id && restaurant.locations && (
-                            <div className="ml-12 border-l border-gray-100">
-                              {restaurant.locations.map((location) => (
-                                <button
-                                  key={location.id}
-                                  onClick={() => {
-                                    setSelectedLocation(location.name);
-                                    setShowRestaurantDropdown(false);
-                                  }}
-                                  className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center"
-                                >
-                                  <MapPin size={14} className="text-gray-400 mr-2" />
-                                  <span className="text-sm text-gray-700">{location.name}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                      <User size={18} className="text-white mr-2" />
+                      <p className="text-xl font-bold text-white">{currentUser?.name}</p>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Discount display */}
-            {selectedLocation ? (
-              <div className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Your Discount</h3>
-                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <p className="text-sm font-medium text-indigo-100">Location</p>
-                      <div className="flex items-center mt-1">
-                        <Building size={18} className="text-white mr-2" />
-                        <p className="text-lg font-medium text-white">{selectedLocation}</p>
-                      </div>
+                  
+                  {/* Employee's workplace */}
+                  <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
+                    <p className="text-indigo-100 text-xs mb-1">Employee Works At</p>
+                    <div className="flex items-center">
+                      <Building size={18} className="text-white mr-2" />
+                      <p className="text-white font-medium">{currentUser?.restaurantName || "Company Restaurant"}</p>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-indigo-100">Your Discount</p>
-                      <div className="flex items-center mt-1">
-                        <Percent size={18} className="text-white mr-2" />
-                        <p className="text-3xl font-bold text-white">{currentDiscount}%</p>
-                      </div>
+                  </div>
+                  
+                  {/* Current dining location */}
+                  <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
+                    <p className="text-indigo-100 text-xs mb-1">Dining At</p>
+                    <div className="flex items-center">
+                      <MapPin size={18} className="text-white mr-2" />
+                      <p className="text-white font-medium">{selectedLocation}</p>
                     </div>
-                    <div className="md:col-span-2 pt-3 border-t border-indigo-400">
-                      <p className="text-sm font-medium text-indigo-100">Valid</p>
-                      <div className="flex items-center mt-1">
-                        <Calendar size={18} className="text-white mr-2" />
-                        <p className="text-lg font-medium text-white">
-                          {new Date().toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                      <div className="mt-4 bg-indigo-400 bg-opacity-20 p-3 rounded-lg border border-indigo-300 border-opacity-30">
-                        <p className="text-sm text-white flex items-center">
-                          <Clock size={14} className="mr-2" />
-                          Show this screen to the worker to receive your discount.
-                          The live clock confirms this is being viewed in real-time.
-                        </p>
-                      </div>
+                  </div>
+                  
+                  {/* Discount details */}
+                  <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
+                    <p className="text-indigo-100 text-xs mb-1">Discount Amount</p>
+                    <div className="flex items-center">
+                      <Percent size={18} className="text-white mr-2" />
+                      <p className="text-3xl font-bold text-white">{currentDiscount}%</p>
                     </div>
                   </div>
                 </div>
-
-                {/* Replace the QR code section with this: */}
-                {selectedLocation && (
-                  <div className="mt-6 text-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div className="flex flex-col items-center justify-center">
-                      <Clock size={32} className="text-indigo-600 mb-2" />
-                      <div className="text-4xl font-bold text-gray-800 font-mono tracking-wider">
+                
+                {/* Live clock and date verification */}
+                <div className="bg-indigo-600 px-5 py-4 mt-2">
+                  <div className="flex flex-col items-center">
+                    <p className="text-indigo-100 text-xs mb-2">Current Date & Time (Live)</p>
+                    <div className="bg-indigo-700 rounded-lg px-4 py-2 w-full text-center">
+                      <p className="text-white text-sm mb-1">
+                        {new Date().toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                      <p className="text-2xl font-mono font-bold text-white tracking-wider">
                         {formatTime(currentTime)}
-                      </div>
-                      <p className="mt-2 text-sm text-gray-500">
-                        Current Time
                       </p>
                     </div>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto flex items-center justify-center rounded-full bg-indigo-100">
-                  <Building size={24} className="text-indigo-600" />
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">Select a Location</h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Choose a restaurant location from the dropdown above to view your available discount.
-                </p>
+                
+                {/* Verification instruction */}
+                <div className="bg-indigo-800 px-5 py-4">
+                  <div className="flex items-start">
+                    <CheckCircle size={20} className="text-indigo-200 mr-2 flex-shrink-0 mt-0.5" />
+                    <p className="text-indigo-100 text-sm">
+                      Staff: Please verify employee name with their ID. The live clock confirms this is being viewed in real-time.
+                    </p>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </main>
-        
-        {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 py-4">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-xs text-center text-gray-500">
-              &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
-            </p>
-          </div>
-        </footer>
-      </div>
-    );
-  }
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 mx-auto flex items-center justify-center rounded-full bg-indigo-100">
+                <Building size={24} className="text-indigo-600" />
+              </div>
+              <h3 className="mt-4 text-lg font-medium text-gray-900">Select a Location</h3>
+              <p className="mt-2 text-sm text-gray-500">
+                Choose a restaurant location from the dropdown above to view your available discount.
+              </p>
+            </div>
+          )}
+        </div>
+      </main>
+      
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-xs text-center text-gray-500">
+            &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
 
 {/* Admin-only section to create restaurant managers */}
 
