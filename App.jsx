@@ -22,7 +22,7 @@ import { Store } from 'lucide-react';
 import VerificationPopup from './VerificationPopup';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import { recordRestaurantVisit, checkCooldownPeriod } from './RestaurantAnalytics';
-import { Tool } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import MaintenanceServicePage from './MaintenanceServicePage';
 
 import ForgotPasswordModal from './ForgotPasswordModal';
@@ -1750,7 +1750,7 @@ if (view === 'manager') {
               }`}
             >
               <div className="flex items-center">
-                <Tool size={16} className="mr-2" />
+                <Wrench size={16} className="mr-2" />
                 Maintenance
               </div>
             </button>
