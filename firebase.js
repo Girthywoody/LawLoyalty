@@ -1,8 +1,6 @@
 // firebase.js
 import { deleteUser as firebaseDeleteUser } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
-import { getStorage } from 'firebase/storage';
-
 import { 
   getFirestore, 
   collection, 

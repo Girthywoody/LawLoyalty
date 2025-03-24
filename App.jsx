@@ -22,8 +22,6 @@ import { Store } from 'lucide-react';
 import VerificationPopup from './VerificationPopup';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import { recordRestaurantVisit, checkCooldownPeriod } from './RestaurantAnalytics';
-import { Wrench } from 'lucide-react';
-import MaintenanceServicePage from './MaintenanceServicePage';
 
 import ForgotPasswordModal from './ForgotPasswordModal';
 
@@ -1742,20 +1740,6 @@ if (view === 'manager') {
               </div>
             </button>
             <button
-              onClick={() => setManagerView('service')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                managerView === 'service' 
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  
-              }`}
-            >
-              <div className="flex items-center">
-                <Wrench size={16} className="mr-2" />
-                Maintenance
-              </div>
-            </button>
-            <button
               onClick={() => setManagerView('discount')}
               className={`px-6 py-4 font-medium text-sm transition-colors ${
                 managerView === 'discount' 
@@ -1787,7 +1771,7 @@ if (view === 'manager') {
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
-        {/* Conditionally render based on managerView */}
+        {/* Conditionally render either Manage view or Discount view */}
         {managerView === 'manage' ? (
           <>
             {/* Restaurant info */}
@@ -1968,9 +1952,6 @@ if (view === 'manager') {
               </div>
             </div>
           </>
-        ) : managerView === 'service' ? (
-          // Render MaintenanceServicePage when service view is selected
-          <MaintenanceServicePage currentUser={currentUser} />
         ) : (
           // Discount View - Adapted from employee view with visual improvements
           <div className="bg-white shadow-lg rounded-xl overflow-hidden">
