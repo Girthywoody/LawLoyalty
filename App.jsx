@@ -1003,7 +1003,6 @@ if (view === 'admin') {
                         >
                           <option value="Employee">Employee</option>
                           <option value="Manager">Manager</option>
-                          <option value="Admin">Admin</option>
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1648,10 +1647,10 @@ if (view === 'manager') {
           <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 flex justify-between">
             <div>
               <h3 className="text-lg font-medium leading-6 text-gray-900">
-                {currentUser?.restaurantName || 'Your Restaurant'}
+                {activeRestaurant?.name || currentUser?.restaurantName || 'Your Restaurant'}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Manage employees for your restaurant
+                Manage employees for {activeRestaurant?.name || currentUser?.restaurantName || 'your restaurant'}
               </p>
             </div>
             <UserProfileBadge user={currentUser} />
