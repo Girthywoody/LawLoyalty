@@ -1,4 +1,5 @@
 // firebase.js
+import { deleteUser as firebaseDeleteUser } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 import { 
   getFirestore, 
@@ -29,8 +30,7 @@ import {
 
 } from 'firebase/auth';
 
-// Replace this with your Firebase configuration
-// You can find this in your Firebase project settings
+
 const firebaseConfig = {
     apiKey: "AIzaSyCC9Bzela9Mhs2raQ0cQCSWJdm-GjnJvGg",
     authDomain: "law-loyalty.firebaseapp.com",
@@ -95,6 +95,79 @@ export const addEmployee = async (employeeData) => {
     throw error;
   }
 };
+
+export const deleteEmployee = async (id) => {
+  try {
+    // First, get the employee data to retrieve the uid
+    const employeeDoc = doc(db, 'employees', id);
+    const employeeSnapshot = await getDoc(employeeDoc);
+    
+    if (!employeeSnapshot.exists()) {
+      throw new Error('Employee not found');
+    }
+    
+    const employeeData = employeeSnapshot.data();
+    
+    // If the employee has a uid, delete from Authentication
+    if (employeeData.uid) {
+      try {
+        // Get the user reference
+        // Note: This can only delete the currently signed-in user, so for admin functions
+        // you'd need a Firebase Admin SDK server-side implementation for complete deletion
+        // This is a limitation of the client-side Firebase SDK
+        
+        // However, we can mark the account for deletion in the database
+        await updateDoc(employeeDoc, {
+          status: 'deleted',
+          deletedAt: new Date(),
+          active: false
+        });
+      } catch (authError) {
+        console.error("Error deleting user from Authentication:", authError);
+        // Continue with Firestore deletion even if Auth deletion fails
+      }
+    }
+    
+    // Delete from Firestore
+    await deleteDoc(employeeDoc);
+    
+    return id;
+  } catch (error) {
+    console.error("Error deleting employee:", error);
+    throw error;
+  }
+};
+
+// Add a new function to handle declining applications
+export const declineEmployeeApplication = async (id) => {
+  try {
+    // First, get the employee data to retrieve the uid
+    const employeeDoc = doc(db, 'employees', id);
+    const employeeSnapshot = await getDoc(employeeDoc);
+    
+    if (!employeeSnapshot.exists()) {
+      throw new Error('Employee application not found');
+    }
+    
+    const employeeData = employeeSnapshot.data();
+    
+    // Update the status to rejected
+    await updateDoc(employeeDoc, {
+      status: 'rejected',
+      updatedAt: new Date()
+    });
+    
+    // Since we can't delete the Authentication account directly from client-side code,
+    // you would need a Firebase Admin SDK server implementation to fully delete the auth account
+    // As a workaround, you can mark the account as rejected in the database
+    
+    return id;
+  } catch (error) {
+    console.error("Error declining employee application:", error);
+    throw error;
+  }
+};
+
 
 // For restaurant managers
 export const createManagerWithRestaurant = async (email, password, name, restaurantId) => {
@@ -433,15 +506,6 @@ export const updateEmployee = async (id, updatedData) => {
   }
 };
 
-export const deleteEmployee = async (id) => {
-  try {
-    const employeeDoc = doc(db, 'employees', id);
-    await deleteDoc(employeeDoc);
-    return id;
-  } catch (error) {
-    throw error;
-  }
-};
 
 // Watch for real-time changes to employees collection
 export const subscribeToEmployees = (callback) => {

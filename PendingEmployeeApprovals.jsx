@@ -118,26 +118,24 @@ const PendingEmployeeApprovals = ({ currentUser, activeRestaurant }) => {
     }
   };
 
-  // Decline/reject an employee
-  const handleDecline = async (employeeId) => {
-    try {
-      await updateEmployee(employeeId, {
-        status: 'rejected',
-        updatedAt: new Date()
-      });
-      
-      // Remove from the local state immediately
-      if (isMounted.current) {
-        setPendingEmployees(prev => prev.filter(emp => emp.id !== employeeId));
-        showLocalNotification("Employee application declined", "success");
-      }
-    } catch (error) {
-      console.error("Error declining employee:", error);
-      if (isMounted.current) {
-        showLocalNotification("Failed to decline employee", "error");
-      }
+// Replace the handleDecline function in PendingEmployeeApprovals.jsx
+const handleDecline = async (employeeId) => {
+  try {
+    // Use the new function instead of just updating the status
+    await declineEmployeeApplication(employeeId);
+    
+    // Remove from the local state immediately
+    if (isMounted.current) {
+      setPendingEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+      showLocalNotification("Employee application declined", "success");
     }
-  };
+  } catch (error) {
+    console.error("Error declining employee:", error);
+    if (isMounted.current) {
+      showLocalNotification("Failed to decline employee", "error");
+    }
+  }
+};
 
   // Render with refresh button
   return (
