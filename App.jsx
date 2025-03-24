@@ -1469,59 +1469,55 @@ if (view === 'employee') {
                 </div>
               </button>
 
-              {/* Dropdown menu */}
-              {showRestaurantDropdown && (
-                <div className="absolute z-10 mt-2 w-full rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                  <div className="max-h-60 overflow-auto">
-                    {RESTAURANTS.map((restaurant) => (
-                      <div key={restaurant.id}>
-                        <button
-                          onClick={() => {
-                            setSelectedRestaurant(restaurant);
-                            if (!restaurant.locations) {
-                              setSelectedLocation(restaurant.name);
-                            }
-                            setShowRestaurantDropdown(false);
-                          }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center justify-between group"
-                        >
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center mr-3 group-hover:bg-indigo-100">
-                              <Building size={16} className="text-indigo-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{restaurant.name}</p>
-                              <p className="text-xs text-gray-500">{restaurant.discount} discount</p>
-                            </div>
-                          </div>
-                          {restaurant.locations && (
-                            <MapPin size={16} className="text-gray-400 group-hover:text-indigo-500" />
-                          )}
-                        </button>
-
-                        {/* Location sub-menu */}
-                        {selectedRestaurant?.id === restaurant.id && restaurant.locations && (
-                          <div className="ml-12 border-l border-gray-100">
-                            {restaurant.locations.map((location) => (
-                              <button
-                                key={location.id}
-                                onClick={() => {
-                                  setSelectedLocation(location.name);
-                                  setShowRestaurantDropdown(false);
-                                }}
-                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center"
-                              >
-                                <MapPin size={14} className="text-gray-400 mr-2" />
-                                <span className="text-sm text-gray-700">{location.name}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              // In App.jsx, modify the dropdown handling in the discount view section
+// Find this code in the discount view part of the manager view:
+{showRestaurantDropdown && (
+  <div className="absolute z-10 mt-2 w-full rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+    <div className="max-h-60 overflow-auto">
+      {filteredRestaurants().map((restaurant) => (
+        <div key={restaurant.id} className="px-1 py-1">
+          {!restaurant.locations ? (
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+              onClick={() => {
+                setSelectedRestaurant(restaurant);
+                setSelectedLocation(restaurant.name);
+                setShowRestaurantDropdown(false);
+              }}
+            >
+              {/* button content */}
+            </button>
+          ) : (
+            // For restaurants with multiple locations
+            <>
+              <div className="px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-md mx-2 mb-1">
+                {restaurant.name}
+              </div>
+              <div className="ml-4 mt-1 space-y-1 mb-2">
+                {restaurant.locations.map((location) => (
+                  <button
+                    key={location.id}
+                    type="button"
+                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+                    onClick={() => {
+                      setSelectedLocation(location.name);
+                      // Also set the selectedRestaurant for consistency
+                      setSelectedRestaurant(restaurant);
+                      setShowRestaurantDropdown(false);
+                    }}
+                  >
+                    {/* button content */}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
             </div>
           </div>
 
@@ -1700,6 +1696,16 @@ if (view === 'manager') {
           </div>
         </div>
       </div>
+
+onClick={() => {
+  setSelectedRestaurant(restaurant);
+  setSelectedLocation(restaurant.name);
+  setShowRestaurantDropdown(false);
+  // Update activeRestaurant if in manager view
+  if (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Manager') {
+    setActiveRestaurant(restaurant);
+  }
+}}
 
       {currentUser && (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Admin') && (
         <RestaurantSelector 

@@ -53,21 +53,21 @@ const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) =>
     return [];
   };
   
-// In App.jsx, replace the handleSelectRestaurant function in the employee view
+// Replace the handleSelectRestaurant function in RestaurantSelector.jsx with this:
 const handleSelectRestaurant = (restaurant) => {
     // Check if the restaurant has locations
-    const restaurantObj = RESTAURANTS.find(r => r.id === restaurant.id);
+    const restaurantObj = restaurants.find(r => r.id === restaurant.id);
     
     if (restaurantObj && restaurantObj.locations) {
       // If the restaurant has locations, just set the selectedRestaurant but don't select a location yet
       setSelectedRestaurant(restaurantObj);
-      // Expand the dropdown to show locations
-      setShowRestaurantDropdown(true);
+      // Call the parent component's callback with the restaurant
+      onSelectRestaurant(restaurantObj);
     } else {
       // If no locations, proceed as normal
       setSelectedRestaurant(restaurant);
-      setSelectedLocation(restaurant.name);
-      setShowRestaurantDropdown(false);
+      onSelectRestaurant(restaurant);
+      setShowDropdown(false);
     }
   };
   
