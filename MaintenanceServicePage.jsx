@@ -1551,6 +1551,5 @@ const MaintenanceServicePage = ({ currentUser }) => {
 );
 };
 
-//test
 
 export default MaintenanceServicePage;
