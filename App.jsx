@@ -85,54 +85,56 @@ const RestaurantLoyaltyApp = () => {
   const [selectedManagerRestaurant, setSelectedManagerRestaurant] = useState(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [activeRestaurant, setActiveRestaurant] = useState(null);
-
+  const [managerView, setManagerView] = useState('manage'); // New state for manager view toggle
   
 
-  // Data
+
   const RESTAURANTS = [
-    { id: "montanas", name: "Montana's" },
-    { id: "kelseys", name: "Kelsey's" },
-    { id: "coras", name: "Cora's Breakfast" },
-    { id: "js-roadhouse", name: "J's Roadhouse" },
-    { id: "swiss-chalet", name: "Swiss Chalet" },
-    { id: "northern-climate", name: "Northern Climate" },
-    { id: "wellness-studio", name: "Wellness Studio" },
-    { id: "montanas", name: "Montana's" },
+    { id: "montanas", name: "Montana's", discount: 20 },
+    { id: "kelseys", name: "Kelsey's", discount: 20 },
+    { id: "coras", name: "Cora's Breakfast", discount: 10 },
+    { id: "js-roadhouse", name: "J's Roadhouse", discount: 20 },
+    { id: "swiss-chalet", name: "Swiss Chalet", discount: 20 },
+    { id: "northern-climate", name: "Northern Climate", discount: 20 },
+    { id: "wellness-studio", name: "Wellness Studio", discount: 20 },
+    { id: "poke-bar", name: "Poke Bar", discount: 20 },
     {
       id: "lot-88",
       name: "Lot 88",
+      discount: 20,
       locations: [
-        { id: "lot88-sudbury", name: "Sudbury" },
-        { id: "lot88-timmins", name: "Timmins" },
-        { id: "lot88-orillia", name: "Orillia" },
-        { id: "lot88-north-bay", name: "North Bay" }
+        { id: "lot88-sudbury", name: "Sudbury", discount: 20 },
+        { id: "lot88-timmins", name: "Timmins", discount: 20 },
+        { id: "lot88-orillia", name: "Orillia", discount: 20 },
+        { id: "lot88-north-bay", name: "North Bay", discount: 20 }
       ]
-    },
+    }, 
     {
       id: "overtime-bar",
       name: "Overtime Bar",
+      discount: 20,
       locations: [
         { id: "overtime-sudbury", name: "Sudbury" },
         { id: "overtime-val-caron", name: "Val Caron" },
         { id: "overtime-chelmsford", name: "Chelmsford" }
       ]
-    },
-    { id: "poke-bar", name: "Poke Bar" },
-    {
+    },   {
       id: "happy-life",
       name: "Happy Life",
+      discount: 10,
       locations: [
-        { id: "happy-life-kingsway", name: "Kingsway" },
-        { id: "happy-life-val-caron", name: "Val Caron" },
-        { id: "happy-life-chelmsford", name: "Chelmsford" },
-        { id: "happy-life-timmins", name: "Timmins" },
-        { id: "happy-life-lakeshore", name: "Lakeshore" },
-        { id: "happy-life-alqonquin", name: "Alqonquin" },
-        { id: "happy-life-espanola", name: "Espanola" }
+        { id: "happy-life-kingsway", name: "Kingsway", discount: 10 },
+        { id: "happy-life-val-caron", name: "Val Caron", discount: 10 },
+        { id: "happy-life-chelmsford", name: "Chelmsford", discount: 10 },
+        { id: "happy-life-timmins", name: "Timmins", discount: 10 },
+        { id: "happy-life-lakeshore", name: "Lakeshore", discount: 10 },
+        { id: "happy-life-alqonquin", name: "Alqonquin", discount: 10 },
+        { id: "happy-life-espanola", name: "Espanola", discount: 10 }
       ]
     },
-    { id: "jlaw-workers", name: "JLaw Workers" },
-  ];
+    { id: "jlaw-workers", name: "JLaw Workers", discount: 50 },
+
+  ]
   
     const [email, setEmail] = useState(''); // Instead of username
   // Clock update effect
@@ -346,17 +348,25 @@ const handleLogin = async (e) => {
     }
   };
 
-  // Simplify getDiscount to only use restaurant discount
   const getDiscount = (location) => {
-    const restaurant = RESTAURANTS.find(r => 
-      r.name === location || 
-      (r.locations && r.locations.some(l => l.name === location))
-    );
-    
-    if (restaurant) {
-      return parseInt(restaurant.discount);
+    // First check for direct restaurant match by name
+    const restaurantByName = RESTAURANTS.find(r => r.name === location);
+    if (restaurantByName && typeof restaurantByName.discount === 'number') {
+      return restaurantByName.discount;
     }
-    return 0;
+    
+    // Then check for restaurant with locations
+    for (const restaurant of RESTAURANTS) {
+      if (restaurant.locations) {
+        const locationObj = restaurant.locations.find(l => l.name === location);
+        if (locationObj && typeof locationObj.discount === 'number') {
+          return locationObj.discount;
+        }
+      }
+    }
+    
+    // Default return if no match found
+    return 20; // Default discount
   };
 
 
@@ -1622,6 +1632,26 @@ if (view === 'manager') {
           </div>
         </div>
       </header>
+
+            {/* Navigation Menu */}
+      <div className="bg-white shadow-sm border-b border-gray-200 mb-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex">
+            <button
+              onClick={() => setManagerView('manage')}
+              className={`px-4 py-3 font-medium text-sm ${managerView === 'manage' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Manage
+            </button>
+            <button
+              onClick={() => setManagerView('discount')}
+              className={`px-4 py-3 font-medium text-sm ${managerView === 'discount' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Discount
+            </button>
+          </div>
+        </div>
+      </div>
 
 
       {currentUser && (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Admin') && (

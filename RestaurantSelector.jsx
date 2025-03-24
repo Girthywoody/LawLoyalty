@@ -30,7 +30,6 @@ const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) =>
     }
   }, [currentUser, restaurants, onSelectRestaurant, initialLoadDone]);
   
-  // Filter restaurants to only show those the user manages
   const getAvailableRestaurants = () => {
     if (!currentUser) return [];
     
@@ -38,10 +37,12 @@ const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) =>
       // Admins can see all restaurants
       return restaurants;
     } else if (currentUser.jobTitle === 'General Manager' && currentUser.managedRestaurants) {
-      // General managers can only see their assigned restaurants
-      return restaurants.filter(restaurant => 
-        currentUser.managedRestaurants.includes(restaurant.id)
-      );
+      // General managers can only see their assigned restaurants (removing duplicates)
+      const uniqueRestaurantIds = [...new Set(currentUser.managedRestaurants)];
+      return uniqueRestaurantIds.map(id => {
+        const restaurant = restaurants.find(r => r.id === id);
+        return restaurant || { id, name: id }; // Fallback if restaurant not found
+      });
     } else if (currentUser.restaurantId) {
       // Regular managers only see their one restaurant
       return restaurants.filter(restaurant => 
