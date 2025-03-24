@@ -1599,10 +1599,6 @@ if (view === 'completeSignup') {
 // MANAGER VIEW
 if (view === 'manager') {
 
-<PendingEmployeeApprovals 
-  currentUser={currentUser} 
-  activeRestaurant={activeRestaurant}
-/>
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -1634,15 +1630,15 @@ if (view === 'manager') {
 
 
       {currentUser && (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Admin') && (
-        <RestaurantSelector 
-          currentUser={currentUser}
-          restaurants={RESTAURANTS}
-          onSelectRestaurant={(restaurant) => {
-            console.log("Restaurant selected:", restaurant);
-            setActiveRestaurant(restaurant);
-          }}
-        />
-      )}
+      <RestaurantSelector 
+        currentUser={currentUser}
+        restaurants={RESTAURANTS}
+        onSelectRestaurant={(restaurant) => {
+          console.log("Restaurant selected:", restaurant);
+          setActiveRestaurant(restaurant);
+        }}
+      />
+    )}
 
 
       {/* Main content */}
@@ -1662,6 +1658,7 @@ if (view === 'manager') {
           </div>
         </div>
           
+
         <PendingEmployeeApprovals 
   currentUser={currentUser} 
   activeRestaurant={activeRestaurant}

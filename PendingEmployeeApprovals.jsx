@@ -4,7 +4,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { User, CheckCircle, XCircle } from 'lucide-react';
 import { db, updateEmployee } from './firebase';
 
-const PendingEmployeeApprovals = ({ currentUser }) => {
+const PendingEmployeeApprovals = ({ currentUser, activeRestaurant }) => {
   const [pendingEmployees, setPendingEmployees] = useState([]);
   const [localNotification, setLocalNotification] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -23,9 +23,12 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
     };
   }, []);
   
-  // Load pending employees only when refresh is clicked
   const loadPendingEmployees = async () => {
-    if (!currentUser?.restaurantId) {
+    // Get the correct restaurantId based on user role and active selection
+    const restaurantId = activeRestaurant?.id || currentUser?.restaurantId;
+    
+    if (!restaurantId) {
+      showLocalNotification("No restaurant selected", "error");
       return;
     }
     
@@ -35,7 +38,7 @@ const PendingEmployeeApprovals = ({ currentUser }) => {
       const employeesRef = collection(db, 'employees');
       const q = query(
         employeesRef, 
-        where("restaurantId", "==", currentUser.restaurantId),
+        where("restaurantId", "==", restaurantId),
         where("status", "==", "pending")
       );
       
