@@ -234,10 +234,11 @@ const PendingEmployeeApprovals = ({ currentUser, activeRestaurant }) => {
                       <div>
                         <p className="text-sm text-gray-600">
                           <span className="font-medium">Email verification status:</span>{" "}
-                          {employee.emailVerified ? (
-                            <span className="text-green-600 font-medium">Verified</span>
+                          {/* Use the proper auth property for email verification */}
+                          {employee.uid ? (
+                            <span className="text-green-600 font-medium">Account Created</span>
                           ) : (
-                            <span className="text-amber-600 font-medium">Not verified</span>
+                            <span className="text-amber-600 font-medium">Account Pending</span>
                           )}
                         </p>
                       </div>
