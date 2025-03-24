@@ -54,7 +54,7 @@ const GeneralManagerManagement = ({ currentUser }) => {
       { id: "lot88-north-bay", name: "North Bay", discount: 20 },
       { id: "overtime-sudbury", name: "Sudbury", discount: 20 },
       { id: "overtime-val-caron", name: "Val Caron", discount: 20 },
-      { id: "overtime-chelmsford", name: "Chelmsford", discount: 20 }
+      { id: "overtime-chelmsford", name: "Chelmsford", discount: 20 },
       { id: "happy-life-kingsway", name: "Kingsway", discount: 10 },
       { id: "happy-life-val-caron", name: "Val Caron", discount: 10 },
       { id: "happy-life-chelmsford", name: "Chelmsford", discount: 10 },
