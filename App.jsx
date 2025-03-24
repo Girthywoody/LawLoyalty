@@ -974,7 +974,7 @@ if (view === 'admin') {
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
-              <p className="text-gray-500">Manage all users across restaurants</p>
+              <p className="text-gray-500">Manage all users across locations</p>
             </div>
             <UserProfileBadge user={currentUser} />
           </div>
@@ -1020,7 +1020,7 @@ if (view === 'admin') {
                       Role
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Restaurant
+                      Location
                     </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Actions
@@ -1471,7 +1471,7 @@ if (view === 'employee') {
           {/* Location selector */}
           <div className="p-6 border-b border-gray-200">
             <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-4">
-              Select Restaurant Location
+              Select Location
             </label>
             
             <div className="relative">
@@ -1668,7 +1668,7 @@ if (view === 'employee') {
               </div>
               <h3 className="mt-4 text-lg font-medium text-gray-900">Select a Location</h3>
               <p className="mt-2 text-sm text-gray-500">
-                Choose a restaurant location from the dropdown above to view your available discount.
+                Choose a location from the dropdown above to view your available discount.
               </p>
             </div>
           )}
@@ -1679,7 +1679,7 @@ if (view === 'employee') {
       <footer className="bg-white border-t border-gray-200 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-xs text-center text-gray-500">
-            &copy; {new Date().getFullYear()} Restaurant Group • All rights reserved
+            &copy; {new Date().getFullYear()} Josh Law • All rights reserved
           </p>
         </div>
       </footer>

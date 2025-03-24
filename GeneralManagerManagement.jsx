@@ -42,27 +42,27 @@ const GeneralManagerManagement = ({ currentUser }) => {
   useEffect(() => {
     // Use the RESTAURANTS constant from your app
     const RESTAURANTS = [
-      { id: "montanas", name: "Montana's", discount: 20 },
-      { id: "kelseys", name: "Kelsey's", discount: 20 },
-      { id: "coras", name: "Cora's Breakfast", discount: 10 },
-      { id: "js-roadhouse", name: "J's Roadhouse", discount: 20 },
-      { id: "swiss-chalet", name: "Swiss Chalet", discount: 20 },
-      { id: "poke-bar", name: "Poke Bar", discount: 20 },
-      { id: "lot88-sudbury", name: "Lot88 Sudbury", discount: 20 },
-      { id: "lot88-timmins", name: "Lot88 Timmins", discount: 20 },
-      { id: "lot88-orillia", name: "Lot88 Orillia", discount: 20 },
-      { id: "lot88-north-bay", name: "Lot88 North Bay", discount: 20 },
-      { id: "overtime-sudbury", name: "Overtime Sudbury", discount: 20 },
-      { id: "overtime-val-caron", name: "Overtime Val Caron", discount: 20 },
-      { id: "overtime-chelmsford", name: "Overtime Chelmsford", discount: 20 },
-      { id: "happy-life-kingsway", name: "Happy Life Kingsway", discount: 10 },
-      { id: "happy-life-val-caron", name: "Happy Life Val Caron", discount: 10 },
-      { id: "happy-life-chelmsford", name: "Happy Life Chelmsford", discount: 10 },
-      { id: "happy-life-timmins", name: "Happy Life Timmins", discount: 10 },
-      { id: "happy-life-lakeshore", name: "Happy Life Lakeshore", discount: 10 },
-      { id: "happy-life-alqonquin", name: "Happy Life Alqonquin", discount: 10 },
-      { id: "happy-life-espanola", name: "Happy Life Espanola", discount: 10 },
-      { id: "jlaw-workers", name: "JLaw Workers", discount: 20 }
+      { id: "montanas", name: "Montana's"},
+      { id: "kelseys", name: "Kelsey's"},
+      { id: "coras", name: "Cora's Breakfast"},
+      { id: "js-roadhouse", name: "J's Roadhouse"},
+      { id: "swiss-chalet", name: "Swiss Chalet"},
+      { id: "poke-bar", name: "Poke Bar"},
+      { id: "lot88-sudbury", name: "Lot88 Sudbury"},
+      { id: "lot88-timmins", name: "Lot88 Timmins"},
+      { id: "lot88-orillia", name: "Lot88 Orillia"},
+      { id: "lot88-north-bay", name: "Lot88 North Bay"},
+      { id: "overtime-sudbury", name: "Overtime Sudbury"},
+      { id: "overtime-val-caron", name: "Overtime Val Caron"},
+      { id: "overtime-chelmsford", name: "Overtime Chelmsford"},
+      { id: "happy-life-kingsway", name: "Happy Life Kingsway"},
+      { id: "happy-life-val-caron", name: "Happy Life Val Caron"},
+      { id: "happy-life-chelmsford", name: "Happy Life Chelmsford"},
+      { id: "happy-life-timmins", name: "Happy Life Timmins"},
+      { id: "happy-life-lakeshore", name: "Happy Life Lakeshore"},
+      { id: "happy-life-alqonquin", name: "Happy Life Alqonquin"},
+      { id: "happy-life-espanola", name: "Happy Life Espanola"},
+      { id: "jlaw-workers", name: "JLaw Workers"}
     ]
     setRestaurants(RESTAURANTS);
   }, []);
