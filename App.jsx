@@ -1484,6 +1484,10 @@ if (view === 'employee') {
                 setSelectedRestaurant(restaurant);
                 setSelectedLocation(restaurant.name);
                 setShowRestaurantDropdown(false);
+                // Update activeRestaurant if in manager view
+                if (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Manager') {
+                  setActiveRestaurant(restaurant);
+                }
               }}
             >
               {/* button content */}
@@ -1697,15 +1701,7 @@ if (view === 'manager') {
         </div>
       </div>
 
-onClick={() => {
-  setSelectedRestaurant(restaurant);
-  setSelectedLocation(restaurant.name);
-  setShowRestaurantDropdown(false);
-  // Update activeRestaurant if in manager view
-  if (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Manager') {
-    setActiveRestaurant(restaurant);
-  }
-}}
+
 
       {currentUser && (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Admin') && (
         <RestaurantSelector 
