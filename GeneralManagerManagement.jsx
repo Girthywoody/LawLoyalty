@@ -61,8 +61,8 @@ const GeneralManagerManagement = ({ currentUser }) => {
       { id: "happy-life-timmins", name: "Timmins", discount: 10 },
       { id: "happy-life-lakeshore", name: "Lakeshore", discount: 10 },
       { id: "happy-life-alqonquin", name: "Alqonquin", discount: 10 },
-      { id: "happy-life-espanola", name: "Espanola", discount: 10 }
-      { id: "jlaw-workers", name: "JLaw Workers", discount: 20 },
+      { id: "happy-life-espanola", name: "Espanola", discount: 10 },
+      { id: "jlaw-workers", name: "JLaw Workers", discount: 20 }
     ]
     setRestaurants(RESTAURANTS);
   }, []);
