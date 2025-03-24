@@ -95,8 +95,6 @@ const RestaurantLoyaltyApp = () => {
     { id: "coras", name: "Cora's Breakfast", discount: 10 },
     { id: "js-roadhouse", name: "J's Roadhouse", discount: 20 },
     { id: "swiss-chalet", name: "Swiss Chalet", discount: 20 },
-    { id: "northern-climate", name: "Northern Climate", discount: 20 },
-    { id: "wellness-studio", name: "Wellness Studio", discount: 20 },
     { id: "poke-bar", name: "Poke Bar", discount: 20 },
     {
       id: "lot-88",
@@ -1981,48 +1979,64 @@ if (view === 'manager') {
                     <div className="max-h-60 overflow-auto">
                       {RESTAURANTS.map((restaurant) => (
                         <div key={restaurant.id} className="px-1 py-1">
-                          {!restaurant.locations ? (
-                            <button
-                              type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-                              onClick={() => {
-                                setSelectedRestaurant(restaurant);
-                                if (!restaurant.locations) {
-                                  setSelectedLocation(restaurant.name);
-                                }
-                                setShowRestaurantDropdown(false);
-                              }}
-                            >
-                              <Store size={16} className="text-indigo-600 flex-shrink-0" />
-                              <div>
-                                <div className="font-medium text-gray-900">{restaurant.name}</div>
-                              </div>
-                            </button>
-                          ) : (
-                            <>
-                              <div className="px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-md mx-2 mb-1">
-                                {restaurant.name}
-                              </div>
-                              <div className="ml-4 mt-1 space-y-1 mb-2">
-                                {restaurant.locations.map((location) => (
-                                  <button
-                                    key={location.id}
-                                    type="button"
-                                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-                                    onClick={() => {
-                                      setSelectedLocation(location.name);
-                                      setShowRestaurantDropdown(false);
-                                    }}
-                                  >
-                                    <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
-                                    <div>
-                                      <div className="font-medium text-gray-900">{location.name}</div>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
+{!restaurant.locations ? (
+  <button
+    type="button"
+    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+    onClick={() => {
+      setSelectedRestaurant(restaurant);
+      setSelectedLocation(restaurant.name);
+      setShowRestaurantDropdown(false);
+      // Update activeRestaurant if in manager view
+      if (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Manager') {
+        setActiveRestaurant(restaurant);
+      }
+    }}
+  >
+    <Store size={16} className="text-indigo-600 flex-shrink-0" />
+    <div>
+      <div className="font-medium text-gray-900">{restaurant.name}</div>
+    </div>
+  </button>
+) : (
+  // For restaurants with multiple locations
+  <>
+    <button
+      type="button"
+      className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+      onClick={() => {
+        setSelectedRestaurant(restaurant);
+        setSelectedLocation(restaurant.name);
+        setShowRestaurantDropdown(false);
+      }}
+    >
+      <Store size={16} className="text-indigo-600 flex-shrink-0" />
+      <div>
+        <div className="font-medium text-gray-900">{restaurant.name}</div>
+      </div>
+    </button>
+    <div className="ml-4 mt-1 space-y-1 mb-2">
+    {restaurant.locations.map((location) => (
+    <button
+      key={location.id}
+      type="button"
+      className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+      onClick={() => {
+        // Set both the location name and the parent restaurant
+        setSelectedLocation(location.name);
+        setSelectedRestaurant(restaurant); // Make sure we update the parent restaurant too
+        setShowRestaurantDropdown(false);
+      }}
+    >
+      <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
+      <div>
+        <div className="font-medium text-gray-900">{location.name}</div>
+      </div>
+    </button>
+  ))}
+    </div>
+  </>
+)}
                         </div>
                       ))}
                     </div>
