@@ -2223,4 +2223,65 @@ if (view === 'manager') {
 }
   return null;
 };
-export default RestaurantLoyaltyApp;
+export default RestaurantLoyaltyApp;import React, { useState, useEffect } from 'react';
+import { 
+  Clock, 
+  User, 
+  Building, 
+  Percent, 
+  LogOut, 
+  Plus, 
+  Trash2, 
+  Edit, 
+  CheckCircle, 
+  XCircle,
+  Calendar,
+  Shield,
+  Award,
+  MapPin,
+  Mail
+} from 'lucide-react';
+
+import { Store } from 'lucide-react';
+
+import VerificationPopup from './VerificationPopup';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import { recordRestaurantVisit, checkCooldownPeriod } from './RestaurantAnalytics';
+
+import ForgotPasswordModal from './ForgotPasswordModal';
+
+import { createUser, sendEmployeeInvite } from './firebase';
+
+import { 
+  createManagerWithRestaurant,
+  subscribeToRestaurantEmployees,
+  sendManagerInvite
+} from './firebase';
+
+import { 
+  loginWithEmailAndPassword, 
+  logoutUser, 
+  getEmployees, 
+  addEmployee, 
+  updateEmployee, 
+  deleteEmployee, 
+  subscribeToEmployees,
+  completeRegistration,
+  db
+} from './firebase';
+
+import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
+
+import GeneralManagerManagement from './GeneralManagerManagement';
+import RestaurantSelector from './RestaurantSelector';
+
+import PendingEmployeeApprovals from './PendingEmployeeApprovals';
+window.showAppNotification = null;
+
+import { auth } from './firebase';
+
+
+const RestaurantLoyaltyApp = () => {
+  // App state
+  const [view, setView] = useState('login');
+  const [username, setUsername] = useState('');
