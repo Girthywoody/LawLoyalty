@@ -323,7 +323,12 @@ useEffect(() => {
       
       // Update local state
       setSelectedRestaurant(pendingRestaurant);
-      setSelectedLocation(pendingRestaurant.name);
+      // Check if this is a location-specific selection
+      if (pendingRestaurant.locationName) {
+        setSelectedLocation(pendingRestaurant.locationName);
+      } else {
+        setSelectedLocation(pendingRestaurant.name);
+      }
       setShowRestaurantDropdown(false);
       
       // Update cooldown information
@@ -1446,6 +1451,14 @@ if (view === 'employee') {
           </div>
         </div>
       </header>
+
+      {showVerification && (
+  <VerificationPopup
+    restaurantName={pendingRestaurant?.name}
+    onConfirm={handleConfirmRestaurant}
+    onCancel={handleCancelVerification}
+  />
+)}
 
       {/* Main content */}
       <main className="flex-grow max-w-5xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
