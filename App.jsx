@@ -804,7 +804,6 @@ if (view === 'admin') {
       </header>
 
 
-
     {currentUser && currentUser.jobTitle === 'Admin' && (
       <GeneralManagerManagement currentUser={currentUser} />
     )}
