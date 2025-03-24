@@ -18,7 +18,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { db, storage } from './firebase';
+import { getStorage } from 'firebase/storage';
 import { 
   collection, 
   addDoc, 
