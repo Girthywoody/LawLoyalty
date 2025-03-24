@@ -24,7 +24,8 @@ import {
   signInWithEmailLink,
   updatePassword,
   updateProfile,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendEmailVerification
 
 } from 'firebase/auth';
 
@@ -51,8 +52,8 @@ const employeesCollection = collection(db, 'employees');
 const restaurantsCollection = collection(db, 'restaurants');
 const invitesCollection = collection(db, 'invites');
 
-export { db, auth, isSignInWithEmailLink, sendPasswordResetEmail};
 
+export { db, auth, isSignInWithEmailLink, sendPasswordResetEmail, sendEmailVerification };
 
 
 
@@ -290,6 +291,19 @@ export const getRestaurantName = (restaurantId) => {
     { id: "coras", name: "Cora's Breakfast" },
     { id: "js-roadhouse", name: "J's Roadhouse" },
     { id: "swiss-chalet", name: "Swiss Chalet" },
+    { id: "northern-climate", name: "Northern Climate" },
+    { id: "wellness-studio", name: "Wellness Studio" },
+    { id: "montanas", name: "Montana's" },
+    {
+      id: "lot-88",
+      name: "Lot 88",
+      locations: [
+        { id: "lot88-sudbury", name: "Sudbury" },
+        { id: "lot88-timmins", name: "Timmins" },
+        { id: "lot88-orillia", name: "Orillia" },
+        { id: "lot88-north-bay", name: "North Bay" }
+      ]
+    },
     {
       id: "overtime-bar",
       name: "Overtime Bar",
@@ -299,6 +313,7 @@ export const getRestaurantName = (restaurantId) => {
         { id: "overtime-chelmsford", name: "Chelmsford" }
       ]
     },
+
     { id: "lot-88", name: "Lot 88 Steakhouse" },
     { id: "poke-bar", name: "Poke Bar" },
     {
@@ -307,9 +322,14 @@ export const getRestaurantName = (restaurantId) => {
       locations: [
         { id: "happy-life-kingsway", name: "Kingsway" },
         { id: "happy-life-val-caron", name: "Val Caron" },
-        { id: "happy-life-chelmsford", name: "Chelmsford" }
+        { id: "happy-life-chelmsford", name: "Chelmsford" },
+        { id: "happy-life-timmins", name: "Timmins" },
+        { id: "happy-life-lakeshore", name: "Lakeshore" },
+        { id: "happy-life-alqonquin", name: "Alqonquin" },
+        { id: "happy-life-espanola", name: "Espanola" }
       ]
-    }
+    },
+    { id: "jlaw-workers", name: "JLaw Workers" },
   ];
   
   // First check if it's a direct restaurant match

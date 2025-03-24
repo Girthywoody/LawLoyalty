@@ -41,34 +41,51 @@ const PublicSignup = () => {
       try {
         // Using predefined restaurants from App.jsx for consistency
         const RESTAURANTS = [
-          { id: "montanas", name: "Montana's", discount: "20%" },
-          { id: "kelseys", name: "Kelsey's", discount: "20%" },
-          { id: "coras", name: "Cora's Breakfast", discount: "10%" },
-          { id: "js-roadhouse", name: "J's Roadhouse", discount: "20%" },
-          { id: "swiss-chalet", name: "Swiss Chalet", discount: "20%" },
-          {
-            id: "overtime-bar",
-            name: "Overtime Bar",
-            discount: "20%",
-            locations: [
-              { id: "overtime-sudbury", name: "Sudbury" },
-              { id: "overtime-val-caron", name: "Val Caron" },
-              { id: "overtime-chelmsford", name: "Chelmsford" }
-            ]
-          },
-          { id: "lot-88", name: "Lot 88 Steakhouse", discount: "20%" },
-          { id: "poke-bar", name: "Poke Bar", discount: "20%" },
-          {
-            id: "happy-life",
-            name: "Happy Life",
-            discount: "10%",
-            locations: [
-              { id: "happy-life-kingsway", name: "Kingsway" },
-              { id: "happy-life-val-caron", name: "Val Caron" },
-              { id: "happy-life-chelmsford", name: "Chelmsford" }
-            ]
-          }
-        ];
+            { id: "montanas", name: "Montana's" },
+            { id: "kelseys", name: "Kelsey's" },
+            { id: "coras", name: "Cora's Breakfast" },
+            { id: "js-roadhouse", name: "J's Roadhouse" },
+            { id: "swiss-chalet", name: "Swiss Chalet" },
+            { id: "northern-climate", name: "Northern Climate" },
+            { id: "wellness-studio", name: "Wellness Studio" },
+            { id: "montanas", name: "Montana's" },
+            {
+              id: "lot-88",
+              name: "Lot 88",
+              locations: [
+                { id: "lot88-sudbury", name: "Sudbury" },
+                { id: "lot88-timmins", name: "Timmins" },
+                { id: "lot88-orillia", name: "Orillia" },
+                { id: "lot88-north-bay", name: "North Bay" }
+              ]
+            },
+            {
+              id: "overtime-bar",
+              name: "Overtime Bar",
+              locations: [
+                { id: "overtime-sudbury", name: "Sudbury" },
+                { id: "overtime-val-caron", name: "Val Caron" },
+                { id: "overtime-chelmsford", name: "Chelmsford" }
+              ]
+            },
+        
+            { id: "lot-88", name: "Lot 88 Steakhouse" },
+            { id: "poke-bar", name: "Poke Bar" },
+            {
+              id: "happy-life",
+              name: "Happy Life",
+              locations: [
+                { id: "happy-life-kingsway", name: "Kingsway" },
+                { id: "happy-life-val-caron", name: "Val Caron" },
+                { id: "happy-life-chelmsford", name: "Chelmsford" },
+                { id: "happy-life-timmins", name: "Timmins" },
+                { id: "happy-life-lakeshore", name: "Lakeshore" },
+                { id: "happy-life-alqonquin", name: "Alqonquin" },
+                { id: "happy-life-espanola", name: "Espanola" }
+              ]
+            },
+            { id: "jlaw-workers", name: "JLaw Workers" },
+          ];
         
         setRestaurants(RESTAURANTS);
       } catch (err) {
@@ -123,6 +140,9 @@ const PublicSignup = () => {
       // Create the user in Firebase Auth
       const user = await createUser(email, password);
       
+      // Send verification email
+      await sendEmailVerification(auth.currentUser);
+      
       // Add user to Firestore with pending status
       await addEmployee({
         firstName: firstName,
@@ -136,7 +156,8 @@ const PublicSignup = () => {
         status: 'pending', // Add pending status
         createdAt: new Date(),
         updatedAt: new Date(),
-        uid: user.uid
+        uid: user.uid,
+        emailVerified: false // Track email verification status
       });
       
       // Show success message
@@ -153,6 +174,39 @@ const PublicSignup = () => {
       setIsLoading(false);
     }
   };
+  
+  // Update the success message to mention email verification
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+          <div className="text-center">
+            <div className="flex justify-center">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-4 shadow-lg">
+                <CheckCircle size={36} className="text-white" />
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800">Registration Submitted!</h1>
+            <p className="mt-2 text-gray-500">Please verify your email</p>
+          </div>
+          
+          <div className="bg-green-50 p-6 rounded-lg border border-green-100 mt-6">
+            <p className="text-green-700 font-medium mb-2">Thank you for registering!</p>
+            <p className="text-green-600 text-sm mb-4">
+              We've sent a verification email to <strong>{email}</strong>. Please check your inbox (including spam folders) and click the verification link.
+            </p>
+            <p className="text-green-600 text-sm">
+              After verifying your email, your registration will be submitted to the restaurant manager for approval. You'll be notified once your account is approved.
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-center mt-6">
+            <span className="text-indigo-600 animate-pulse">Redirecting to login...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Success state
   if (success) {

@@ -90,47 +90,51 @@ const RestaurantLoyaltyApp = () => {
 
   // Data
   const RESTAURANTS = [
-    { id: "montanas", name: "Montana's", discount: "20%" },
-    { id: "kelseys", name: "Kelsey's", discount: "20%" },
-    { id: "coras", name: "Cora's Breakfast", discount: "10%" },
-    { id: "js-roadhouse", name: "J's Roadhouse", discount: "20%" },
-    { id: "swiss-chalet", name: "Swiss Chalet", discount: "20%" },
+    { id: "montanas", name: "Montana's" },
+    { id: "kelseys", name: "Kelsey's" },
+    { id: "coras", name: "Cora's Breakfast" },
+    { id: "js-roadhouse", name: "J's Roadhouse" },
+    { id: "swiss-chalet", name: "Swiss Chalet" },
+    { id: "northern-climate", name: "Northern Climate" },
+    { id: "wellness-studio", name: "Wellness Studio" },
+    { id: "montanas", name: "Montana's" },
+    {
+      id: "lot-88",
+      name: "Lot 88",
+      locations: [
+        { id: "lot88-sudbury", name: "Sudbury" },
+        { id: "lot88-timmins", name: "Timmins" },
+        { id: "lot88-orillia", name: "Orillia" },
+        { id: "lot88-north-bay", name: "North Bay" }
+      ]
+    },
     {
       id: "overtime-bar",
       name: "Overtime Bar",
-      discount: "20%",
       locations: [
         { id: "overtime-sudbury", name: "Sudbury" },
         { id: "overtime-val-caron", name: "Val Caron" },
         { id: "overtime-chelmsford", name: "Chelmsford" }
       ]
     },
-    { id: "lot-88", name: "Lot 88 Steakhouse", discount: "20%" },
-    { id: "poke-bar", name: "Poke Bar", discount: "20%" },
+
+    { id: "lot-88", name: "Lot 88 Steakhouse" },
+    { id: "poke-bar", name: "Poke Bar" },
     {
       id: "happy-life",
       name: "Happy Life",
-      discount: "10%",
       locations: [
         { id: "happy-life-kingsway", name: "Kingsway" },
         { id: "happy-life-val-caron", name: "Val Caron" },
-        { id: "happy-life-chelmsford", name: "Chelmsford" }
+        { id: "happy-life-chelmsford", name: "Chelmsford" },
+        { id: "happy-life-timmins", name: "Timmins" },
+        { id: "happy-life-lakeshore", name: "Lakeshore" },
+        { id: "happy-life-alqonquin", name: "Alqonquin" },
+        { id: "happy-life-espanola", name: "Espanola" }
       ]
-    }
+    },
+    { id: "jlaw-workers", name: "JLaw Workers" },
   ];
-  
-  // const [jobTitles, setJobTitles] = useState(['Employee']);
-  
-  // const [employees, setEmployees] = useState([
-  //   { id: 1, name: 'John Smith', jobTitle: 'Employee' },
-  //   { id: 2, name: 'Maria Garcia', jobTitle: 'Employee' },
-  //   { id: 3, name: 'David Wong', jobTitle: 'Employee' },
-  //   { id: 4, name: 'Sarah Johnson', jobTitle: 'Employee' },
-  //   { id: 5, name: 'Alex Lee', jobTitle: 'Employee' },
-  //   { id: 6, name: 'Emma Roberts', jobTitle: 'Employee' }
-  // ]);
-  
-  // const [newEmployee, setNewEmployee] = useState({ name: '', jobTitle: 'Employee' });
   
     const [email, setEmail] = useState(''); // Instead of username
   // Clock update effect
