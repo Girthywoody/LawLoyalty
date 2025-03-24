@@ -1493,8 +1493,6 @@ if (view === 'employee') {
                 </div>
               </button>
 
-              // In App.jsx, modify the dropdown handling in the discount view section
-// Find this code in the discount view part of the manager view:
 {showRestaurantDropdown && (
   <div className="absolute z-10 mt-2 w-full rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
     <div className="max-h-60 overflow-auto">
