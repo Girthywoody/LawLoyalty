@@ -775,9 +775,6 @@ if (view === 'register') {
 // ADMIN VIEW
 if (view === 'admin') {
 
-
-
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {notification && <Notification message={notification.message} type={notification.type} />}
@@ -806,14 +803,16 @@ if (view === 'admin') {
         </div>
       </header>
 
-      <PendingEmployeeApprovals 
-        currentUser={currentUser} 
-        activeRestaurant={activeRestaurant}
-      />
 
-{currentUser && currentUser.jobTitle === 'Admin' && (
-            <GeneralManagerManagement currentUser={currentUser} />
-          )}
+
+    {currentUser && currentUser.jobTitle === 'Admin' && (
+      <GeneralManagerManagement currentUser={currentUser} />
+    )}
+
+  <PendingEmployeeApprovals 
+          currentUser={currentUser} 
+          activeRestaurant={activeRestaurant}
+        />
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
