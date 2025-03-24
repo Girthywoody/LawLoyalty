@@ -6,6 +6,13 @@ const RestaurantSelector = ({ currentUser, restaurants, onSelectRestaurant }) =>
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   
+  // Add this function to handle restaurant selection
+  const handleSelectRestaurant = (restaurant) => {
+    setSelectedRestaurant(restaurant);
+    onSelectRestaurant(restaurant);
+    setShowDropdown(false);
+  };
+
   // Initialize with current restaurant or first managed restaurant - only on first load
   useEffect(() => {
     if (!initialLoadDone && currentUser) {
