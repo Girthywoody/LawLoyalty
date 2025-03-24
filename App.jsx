@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import React, { useState, useEffect } from 'react';
 import { 
   Clock, 
   User, 
@@ -95,8 +94,6 @@ const RestaurantLoyaltyApp = () => {
   const [pendingRestaurant, setPendingRestaurant] = useState(null);
   const [cooldownInfo, setCooldownInfo] = useState(null);
   const [cooldownChecked, setCooldownChecked] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [employeesPerPage] = useState(10);
 
 
   const RESTAURANTS = [
@@ -1002,8 +999,7 @@ if (view === 'admin') {
                 </div>
                 <div>
                   <span className="text-sm text-gray-500">
-                    Showing {Math.min(currentPage * employeesPerPage, filteredEmployees.length)} of {employees.length} users
-                    (Page {currentPage})
+                    Showing {filteredEmployees.length} of {employees.length} users
                   </span>
                 </div>
               </div>
@@ -1826,8 +1822,7 @@ if (view === 'manager') {
                     </div>
                     <div>
                       <span className="text-sm text-gray-500">
-                        Showing {Math.min(currentPage * employeesPerPage, filteredEmployees.length)} of {employees.length} employees
-                        (Page {currentPage})
+                        Showing {filteredEmployees.length} of {employees.length} employees
                       </span>
                     </div>
                   </div>
