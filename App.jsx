@@ -1598,7 +1598,6 @@ if (view === 'employee') {
   );
 }
 
-{/* Admin-only section to create restaurant managers */}
 
 
 // MANAGER VIEW
@@ -1688,76 +1687,7 @@ if (view === 'manager') {
   currentUser={currentUser} 
   activeRestaurant={activeRestaurant}
 />
-        {/* Invite employee form - only for this restaurant */}
-        <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
-          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">
-              Invite New Employee
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Send an email invitation to join your restaurant
-            </p>
-          </div>
-          
-          <div className="px-6 py-5">
-            <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
-              <div className="sm:col-span-4">
-                <label htmlFor="inviteEmail" className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  id="inviteEmail"
-                  placeholder="employee@example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                />
-              </div>
-              <div className="sm:col-span-1">
-                <label htmlFor="inviteRole" className="block text-xs font-medium text-gray-500 mb-1">Role</label>
-                <select
-                  id="inviteRole"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                >
-                  <option value="Employee">Employee</option>
-                </select>
-              </div>
-              <div className="sm:col-span-1 flex items-end">
-                <button
-                  type="button"
-                  onClick={handleSendInvite}
-                  disabled={isLoading || !inviteEmail || (inviteRole === 'Manager' && !selectedManagerRestaurant)}
-                  className={`inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center ${isLoading || !inviteEmail || (inviteRole === 'Manager' && !selectedManagerRestaurant) ? 'opacity-70 cursor-not-allowed' : ''}`}
-                >
-                  {isLoading ? (
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    'Invite'
-                  )}
-                </button>
-              </div>
-            </div>
-            
-            {inviteSuccess && (
-              <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-green-800">
-                      Invitation sent successfully! The employee will receive an email with instructions.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+
 
 {/* Employee management section - filtered by restaurant */}
 <div className="w-full">
