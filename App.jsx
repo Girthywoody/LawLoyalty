@@ -133,8 +133,31 @@ const RestaurantLoyaltyApp = () => {
       ]
     },
     { id: "jlaw-workers", name: "JLaw Workers", discount: 50 },
-
   ]
+
+// Add a more sophisticated restaurant filtering function
+const filteredRestaurants = () => {
+  // If current user is an employee, they can see all restaurants
+  if (currentUser && currentUser.jobTitle === 'Employee') {
+    return RESTAURANTS;
+  }
+  
+  // For managers, they might only see their restaurant and others in their group
+  if (currentUser && (currentUser.jobTitle === 'Manager' || currentUser.jobTitle === 'General Manager')) {
+    // If they have managedRestaurants property, filter by those
+    if (currentUser.managedRestaurants && currentUser.managedRestaurants.length > 0) {
+      return RESTAURANTS.filter(r => currentUser.managedRestaurants.includes(r.id));
+    }
+    
+    // If they have a restaurant assigned, just show that one
+    if (currentUser.restaurantId) {
+      return RESTAURANTS.filter(r => r.id === currentUser.restaurantId);
+    }
+  }
+  
+  // Default: return all restaurants
+  return RESTAURANTS;
+};
   
     const [email, setEmail] = useState(''); // Instead of username
   // Clock update effect
@@ -145,6 +168,7 @@ const RestaurantLoyaltyApp = () => {
     
     return () => clearInterval(timer);
   }, []);
+
 
   // Add this useEffect at the top level of your App component
 useEffect(() => {
@@ -390,26 +414,26 @@ const handleLogout = async () => {
   }
 };
 
-  const getDiscount = (location) => {
-    // First check for direct restaurant match by name
-    const restaurantByName = RESTAURANTS.find(r => r.name === location);
-    if (restaurantByName && typeof restaurantByName.discount === 'number') {
-      return restaurantByName.discount;
-    }
-    
-    // Then check for restaurant with locations
-    for (const restaurant of RESTAURANTS) {
-      if (restaurant.locations) {
-        const locationObj = restaurant.locations.find(l => l.name === location);
-        if (locationObj && typeof locationObj.discount === 'number') {
-          return locationObj.discount;
-        }
+const getDiscount = (locationName) => {
+  // First check for direct restaurant match by name
+  const restaurantByName = RESTAURANTS.find(r => r.name === locationName);
+  if (restaurantByName && typeof restaurantByName.discount === 'number') {
+    return restaurantByName.discount;
+  }
+  
+  // Then check for location within restaurants
+  for (const restaurant of RESTAURANTS) {
+    if (restaurant.locations) {
+      const locationObj = restaurant.locations.find(l => l.name === locationName);
+      if (locationObj && typeof locationObj.discount === 'number') {
+        return locationObj.discount;
       }
     }
-    
-    // Default return if no match found
-    return 20; // Default discount
-  };
+  }
+  
+  // Default return if no match found
+  return 20; // Default discount
+};
 
 
   const handleSendInvite = async () => {
@@ -1499,21 +1523,24 @@ if (view === 'employee') {
                 {restaurant.name}
               </div>
               <div className="ml-4 mt-1 space-y-1 mb-2">
-                {restaurant.locations.map((location) => (
-                  <button
-                    key={location.id}
-                    type="button"
-                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-                    onClick={() => {
-                      setSelectedLocation(location.name);
-                      // Also set the selectedRestaurant for consistency
-                      setSelectedRestaurant(restaurant);
-                      setShowRestaurantDropdown(false);
-                    }}
-                  >
-                    {/* button content */}
-                  </button>
-                ))}
+              {restaurant.locations.map((location) => (
+              <button
+                key={location.id}
+                type="button"
+                className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+                onClick={() => {
+                  // Set both the location name and the parent restaurant
+                  setSelectedLocation(location.name);
+                  setSelectedRestaurant(restaurant); // Make sure we update the parent restaurant too
+                  setShowRestaurantDropdown(false);
+                }}
+              >
+                <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
+                <div>
+                  <div className="font-medium text-gray-900">{location.name}</div>
+                </div>
+              </button>
+            ))}
               </div>
             </>
           )}
