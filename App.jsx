@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 
 import { Store } from 'lucide-react';
+import { getStorage } from "firebase/storage";
 
 import VerificationPopup from './VerificationPopup';
 import AnalyticsDashboard from './AnalyticsDashboard';
