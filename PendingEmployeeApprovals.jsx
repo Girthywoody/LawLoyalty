@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, CheckCircle, XCircle, Calendar, Mail, Store, Clock } from 'lucide-react';
-import { collection, query, where, getDocs, db, updateEmployee, declineEmployeeApplication } from './firebase';
+import { db, updateEmployee, declineEmployeeApplication } from './firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const PendingEmployeeApprovals = ({ currentUser, activeRestaurant }) => {
   const [pendingEmployees, setPendingEmployees] = useState([]);
