@@ -42,17 +42,48 @@ const GeneralManagerManagement = ({ currentUser }) => {
   useEffect(() => {
     // Use the RESTAURANTS constant from your app
     const RESTAURANTS = [
-      { id: "montanas", name: "Montana's", discount: "20%" },
-      { id: "kelseys", name: "Kelsey's", discount: "20%" },
-      { id: "coras", name: "Cora's Breakfast", discount: "10%" },
-      { id: "js-roadhouse", name: "J's Roadhouse", discount: "20%" },
-      { id: "swiss-chalet", name: "Swiss Chalet", discount: "20%" },
-      { id: "overtime-bar", name: "Overtime Bar", discount: "20%" },
-      { id: "lot-88", name: "Lot 88 Steakhouse", discount: "20%" },
-      { id: "poke-bar", name: "Poke Bar", discount: "20%" },
-      { id: "happy-life", name: "Happy Life", discount: "10%" }
-    ];
-    
+      { id: "montanas", name: "Montana's", discount: 20 },
+      { id: "kelseys", name: "Kelsey's", discount: 20 },
+      { id: "coras", name: "Cora's Breakfast", discount: 10 },
+      { id: "js-roadhouse", name: "J's Roadhouse", discount: 20 },
+      { id: "swiss-chalet", name: "Swiss Chalet", discount: 20 },
+      { id: "poke-bar", name: "Poke Bar", discount: 20 },
+      {
+        id: "lot-88",
+        name: "Lot 88",
+        discount: 20,
+        locations: [
+          { id: "lot88-sudbury", name: "Sudbury", discount: 20 },
+          { id: "lot88-timmins", name: "Timmins", discount: 20 },
+          { id: "lot88-orillia", name: "Orillia", discount: 20 },
+          { id: "lot88-north-bay", name: "North Bay", discount: 20 }
+        ]
+      }, 
+      {
+        id: "overtime-bar",
+        name: "Overtime Bar",
+        discount: 20,
+        locations: [
+          { id: "overtime-sudbury", name: "Sudbury", discount: 20 },
+          { id: "overtime-val-caron", name: "Val Caron", discount: 20 },
+          { id: "overtime-chelmsford", name: "Chelmsford", discount: 20 }
+        ]
+      },   {
+        id: "happy-life",
+        name: "Happy Life",
+        discount: 10,
+        locations: [
+          { id: "happy-life-kingsway", name: "Kingsway", discount: 10 },
+          { id: "happy-life-val-caron", name: "Val Caron", discount: 10 },
+          { id: "happy-life-chelmsford", name: "Chelmsford", discount: 10 },
+          { id: "happy-life-timmins", name: "Timmins", discount: 10 },
+          { id: "happy-life-lakeshore", name: "Lakeshore", discount: 10 },
+          { id: "happy-life-alqonquin", name: "Alqonquin", discount: 10 },
+          { id: "happy-life-espanola", name: "Espanola", discount: 10 }
+        ]
+      },
+      { id: "jlaw-workers", name: "JLaw Workers", discount: 50 },
+    ]
     setRestaurants(RESTAURANTS);
   }, []);
 
