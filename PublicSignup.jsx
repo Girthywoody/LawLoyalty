@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUser, addEmployee, collection, getDocs, db } from './firebase';
-import { User, Shield, CheckCircle, XCircle, Mail, Coffee, Store, ChevronDown, MapPin } from 'lucide-react';
+import { User, Shield, CheckCircle, XCircle, Mail, Coffee, Store, ChevronDown, MapPin, CreditCard } from 'lucide-react';
 
 const PublicSignup = () => {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -100,7 +101,7 @@ const PublicSignup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!name || !email || !password || !confirmPassword || !selectedRestaurant) {
+    if (!firstName || !lastName || !email || !password || !confirmPassword || !selectedRestaurant) {
       setError('Please fill in all fields and select a restaurant');
       return;
     }
@@ -124,7 +125,9 @@ const PublicSignup = () => {
       
       // Add user to Firestore with pending status
       await addEmployee({
-        name: name,
+        firstName: firstName,
+        lastName: lastName,
+        name: `${firstName} ${lastName}`, // Keep the name field for backward compatibility
         email: email,
         jobTitle: 'Employee', // Default to Employee role
         discount: 20, // Default discount
@@ -196,24 +199,51 @@ const PublicSignup = () => {
         
         <form className="mt-4 sm:mt-6 space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4 sm:space-y-5">
+            {/* First Name Field */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Your Full Name</label>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                First Name <span className="text-xs text-gray-500">(as it appears on driver's license)</span>
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User size={18} className="text-gray-400" />
                 </div>
                 <input
-                  id="name"
-                  name="name"
+                  id="firstName"
+                  name="firstName"
                   type="text"
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your first name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                 />
               </div>
             </div>
+            
+            {/* Last Name Field */}
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name <span className="text-xs text-gray-500">(as it appears on driver's license)</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <CreditCard size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Enter your last name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <div className="relative">
@@ -233,7 +263,7 @@ const PublicSignup = () => {
               </div>
             </div>
             
-            {/* Enhanced Mobile-Friendly Restaurant Dropdown */}
+            {/* Enhanced Restaurant Dropdown */}
             <div className="relative" id="restaurant-dropdown">
               <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-1">Select Restaurant</label>
               <button
@@ -256,19 +286,24 @@ const PublicSignup = () => {
               </button>
               
               {showRestaurantDropdown && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg border border-gray-200 overflow-hidden">
-                  <div className="p-2 border-b border-gray-200">
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg overflow-auto border border-gray-200">
+                  <div className="sticky top-0 p-2 border-b border-gray-200 bg-white z-10">
                     <div className="relative">
+                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
                       <input
                         type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         placeholder="Search restaurants..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
                   </div>
-                  <div className="overflow-y-auto max-h-52">
+                  <div className="overflow-y-auto max-h-52 pt-1">
                     {filteredRestaurants().length === 0 ? (
                       <div className="p-4 text-sm text-gray-500 text-center">
                         No restaurants match your search
@@ -279,7 +314,7 @@ const PublicSignup = () => {
                           {!restaurant.locations ? (
                             <button
                               type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2"
+                              className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
                               onClick={() => handleSelectRestaurant(`${restaurant.id}|${restaurant.name}`, restaurant.name)}
                             >
                               <Store size={16} className="text-indigo-600 flex-shrink-0" />
@@ -290,15 +325,15 @@ const PublicSignup = () => {
                             </button>
                           ) : (
                             <>
-                              <div className="px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-md mx-2">
+                              <div className="px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-md mx-2 mb-1">
                                 {restaurant.name}
                               </div>
-                              <div className="ml-4 mt-1 space-y-1">
+                              <div className="ml-4 mt-1 space-y-1 mb-2">
                                 {restaurant.locations.map(location => (
                                   <button
                                     key={location.id}
                                     type="button"
-                                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2"
+                                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
                                     onClick={() => handleSelectRestaurant(
                                       `${location.id}|${restaurant.name} - ${location.name}`,
                                       `${restaurant.name} - ${location.name}`
@@ -322,6 +357,7 @@ const PublicSignup = () => {
               )}
             </div>
             
+            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Create Password</label>
               <div className="relative">
@@ -340,6 +376,8 @@ const PublicSignup = () => {
                 />
               </div>
             </div>
+            
+            {/* Confirm Password Field */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
               <div className="relative">

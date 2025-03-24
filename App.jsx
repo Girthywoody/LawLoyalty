@@ -939,41 +939,35 @@ if (view === 'admin') {
             {/* Employee table */}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Name
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Email
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Role
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Restaurant
                     </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {isEditingEmployee && editEmployee ? (
                     <tr className="bg-indigo-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {currentUser.jobTitle === 'Admin' ? (
-                          <input
-                            type="number"
-                            className="w-20 px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            value={editEmployee.discount}
-                            onChange={(e) => setEditEmployee({...editEmployee, discount: parseInt(e.target.value) || 0})}
-                          />
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {editEmployee.discount}%
-                          </span>
-                        )}
+                        <input
+                          type="text"
+                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          value={editEmployee.name}
+                          onChange={(e) => setEditEmployee({...editEmployee, name: e.target.value})}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
@@ -1012,25 +1006,17 @@ if (view === 'admin') {
                           ))}
                         </select>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="number"
-                          className="w-20 px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                          value={editEmployee.discount}
-                          onChange={(e) => setEditEmployee({...editEmployee, discount: parseInt(e.target.value) || 0})}
-                        />
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={saveEmployeeEditToFirebase}
-                          className="text-green-600 hover:text-green-900 mr-3"
+                          className="text-green-600 hover:text-green-900 mr-3 bg-green-50 hover:bg-green-100 p-2 rounded-md transition-colors"
                           aria-label="Save changes"
                         >
                           <CheckCircle size={16} />
                         </button>
                         <button
                           onClick={cancelEdit}
-                          className="text-gray-600 hover:text-gray-900"
+                          className="text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-md transition-colors"
                           aria-label="Cancel editing"
                         >
                           <XCircle size={16} />
@@ -1057,9 +1043,9 @@ if (view === 'admin') {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded-full ${
-                            employee.jobTitle === 'Admin' ? 'bg-purple-50 text-purple-700' :
-                            employee.jobTitle === 'Manager' ? 'bg-indigo-50 text-indigo-700' :
-                            'bg-green-50 text-green-700'
+                            employee.jobTitle === 'Admin' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+                            employee.jobTitle === 'Manager' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
+                            'bg-green-50 text-green-700 border border-green-200'
                           }`}>
                             {employee.jobTitle}
                           </span>
@@ -1067,22 +1053,17 @@ if (view === 'admin') {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {employee.restaurantName || 'Not assigned'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {employee.discount}%
-                          </span>
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
                             onClick={() => startEditEmployee(employee)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                            className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded-md mr-2 transition-colors"
                             aria-label="Edit user"
                           >
                             <Edit size={16} />
                           </button>
                           <button
                             onClick={() => removeEmployeeFromFirebase(employee.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-md transition-colors"
                             aria-label="Remove user"
                           >
                             <Trash2 size={16} />
@@ -1094,8 +1075,11 @@ if (view === 'admin') {
                   
                   {filteredEmployees.length === 0 && (
                     <tr>
-                      <td colSpan="6" className="px-6 py-10 text-center text-sm text-gray-500">
-                        No users found. Try a different search or add a new user.
+                      <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
+                        <div className="flex flex-col items-center justify-center">
+                          <User size={24} className="text-gray-300 mb-2" />
+                          <p>No users found. Try a different search or add a new user.</p>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -1743,167 +1727,162 @@ if (view === 'manager') {
           </div>
         </div>
 
-        {/* Employee management section - filtered by restaurant */}
-        <div className="w-full">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Employee Management</h2>
-            <p className="text-gray-500">Manage employees for {currentUser?.restaurantName || 'your restaurant'}</p>
+{/* Employee management section - filtered by restaurant */}
+<div className="w-full">
+  <div className="mb-6">
+    <h2 className="text-2xl font-bold text-gray-800">Employee Management</h2>
+    <p className="text-gray-500">Manage employees for {currentUser?.restaurantName || 'your restaurant'}</p>
+  </div>
+  
+  <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+    {/* Search bar */}
+    <div className="px-6 py-4 border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:w-64 mb-4 sm:mb-0">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            </svg>
           </div>
-          
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-            {/* Search bar */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div className="relative w-full sm:w-64 mb-4 sm:mb-0">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search employees..."
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <span className="text-sm text-gray-500">
-                    Showing {filteredEmployees.length} of {employees.length} employees
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Employee table */}
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Discount
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {isEditingEmployee && editEmployee ? (
-                    <tr className="bg-indigo-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="text"
-                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                          value={editEmployee.name}
-                          onChange={(e) => setEditEmployee({...editEmployee, name: e.target.value})}
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="email"
-                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                          value={editEmployee.email}
-                          onChange={(e) => setEditEmployee({...editEmployee, email: e.target.value})}
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                          value={editEmployee.jobTitle}
-                          onChange={(e) => setEditEmployee({...editEmployee, jobTitle: e.target.value})}
-                        >
-                          <option value="Employee">Employee</option>
-                          <option value="Manager">Manager</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={saveEmployeeEditToFirebase}
-                          className="text-green-600 hover:text-green-900 mr-3"
-                          aria-label="Save changes"
-                        >
-                          <CheckCircle size={16} />
-                        </button>
-                        <button
-                          onClick={cancelEdit}
-                          className="text-gray-600 hover:text-gray-900"
-                          aria-label="Cancel editing"
-                        >
-                          <XCircle size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ) : null}
-                  
-                  {filteredEmployees.map((employee) => (
-                    isEditingEmployee && editEmployee && employee.id === editEmployee.id ? null : (
-                      <tr key={employee.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                              <User size={14} className="text-indigo-600" />
-                            </div>
-                            <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900">{employee.name}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.email}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 text-xs rounded-full bg-green-50 text-green-700">
-                            {employee.jobTitle}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {employee.discount}%
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => startEditEmployee(employee)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-3"
-                            aria-label="Edit employee"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button
-                            onClick={() => removeEmployeeFromFirebase(employee.id)}
-                            className="text-red-600 hover:text-red-900"
-                            aria-label="Remove employee"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  ))}
-                  
-                  {filteredEmployees.length === 0 && (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
-                        No employees found. Try a different search or invite new employees.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <input
+            type="text"
+            placeholder="Search employees..."
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
+        <div>
+          <span className="text-sm text-gray-500">
+            Showing {filteredEmployees.length} of {employees.length} employees
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {/* Employee table - UPDATED to remove discount column and improve styling */}
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
+          <tr>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              Name
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              Email
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              Role
+            </th>
+            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-100">
+          {isEditingEmployee && editEmployee ? (
+            <tr className="bg-indigo-50">
+              <td className="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="text"
+                  className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={editEmployee.name}
+                  onChange={(e) => setEditEmployee({...editEmployee, name: e.target.value})}
+                />
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="email"
+                  className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={editEmployee.email}
+                  onChange={(e) => setEditEmployee({...editEmployee, email: e.target.value})}
+                />
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <select
+                  className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={editEmployee.jobTitle}
+                  onChange={(e) => setEditEmployee({...editEmployee, jobTitle: e.target.value})}
+                >
+                  <option value="Employee">Employee</option>
+                  <option value="Manager">Manager</option>
+                </select>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button
+                  onClick={saveEmployeeEditToFirebase}
+                  className="text-green-600 hover:text-green-900 mr-3 bg-green-50 hover:bg-green-100 p-2 rounded-md transition-colors"
+                  aria-label="Save changes"
+                >
+                  <CheckCircle size={16} />
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  className="text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-md transition-colors"
+                  aria-label="Cancel editing"
+                >
+                  <XCircle size={16} />
+                </button>
+              </td>
+            </tr>
+          ) : null}
+          
+          {filteredEmployees.map((employee) => (
+            isEditingEmployee && editEmployee && employee.id === editEmployee.id ? null : (
+              <tr key={employee.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                      <User size={14} className="text-indigo-600" />
+                    </div>
+                    <div className="ml-3">
+                      <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {employee.email}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-50 text-green-700 border border-green-200">
+                    {employee.jobTitle}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    onClick={() => startEditEmployee(employee)}
+                    className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded-md mr-2 transition-colors"
+                    aria-label="Edit employee"
+                  >
+                    <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={() => removeEmployeeFromFirebase(employee.id)}
+                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-md transition-colors"
+                    aria-label="Remove employee"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            )
+          ))}
+          
+          {filteredEmployees.length === 0 && (
+            <tr>
+              <td colSpan="4" className="px-6 py-10 text-center text-sm text-gray-500">
+                <div className="flex flex-col items-center justify-center">
+                  <User size={24} className="text-gray-300 mb-2" />
+                  <p>No employees found. Try a different search or invite new employees.</p>
+                </div>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
       </main>
       
       {/* Footer */}
