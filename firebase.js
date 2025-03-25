@@ -58,18 +58,18 @@ export { db, auth, isSignInWithEmailLink, sendPasswordResetEmail, sendEmailVerif
 
 export const addEmployee = async (employeeData) => {
   try {
-    // Normalize the email address
-    const normalizedEmployeeData = {
+    // Create a copy with normalized email
+    const normalizedData = {
       ...employeeData,
       email: employeeData.email.toLowerCase()
     };
     
     // Create a meaningful ID based on name and restaurant (if available)
-    const nameSlug = normalizedEmployeeData.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const nameSlug = normalizedData.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
     let customId = `employee-${nameSlug}`;
     
-    if (normalizedEmployeeData.restaurantId) {
-      customId = `${normalizedEmployeeData.restaurantId}-${nameSlug}`;
+    if (normalizedData.restaurantId) {
+      customId = `${normalizedData.restaurantId}-${nameSlug}`;
     }
     
     // Check if a document with this ID already exists
@@ -82,7 +82,7 @@ export const addEmployee = async (employeeData) => {
     }
     
     // Remove discount field from employee data
-    const { discount, ...employeeDataWithoutDiscount } = normalizedEmployeeData;
+    const { discount, ...employeeDataWithoutDiscount } = normalizedData;
     
     // Use setDoc with a custom ID instead of addDoc
     await setDoc(doc(db, 'employees', customId), {
@@ -469,13 +469,52 @@ export const loginWithEmailAndPassword = async (email, password) => {
   try {
     // Convert email to lowercase before authentication
     const normalizedEmail = email.toLowerCase();
-    const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+    
+    // First try exact match with provided email
+    let userCredential;
+    try {
+      userCredential = await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      // If that fails, try with normalized email
+      userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+    }
+    
+    // Query Firestore to get the user's role information
+    const employeesRef = collection(db, 'employees');
+    
+    // Try both original and lowercase email in the query
+    const q1 = query(employeesRef, where("email", "==", email));
+    const q2 = query(employeesRef, where("email", "==", normalizedEmail));
+    
+    let querySnapshot = await getDocs(q1);
+    
+    // If no results with original email, try lowercase
+    if (querySnapshot.empty) {
+      querySnapshot = await getDocs(q2);
+    }
+    
+    if (querySnapshot.empty) {
+      throw new Error('User not found in employees database');
+    }
+    
+    // Get the employee data
+    const employeeData = querySnapshot.docs[0].data();
+    
+    // Also update the email in the employee record to be lowercase for future logins
+    if (email !== normalizedEmail && email === employeeData.email) {
+      const employeeDoc = doc(db, 'employees', querySnapshot.docs[0].id);
+      await updateDoc(employeeDoc, {
+        email: normalizedEmail,
+        updatedAt: new Date()
+      });
+    }
+    
+    // Rest of your function remains the same
     return userCredential.user;
   } catch (error) {
     throw error;
   }
 };
-
 
 
 export const logoutUser = async () => {

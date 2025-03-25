@@ -13,7 +13,8 @@ const CompleteSignup = () => {
   const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
   const [invalidLink, setInvalidLink] = useState(false);
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
