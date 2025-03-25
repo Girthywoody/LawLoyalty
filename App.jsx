@@ -1235,12 +1235,6 @@ if (view === 'admin') {
 
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-500">
-                New users need an invitation from a manager.
-              </p>
-            </div>
-
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-500">
                 New users can <a href="/signup" className="text-indigo-600 hover:text-indigo-800 font-medium">sign up here</a>.
               </p>
             </div>
@@ -1280,9 +1274,7 @@ if (view === 'admin') {
               </button>
             </div>
           </form>
-        </div>
-
-        <div className="mt-2 text-center">
+          <div className="mt-2 text-center">
           <button 
             onClick={handleForgotPassword}
             className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
@@ -1297,6 +1289,9 @@ if (view === 'admin') {
             onClose={() => setShowForgotPassword(false)}
           />
         )}
+        </div>
+
+
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
             &copy; {new Date().getFullYear()} Josh Law • All rights reserved

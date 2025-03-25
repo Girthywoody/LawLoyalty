@@ -16,7 +16,7 @@ const PublicSignup = () => {
   const [success, setSuccess] = useState(false);
   const [showRestaurantDropdown, setShowRestaurantDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRestaurantName, setSelectedRestaurantName] = useState('Select your restaurant');
+  const [selectedRestaurantName, setSelectedRestaurantName] = useState('Select your location');
   
   const navigate = useNavigate();
   
@@ -49,6 +49,7 @@ const PublicSignup = () => {
             { id: "northern-climate", name: "Northern Climate" },
             { id: "wellness-studio", name: "Wellness Studio" },
             { id: "montanas", name: "Montana's" },
+            { id: "flooring-and-more-superstore", name: "Flooring and More Superstore" },
             {
               id: "lot-88",
               name: "Lot 88",
@@ -287,7 +288,7 @@ const PublicSignup = () => {
             
             {/* Enhanced Restaurant Dropdown */}
             <div className="relative" id="restaurant-dropdown">
-              <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-1">Select Restaurant</label>
+              <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-1">Select Location</label>
               <button
                 type="button"
                 onClick={() => setShowRestaurantDropdown(!showRestaurantDropdown)}
@@ -319,7 +320,7 @@ const PublicSignup = () => {
                       <input
                         type="text"
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="Search restaurants..."
+                        placeholder="Search locations..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
@@ -456,7 +457,7 @@ const PublicSignup = () => {
         </div>
         
         <div className="text-center text-sm text-gray-500 mt-2 sm:mt-4">
-          <p>By creating an account, you'll get access to exclusive employee discounts at all participating restaurants after approval!</p>
+          <p>By creating an account, you'll get access to exclusive employee discounts at all participating locations after approval!</p>
         </div>
       </div>
     </div>
