@@ -95,6 +95,9 @@ const RestaurantLoyaltyApp = () => {
   const [cooldownInfo, setCooldownInfo] = useState(null);
   const [cooldownChecked, setCooldownChecked] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showCompletePassword, setShowCompletePassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const RESTAURANTS = [
     { id: "montanas", name: "Montana's", discount: 20 },
@@ -1392,14 +1395,30 @@ if (view === 'login') {
                 <input
                   id="password"
                   name="password"
-                  type="password"
-                  autoComplete="current-password"
+                  type={showLoginPassword ? "text" : "password"}
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="Enter password"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                >
+                  {showLoginPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14z" clipRule="evenodd" />
+                      <path d="M19.542 10C18.268 14.057 14.478 17 10 17c-1.865 0-3.598-.544-5.06-1.483L8.18 12.28A3 3 0 0015.9 11.05L14.26 12.69A3 3 0 0110 10c-.149 0-.293.014-.434.035L7.524 7.993C8.373 7.368 9.419 7 10 7c4.478 0 8.268 2.943 9.542 7z" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -1515,13 +1534,30 @@ if (view === 'completeSignup') {
                 <input
                   id="completePassword"
                   name="completePassword"
-                  type="password"
+                  type={showCompletePassword ? "text" : "password"}
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   placeholder="Create a secure password"
                   value={completeSignupPassword}
                   onChange={(e) => setCompleteSignupPassword(e.target.value)}
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowCompletePassword(!showCompletePassword)}
+                >
+                  {showCompletePassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14z" clipRule="evenodd" />
+                      <path d="M19.542 10C18.268 14.057 14.478 17 10 17c-1.865 0-3.598-.544-5.06-1.483L8.18 12.28A3 3 0 0015.9 11.05L14.26 12.69A3 3 0 0110 10c-.149 0-.293.014-.434.035L7.524 7.993C8.373 7.368 9.419 7 10 7c4.478 0 8.268 2.943 9.542 7z" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
             <div>
@@ -1541,42 +1577,6 @@ if (view === 'completeSignup') {
                   onChange={(e) => setCompleteSignupConfirmPassword(e.target.value)}
                 />
               </div>
-              <div>
-  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-  <div className="relative">
-    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-      <Shield size={18} className="text-gray-400" />
-    </div>
-    <input
-      id="password"
-      name="password"
-      type={showPassword ? "text" : "password"}
-      autoComplete="current-password"
-      required
-      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-      placeholder="Enter password"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-    />
-    <button
-      type="button"
-      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-      onClick={() => setShowPassword(!showPassword)}
-    >
-      {showPassword ? (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-        </svg>
-      ) : (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14z" clipRule="evenodd" />
-          <path d="M19.542 10C18.268 14.057 14.478 17 10 17c-1.865 0-3.598-.544-5.06-1.483L8.18 12.28A3 3 0 0015.9 11.05L14.26 12.69A3 3 0 0110 10c-.149 0-.293.014-.434.035L7.524 7.993C8.373 7.368 9.419 7 10 7c4.478 0 8.268 2.943 9.542 7z" />
-        </svg>
-      )}
-    </button>
-  </div>
-</div>
             </div>
           </div>
 
