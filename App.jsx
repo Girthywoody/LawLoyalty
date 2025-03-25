@@ -103,6 +103,9 @@ const RestaurantLoyaltyApp = () => {
     { id: "js-roadhouse", name: "J's Roadhouse", discount: 20 },
     { id: "swiss-chalet", name: "Swiss Chalet", discount: 20 },
     { id: "poke-bar", name: "Poke Bar", discount: 20 },
+    { id: "northern-climate", name: "Northern Climate", discount: 20 },
+    { id: "flooring-and-more-superstore", name: "Flooring and More Superstore", discount: 20 },
+    { id: "wellness-studio", name: "Wellness Studio", discount: 20 },
     {
       id: "lot-88",
       name: "Lot 88",
@@ -623,6 +626,163 @@ const handleCreateManager = async () => {
       showNotification("Failed to remove employee", "error");
       setIsLoading(false);
     }
+  };
+
+  const MobileNavbar = ({ currentUser, view, setView, handleLogout }) => {
+    const [showMenu, setShowMenu] = useState(false);
+    
+    const toggleMenu = () => {
+      setShowMenu(!showMenu);
+    };
+    
+    return (
+      <div className="lg:hidden">
+        {/* Mobile Header */}
+        <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20 p-3 flex justify-between items-center">
+          <div className="flex items-center">
+            <img src="/logo.jpg" alt="Logo" className="h-8 w-8 rounded-full mr-2" />
+            <h1 className="text-lg font-semibold text-indigo-700">Law Loyalty</h1>
+          </div>
+          
+          <button 
+            onClick={toggleMenu} 
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none"
+          >
+            {showMenu ? (
+              <X size={24} />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            )}
+          </button>
+        </div>
+        
+        {/* Mobile Menu */}
+        {showMenu && (
+          <div className="fixed inset-0 z-10 bg-gray-900 bg-opacity-50" onClick={toggleMenu}>
+            <div 
+              className="absolute right-0 top-0 h-full w-64 bg-white shadow-lg py-4 px-2"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex flex-col h-full">
+                <div className="flex-grow">
+                  {currentUser && (
+                    <div className="px-4 py-3 border-b border-gray-200 mb-4">
+                      <div className="flex items-center mb-2">
+                        <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+                          <User size={20} className="text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800">{currentUser.name}</p>
+                          <p className="text-xs text-gray-500">{currentUser.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full">
+                          {currentUser.jobTitle}
+                        </span>
+                        {currentUser.restaurantName && (
+                          <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full ml-2">
+                            {currentUser.restaurantName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="px-2 space-y-1">
+                    {currentUser && currentUser.jobTitle === 'Employee' && (
+                      <>
+                        <button 
+                          onClick={() => {
+                            setView('employee');
+                            setShowMenu(false);
+                          }} 
+                          className={`w-full flex items-center px-4 py-3 rounded-lg text-left ${view === 'employee' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100'}`}
+                        >
+                          <Percent size={20} className="mr-3" />
+                          My Discount
+                        </button>
+                      </>
+                    )}
+                    
+                    {currentUser && (currentUser.jobTitle === 'Manager' || currentUser.jobTitle === 'General Manager') && (
+                      <>
+                        <button 
+                          onClick={() => {
+                            setView('manager');
+                            setManagerView('manage');
+                            setShowMenu(false);
+                          }} 
+                          className={`w-full flex items-center px-4 py-3 rounded-lg text-left ${view === 'manager' && managerView === 'manage' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100'}`}
+                        >
+                          <User size={20} className="mr-3" />
+                          Manage Employees
+                        </button>
+                        
+                        <button 
+                          onClick={() => {
+                            setView('manager');
+                            setManagerView('discount');
+                            setShowMenu(false);
+                          }} 
+                          className={`w-full flex items-center px-4 py-3 rounded-lg text-left ${view === 'manager' && managerView === 'discount' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100'}`}
+                        >
+                          <Percent size={20} className="mr-3" />
+                          View Discount
+                        </button>
+                      </>
+                    )}
+                    
+                    {currentUser && currentUser.jobTitle === 'Admin' && (
+                      <>
+                        <button 
+                          onClick={() => {
+                            setView('admin');
+                            setShowMenu(false);
+                          }} 
+                          className={`w-full flex items-center px-4 py-3 rounded-lg text-left ${view === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100'}`}
+                        >
+                          <Shield size={20} className="mr-3" />
+                          Admin Dashboard
+                        </button>
+                        
+                        <button 
+                          onClick={() => {
+                            setActiveTab('analytics');
+                            setShowMenu(false);
+                          }} 
+                          className={`w-full flex items-center px-4 py-3 rounded-lg text-left ${activeTab === 'analytics' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100'}`}
+                        >
+                          <BarChart2 size={20} className="mr-3" />
+                          Analytics
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <button 
+                    onClick={() => {
+                      handleLogout();
+                      setShowMenu(false);
+                    }}
+                    className="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg"
+                  >
+                    <LogOut size={20} className="mr-3" />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Add this function to handle registration
@@ -1176,105 +1336,97 @@ if (view === 'admin') {
 }
 
 
-
-
-  // LOGIN VIEW
-  if (view === 'login') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
-          <div className="text-center">
-            <div className="flex justify-center">
-              <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4">
-              <img src="/logo.jpg" alt="Restaurant Logo" className="h-20 w-20 object-contain" />
-              </div>
+if (view === 'login') {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
+      <div className="w-full max-w-md p-6 sm:p-8 space-y-6 bg-white rounded-2xl shadow-xl border border-gray-100">
+        <div className="text-center">
+          <div className="flex justify-center">
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center mb-4">
+              <img src="/logo.jpg" alt="Restaurant Logo" className="h-full w-full object-contain rounded-full" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-800">Law Loyalty</h1>
-            <p className="mt-2 text-gray-500">Employee Discount System</p>
           </div>
-          
-          <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-            <div className="space-y-5">
-              <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail size={18} className="text-gray-400" />
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Shield size={18} className="text-gray-400" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    placeholder="Enter password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-500">
-                New users can <a href="/signup" className="text-indigo-600 hover:text-indigo-800 font-medium">sign up here</a>.
-              </p>
-            </div>
-
-            {/* Add helpful tooltips */}
-            <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex items-center">
-                <CheckCircle size={14} className="text-green-500 mr-2" />
-                <span>Ask your manager if you are having any problems logging in</span>
-              </div>
-            </div>
-
-            {loginError && (
-              <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex items-center">
-                <XCircle size={16} className="mr-2" />
-                {loginError}
-              </div>
-            )}
-
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Law Loyalty</h1>
+          <p className="mt-2 text-gray-500">Employee Discount System</p>
+        </div>
+        
+        <form className="mt-6 space-y-5" onSubmit={handleLogin}>
+          <div className="space-y-4">
             <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors font-medium ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Signing in...
-                  </>
-                ) : (
-                  'Sign in'
-                )}
-              </button>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             </div>
-          </form>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Shield size={18} className="text-gray-400" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="mt-2 text-center">
+            <p className="text-sm text-gray-500">
+              New users can <a href="/signup" className="text-indigo-600 hover:text-indigo-800 font-medium">sign up here</a>.
+            </p>
+          </div>
+
+          {loginError && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex items-center">
+              <XCircle size={16} className="mr-2 flex-shrink-0" />
+              <span>{loginError}</span>
+            </div>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors font-medium ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing in...
+                </>
+              ) : (
+                'Sign in'
+              )}
+            </button>
+          </div>
+        </form>
+        
+        <div className="mt-2 text-center">
           <button 
             onClick={handleForgotPassword}
             className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
@@ -1282,24 +1434,22 @@ if (view === 'admin') {
             Forgot your password?
           </button>
         </div>
-                
 
         {showForgotPassword && (
           <ForgotPasswordModal 
             onClose={() => setShowForgotPassword(false)}
           />
         )}
-        </div>
-
-
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} Josh Law • All rights reserved
-          </p>
-        </div>
       </div>
-    );
-  }
+
+      <div className="mt-6 text-center">
+        <p className="text-xs sm:text-sm text-gray-500">
+          &copy; {new Date().getFullYear()} Josh Law • All rights reserved
+        </p>
+      </div>
+    </div>
+  );
+}
 
   // COMPLETE SIGNUP VIEW
 // COMPLETE SIGNUP VIEW

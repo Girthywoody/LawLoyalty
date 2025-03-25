@@ -56,15 +56,20 @@ const invitesCollection = collection(db, 'invites');
 export { db, auth, isSignInWithEmailLink, sendPasswordResetEmail, sendEmailVerification };
 
 
-
 export const addEmployee = async (employeeData) => {
   try {
+    // Normalize the email address
+    const normalizedEmployeeData = {
+      ...employeeData,
+      email: employeeData.email.toLowerCase()
+    };
+    
     // Create a meaningful ID based on name and restaurant (if available)
-    const nameSlug = employeeData.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const nameSlug = normalizedEmployeeData.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
     let customId = `employee-${nameSlug}`;
     
-    if (employeeData.restaurantId) {
-      customId = `${employeeData.restaurantId}-${nameSlug}`;
+    if (normalizedEmployeeData.restaurantId) {
+      customId = `${normalizedEmployeeData.restaurantId}-${nameSlug}`;
     }
     
     // Check if a document with this ID already exists
@@ -77,7 +82,7 @@ export const addEmployee = async (employeeData) => {
     }
     
     // Remove discount field from employee data
-    const { discount, ...employeeDataWithoutDiscount } = employeeData;
+    const { discount, ...employeeDataWithoutDiscount } = normalizedEmployeeData;
     
     // Use setDoc with a custom ID instead of addDoc
     await setDoc(doc(db, 'employees', customId), {
@@ -199,9 +204,12 @@ export const createManagerWithRestaurant = async (email, password, name, restaur
   }
 };
 
-// For invites
 export const sendEmployeeInvite = async (email, role = 'Employee', senderUid, restaurantId = null) => {
   try {
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase();
+    
+    // Rest of the function remains the same but uses normalizedEmail instead of email
     let restaurantName = null;
     
     // If a restaurant ID is provided, get its name
@@ -224,7 +232,7 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid, re
     const inviteCode = generateUniqueId();
     
     // Create a meaningful ID for this invite
-    const emailSlug = email.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const emailSlug = normalizedEmail.toLowerCase().replace(/[^a-z0-9]/g, '-');
     let customId = `invite-${emailSlug}`;
     
     if (restaurantId) {
@@ -233,7 +241,7 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid, re
     
     // Create the invite record with a custom ID
     const inviteData = {
-      email: email,
+      email: normalizedEmail,
       role: role,
       status: 'pending',
       sentAt: new Date(),
@@ -248,12 +256,12 @@ export const sendEmployeeInvite = async (email, role = 'Employee', senderUid, re
     
     // Generate magic link for email
     const actionCodeSettings = {
-      url: `${window.location.origin}/complete-signup?mode=complete&email=${email}&inviteId=${inviteCode}`,
+      url: `${window.location.origin}/complete-signup?mode=complete&email=${normalizedEmail}&inviteId=${inviteCode}`,
       handleCodeInApp: true
     };
     
     // Send the email invitation
-    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    await sendSignInLinkToEmail(auth, normalizedEmail, actionCodeSettings);
     
     return { success: true, inviteId: customId };
   } catch (error) {
@@ -457,16 +465,18 @@ export const subscribeToRestaurantEmployees = (callback, restaurantId) => {
 };
 
 
-
-// Auth functions
 export const loginWithEmailAndPassword = async (email, password) => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    // Convert email to lowercase before authentication
+    const normalizedEmail = email.toLowerCase();
+    const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
     return userCredential.user;
   } catch (error) {
     throw error;
   }
 };
+
+
 
 export const logoutUser = async () => {
   try {
@@ -479,7 +489,9 @@ export const logoutUser = async () => {
 
 export const createUser = async (email, password) => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    // Convert email to lowercase during account creation
+    const normalizedEmail = email.toLowerCase();
+    const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
     return userCredential.user;
   } catch (error) {
     throw error;
