@@ -76,7 +76,7 @@ const GeneralManagerManagement = ({ currentUser }) => {
 
     try {
       setIsLoading(true);
-      await assignRestaurantToManager(selectedManager.id, selectedRestaurant.id, currentUser.id);
+      await assignRestaurantToManager(selectedManager.id, selectedRestaurant.name, currentUser.id);
       
       // Update the manager in the local state
       setManagers(prevManagers => {
