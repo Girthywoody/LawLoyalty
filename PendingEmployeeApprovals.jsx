@@ -180,7 +180,7 @@ const PendingEmployeeApprovals = ({ currentUser, activeRestaurant }) => {
               <div className="space-y-4">
                 {pendingEmployees.map(employee => (
                   <div key={employee.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 flex items-center justify-between">
+                    <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="flex items-center">
                         <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
                           <User size={18} className="text-indigo-600" />
@@ -190,13 +190,13 @@ const PendingEmployeeApprovals = ({ currentUser, activeRestaurant }) => {
                             {employee.name || `${employee.firstName} ${employee.lastName}`}
                           </h5>
                           <div className="flex items-center text-xs text-gray-500">
-                            <Mail size={12} className="mr-1" />
-                            {employee.email}
+                            <Mail size={12} className="mr-1 flex-shrink-0" />
+                            <span className="truncate max-w-[180px] sm:max-w-none">{employee.email}</span>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2 self-end sm:self-center">
                         <button
                           onClick={() => handleApproveEmployee(employee.id)}
                           disabled={isLoading}
@@ -216,31 +216,29 @@ const PendingEmployeeApprovals = ({ currentUser, activeRestaurant }) => {
                       </div>
                     </div>
                     
-                    <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="px-4 py-3">
                       <div className="space-y-2">
                         <div className="flex items-center text-sm">
-                          <Store size={16} className="text-gray-400 mr-2" />
+                          <Store size={16} className="text-gray-400 mr-2 flex-shrink-0" />
                           <span className="text-gray-600 font-medium mr-1">Restaurant:</span>
                           <span className="text-gray-900">{employee.restaurantName || 'Not specified'}</span>
                         </div>
                         
                         <div className="flex items-center text-sm">
-                          <Calendar size={16} className="text-gray-400 mr-2" />
+                          <Calendar size={16} className="text-gray-400 mr-2 flex-shrink-0" />
                           <span className="text-gray-600 font-medium mr-1">Applied:</span>
                           <span className="text-gray-900">{formatDate(employee.createdAt)}</span>
                         </div>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Email verification status:</span>{" "}
+                        
+                        <div className="text-sm">
+                          <span className="font-medium">Email verification status: </span>
                           {/* Use the proper auth property for email verification */}
                           {employee.uid ? (
                             <span className="text-green-600 font-medium">Account Created</span>
                           ) : (
                             <span className="text-amber-600 font-medium">Account Pending</span>
                           )}
-                        </p>
+                        </div>
                       </div>
                     </div>
                   </div>

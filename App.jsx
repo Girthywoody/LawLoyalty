@@ -146,7 +146,7 @@ const RestaurantLoyaltyApp = () => {
     { id: "jlaw-workers", name: "JLaw Workers", discount: 50 },
   ]
 
-// Add a more sophisticated restaurant filtering function
+// Modify the filteredRestaurants function to handle location IDs properly
 const filteredRestaurants = () => {
   // If current user is an employee, they can see all restaurants
   if (currentUser && currentUser.jobTitle === 'Employee') {
@@ -155,14 +155,36 @@ const filteredRestaurants = () => {
   
   // For managers, they might only see their restaurant and others in their group
   if (currentUser && (currentUser.jobTitle === 'Manager' || currentUser.jobTitle === 'General Manager')) {
-    // If they have managedRestaurants property, filter by those
+    let managedRestaurantIds = [];
+    
+    // If they have managedRestaurants property, add those IDs
     if (currentUser.managedRestaurants && currentUser.managedRestaurants.length > 0) {
-      return RESTAURANTS.filter(r => currentUser.managedRestaurants.includes(r.id));
+      managedRestaurantIds = [...currentUser.managedRestaurants];
     }
     
-    // If they have a restaurant assigned, just show that one
+    // If they have a restaurantId, add that too
     if (currentUser.restaurantId) {
-      return RESTAURANTS.filter(r => r.id === currentUser.restaurantId);
+      managedRestaurantIds.push(currentUser.restaurantId);
+    }
+    
+    if (managedRestaurantIds.length > 0) {
+      // Check if the restaurant ID or any location ID matches the managed IDs
+      return RESTAURANTS.filter(restaurant => {
+        // Direct match for the restaurant ID
+        if (managedRestaurantIds.includes(restaurant.id)) {
+          return true;
+        }
+        
+        // Check locations if they exist
+        if (restaurant.locations) {
+          // Return true if any location ID is in the managed list
+          return restaurant.locations.some(location => 
+            managedRestaurantIds.includes(location.id)
+          );
+        }
+        
+        return false;
+      });
     }
   }
   
@@ -935,27 +957,30 @@ const saveEmployeeEditToFirebase = async () => {
     setShowForgotPassword(true);
   };
 
-  // User profile badge
-  const UserProfileBadge = ({ user }) => (
-    <div className="flex items-center">
-      <div className="h-12 w-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-        <User size={24} className="text-white" />
-      </div>
-      <div className="ml-4">
-        <h2 className="text-lg font-bold text-gray-800">{user?.name}</h2>
+// In App.jsx, find the UserProfileBadge component and update it:
+
+const UserProfileBadge = ({ user }) => (
+  <div className="flex flex-col sm:flex-row sm:items-center">
+    <div className="h-12 w-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+      <User size={24} className="text-white" />
+    </div>
+    <div className="mt-2 sm:mt-0 sm:ml-4">
+      <h2 className="text-lg font-bold text-gray-800">{user?.name}</h2>
+      <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center">
           <Award size={14} className="text-indigo-700 mr-1" />
           <p className="text-indigo-600 text-sm font-medium">{user?.jobTitle}</p>
-          {user?.restaurantName && (
-            <div className="flex items-center ml-2">
-              <Store size={14} className="text-green-700 mr-1" />
-              <p className="text-green-600 text-sm font-medium">{user?.restaurantName}</p>
-            </div>
-          )}
         </div>
+        {user?.restaurantName && (
+          <div className="flex items-center">
+            <Store size={14} className="text-green-700 mr-1" />
+            <p className="text-green-600 text-sm font-medium">{user?.restaurantName}</p>
+          </div>
+        )}
       </div>
     </div>
-  );
+  </div>
+);
 
   // Helper function to get restaurant name by ID
 const getRestaurantName = (restaurantId) => {
@@ -1726,42 +1751,34 @@ if (view === 'employee') {
           ) : (
             // For restaurants with multiple locations
             <>
-              <button
-                type="button"
-                className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-                onClick={() => {
-                  setSelectedRestaurant(restaurant);
-                  setSelectedLocation(restaurant.name);
-                  setShowRestaurantDropdown(false);
-                }}
-              >
+              <div className="w-full text-left px-3 py-2 font-medium text-gray-700 bg-gray-100 rounded-md flex items-center gap-2">
                 <Store size={16} className="text-indigo-600 flex-shrink-0" />
-                <div>
-                  <div className="font-medium text-gray-900">{restaurant.name}</div>
-                </div>
-              </button>
+                <div className="font-medium text-gray-900">{restaurant.name}</div>
+              </div>
               <div className="ml-4 mt-1 space-y-1 mb-2">
-              {restaurant.locations.map((location) => (
-              <button
-                key={location.id}
-                type="button"
-                className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-                onClick={() => {
-                  // We need to create a combined restaurant+location object
-                  const restaurantWithLocation = {
-                    ...restaurant,
-                    name: `${restaurant.name} - ${location.name}`,
-                    locationName: location.name
-                  };
-                  handleSelectRestaurant(restaurantWithLocation);
-                }}
-              >
-                <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
-                <div>
-                  <div className="font-medium text-gray-900">{location.name}</div>
-                </div>
-              </button>
-            ))}
+                {restaurant.locations.map((location) => (
+                  <button
+                    key={location.id}
+                    type="button"
+                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+                    onClick={() => {
+                      // Create a combined restaurant+location object
+                      const restaurantWithLocation = {
+                        id: location.id,
+                        name: `${restaurant.name} - ${location.name}`,
+                        discount: location.discount || restaurant.discount,
+                        parentId: restaurant.id,
+                        locationName: location.name
+                      };
+                      handleSelectRestaurant(restaurantWithLocation);
+                    }}
+                  >
+                    <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
+                    <div>
+                      <div className="font-medium text-gray-900">{location.name}</div>
+                    </div>
+                  </button>
+                ))}
               </div>
             </>
           )}
@@ -1779,19 +1796,19 @@ if (view === 'employee') {
               <h3 className="text-lg font-medium text-gray-900 mb-3">Your Discount</h3>
               <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg overflow-hidden">
                 {/* Header section */}
-                <div className="px-5 py-4 border-b border-indigo-400 border-opacity-30">
-                  <h4 className="text-white text-xl font-bold">Employee Verification</h4>
-                  <p className="text-indigo-100 text-sm">Show this screen to receive your discount</p>
+                <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-indigo-400 border-opacity-30">
+                  <h4 className="text-white text-lg sm:text-xl font-bold">Employee Verification</h4>
+                  <p className="text-indigo-100 text-xs sm:text-sm">Show this screen to receive your discount</p>
                 </div>
                 
                 {/* Employee information section */}
-                <div className="px-5 py-4 space-y-4">
+                <div className="px-4 sm:px-5 py-3 sm:py-4 space-y-3 sm:space-y-4">
                   {/* Employee name with ID verification note */}
-                  <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
+                  <div className="bg-white bg-opacity-10 rounded-lg p-2 sm:p-3 border border-white border-opacity-20">
                     <p className="text-indigo-100 text-xs mb-1">Employee Name (Must Match ID)</p>
                     <div className="flex items-center">
-                      <User size={18} className="text-white mr-2" />
-                      <p className="text-xl font-bold text-white">{currentUser?.name}</p>
+                      <User size={16} className="text-white mr-2" />
+                      <p className="text-lg sm:text-xl font-bold text-white truncate">{currentUser?.name}</p>
                     </div>
                   </div>
                   
@@ -1915,39 +1932,41 @@ if (view === 'manager') {
         </div>
       </header>
 
-      {/* Navigation Menu - Centered and Enhanced */}
-      <div className="bg-white shadow-sm border-b border-gray-200 mb-6">
-        <div className="max-w-7xl mx-auto flex justify-center">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setManagerView('manage')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                managerView === 'manage' 
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center">
-                <User size={16} className="mr-2" />
-                Manage Employees
-              </div>
-            </button>
-            <button
-              onClick={() => setManagerView('discount')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                managerView === 'discount' 
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center">
-                <Percent size={16} className="mr-2" />
-                View Discount
-              </div>
-            </button>
-          </div>
+// In App.jsx, find the manager view with navigation menu and update it:
+
+{/* Navigation Menu - Centered and Enhanced */}
+<div className="bg-white shadow-sm border-b border-gray-200 mb-6 overflow-x-auto">
+  <div className="max-w-7xl mx-auto flex justify-center">
+    <div className="flex space-x-1 sm:space-x-2 px-2">
+      <button
+        onClick={() => setManagerView('manage')}
+        className={`px-3 sm:px-6 py-4 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+          managerView === 'manage' 
+            ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
+            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        <div className="flex items-center">
+          <User size={16} className="mr-1 sm:mr-2" />
+          Manage Employees
         </div>
-      </div>
+      </button>
+      <button
+        onClick={() => setManagerView('discount')}
+        className={`px-3 sm:px-6 py-4 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+          managerView === 'discount' 
+            ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
+            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        <div className="flex items-center">
+          <Percent size={16} className="mr-1 sm:mr-2" />
+          View Discount
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
 
 
 
@@ -2021,21 +2040,21 @@ if (view === 'manager') {
                   </div>
                 </div>
 
-                {/* Employee table */}
-                <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="inline-block min-w-full align-middle">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                       <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                        <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Name
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                        <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Email
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                        <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Role
                         </th>
-                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                        <th scope="col" className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
