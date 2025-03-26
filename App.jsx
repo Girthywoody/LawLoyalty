@@ -584,13 +584,34 @@ const handleLogout = async () => {
 };
 
 const getDiscount = (locationName) => {
-  // First check for direct restaurant match by name
+  // Check if this is a combined restaurant-location name (e.g. "Happy Life - Sudbury")
+  if (locationName.includes(' - ')) {
+    const [restaurantName, specificLocation] = locationName.split(' - ');
+    
+    // Find the restaurant first
+    const restaurant = RESTAURANTS.find(r => r.name === restaurantName);
+    if (restaurant) {
+      // Then find the specific location within that restaurant
+      if (restaurant.locations) {
+        const location = restaurant.locations.find(l => l.name === specificLocation);
+        if (location && typeof location.discount === 'number') {
+          return location.discount;
+        }
+      }
+      // If location not found but restaurant is, use restaurant discount
+      if (typeof restaurant.discount === 'number') {
+        return restaurant.discount;
+      }
+    }
+  }
+  
+  // Original logic for direct restaurant match
   const restaurantByName = RESTAURANTS.find(r => r.name === locationName);
   if (restaurantByName && typeof restaurantByName.discount === 'number') {
     return restaurantByName.discount;
   }
   
-  // Then check for location within restaurants
+  // Original logic for checking locations
   for (const restaurant of RESTAURANTS) {
     if (restaurant.locations) {
       const locationObj = restaurant.locations.find(l => l.name === locationName);
@@ -1882,26 +1903,27 @@ if (view === 'employee') {
               </button>
               <div className="ml-4 mt-1 space-y-1 mb-2">
               {restaurant.locations.map((location) => (
-              <button
-                key={location.id}
-                type="button"
-                className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-                onClick={() => {
-                  // We need to create a combined restaurant+location object
-                  const restaurantWithLocation = {
-                    ...restaurant,
-                    name: `${restaurant.name} - ${location.name}`,
-                    locationName: location.name
-                  };
-                  handleSelectRestaurant(restaurantWithLocation);
-                }}
-              >
-                <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
-                <div>
-                  <div className="font-medium text-gray-900">{location.name}</div>
-                </div>
-              </button>
-            ))}
+                <button
+                  key={location.id}
+                  type="button"
+                  className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+                  onClick={() => {
+                    // We need to create a combined restaurant+location object
+                    const restaurantWithLocation = {
+                      ...restaurant,
+                      name: `${restaurant.name} - ${location.name}`,
+                      locationName: location.name,
+                      discount: location.discount // Make sure the location discount comes with it
+                    };
+                    handleSelectRestaurant(restaurantWithLocation);
+                  }}
+                >
+                  <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
+                  <div>
+                    <div className="font-medium text-gray-900">{location.name}</div>
+                  </div>
+                </button>
+              ))}
               </div>
             </>
           )}
