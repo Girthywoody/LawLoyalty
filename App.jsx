@@ -107,7 +107,7 @@ const RestaurantLoyaltyApp = () => {
 
 
   const RESTAURANTS = [
-    { id: "kelseys", name: "Kelseys", discount: 20 },
+    { id: "montanas", name: "Montana's", discount: 20 },
     { id: "coras", name: "Cora's Breakfast", discount: 10 },
     { id: "js-roadhouse", name: "J's Roadhouse", discount: 20 },
     { id: "swiss-chalet", name: "Swiss Chalet", discount: 20 },
@@ -116,8 +116,6 @@ const RestaurantLoyaltyApp = () => {
     { id: "flooring-and-more-superstore", name: "Flooring and More Superstore", discount: 20 },
     { id: "wellness-studio", name: "Wellness Studio", discount: 20 },
     { id: "east-side-marios-orillia", name: "East Side Mario's Orillia", discount: 20 },
-    { id: "kelseys-sudbury", name: "Kelseys Sudbury", discount: 20 },
-    { id: "osmows-winnipeg", name: "Osmows Winnipeg", discount: 20 },
     {
       id: "lot-88",
       name: "Lot 88",
@@ -129,19 +127,6 @@ const RestaurantLoyaltyApp = () => {
         { id: "lot88-north-bay", name: "North Bay", discount: 20 },
         { id: "lot88-thunder-bay", name: "Thunder Bay", discount: 20 },
         { id: "lot88-burlington", name: "Burlington", discount: 20 }
-      ]
-    }, 
-    {
-      id: "montanas",
-      name: "Montana's",
-      discount: 20,
-      locations: [
-        { id: "montanas-sudbury", name: "Sudbury", discount: 20 },
-        { id: "montanas-polo-park", name: "Polo Park", discount: 20 },
-        { id: "montanas-Sterling-Lyon ", name: "Sterling Lyon", discount: 20 },
-        { id: "montanas-St-vital", name: "St Vital", discount: 20 },
-        { id: "montanas-regent", name: "Regent", discount: 20 },
-        { id: "montanas-orillia", name: "Orillia", discount: 20 }
       ]
     }, 
     {

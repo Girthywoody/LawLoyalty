@@ -42,7 +42,7 @@ const PublicSignup = () => {
       try {
         // Using predefined restaurants from App.jsx for consistency
         const RESTAURANTS = [
-          { id: "kelseys", name: "Kelseys"},
+          { id: "montanas", name: "Montana's"},
           { id: "coras", name: "Cora's Breakfast"},
           { id: "js-roadhouse", name: "J's Roadhouse"},
           { id: "swiss-chalet", name: "Swiss Chalet"},
@@ -51,8 +51,6 @@ const PublicSignup = () => {
           { id: "flooring-and-more-superstore", name: "Flooring and More Superstore"},
           { id: "wellness-studio", name: "Wellness Studio"},
           { id: "east-side-marios-orillia", name: "East Side Mario's Orillia"},
-          { id: "kelseys-sudbury", name: "Kelseys Sudbury"},
-          { id: "osmows-winnipeg", name: "Osmows Winnipeg"},
           {
             id: "lot-88",
             name: "Lot 88",
@@ -67,34 +65,12 @@ const PublicSignup = () => {
             ]
           }, 
           {
-            id: "montanas",
-            name: "Montana's",
-            discount: 20,
-            locations: [
-              { id: "montanas-sudbury", name: "Sudbury"},
-              { id: "montanas-polo-park", name: "Polo Park"},
-              { id: "montanas-Sterling-Lyon ", name: "Sterling Lyon"},
-              { id: "montanas-St-vital", name: "St Vital"},
-              { id: "montanas-regent", name: "Regent"},
-              { id: "montanas-orillia", name: "Orillia"}
-            ]
-          }, 
-          {
             id: "kelseys",
             name: "Kelseys",
             discount: 20,
             locations: [
               { id: "kelseys-sudbury", name: "Sudbury"},
               { id: "kelseys-orillia", name: "Orillia"},
-            ]
-          }, 
-          {
-            id: "kelseys",
-            name: "Kelseys",
-            discount: 20,
-            locations: [
-              { id: "kelseys-sudbury", name: "Sudbury"},
-              { id: "kelseys-orillia", name: "Orillia"}
             ]
           }, 
           {
