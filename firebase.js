@@ -2,7 +2,7 @@
 import { deleteUser as firebaseDeleteUser } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 import { getStorage } from 'firebase/storage';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import {setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 
 import { 
