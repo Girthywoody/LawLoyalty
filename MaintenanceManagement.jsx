@@ -202,30 +202,41 @@ const showNotification = (message, type = 'info') => {
         throw new Error("Request not found");
       }
       
-      // Create event data with the selected date
+      // Ensure the date is set correctly by creating a new date with the exact components
+      // This prevents timezone issues from affecting the displayed date
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      
+      // Create a proper date object using these components
+      const scheduledDate = new Date(year, month, day, hours, minutes, 0);
+      
+      // Create event data with the corrected date
       const eventData = {
         title: request.title,
         technician: currentUser?.name || 'Current User',
         location: request.location,
         description: request.description,
-        start: date,
-        end: new Date(date.getTime() + 2 * 60 * 60 * 1000), // 2 hours from selected time
+        start: scheduledDate,
+        end: new Date(scheduledDate.getTime() + 2 * 60 * 60 * 1000), // 2 hours from selected time
       };
       
-      // We need to modify the scheduleMaintenanceEvent function to use our provided date
+      // Schedule in Firebase
       const result = await scheduleMaintenanceEvent(requestId, eventData);
       
       // Update the selected request
       setSelectedRequest({
         ...selectedRequest, 
         status: 'scheduled', 
-        scheduledDate: date
+        scheduledDate: scheduledDate
       });
       
       // Update the request in the maintenanceRequests array
       const updatedRequests = maintenanceRequests.map(req => 
         req.id === requestId 
-          ? {...req, status: 'scheduled', scheduledDate: date}
+          ? {...req, status: 'scheduled', scheduledDate: scheduledDate}
           : req
       );
       setMaintenanceRequests(updatedRequests);
@@ -1085,22 +1096,23 @@ const formatTime = (date) => {
                             </p>
                             
                             <div className="mt-6 space-y-6">
-                              {/* Date Picker */}
-                              <div>
-                                <label htmlFor="maintenance-date" className="block text-sm font-medium text-gray-700">
-                                  Date
-                                </label>
-                                <input
-                                  type="date"
-                                  id="maintenance-date"
-                                  className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-                                  value={scheduleDate.toISOString().split('T')[0]}
-                                  onChange={(e) => {
-                                    const newDate = new Date(e.target.value);
-                                    setScheduleDate(newDate);
-                                  }}
-                                />
-                              </div>
+                            {/* Date Picker */}
+                            <div>
+                              <label htmlFor="maintenance-date" className="block text-sm font-medium text-gray-700">
+                                Date
+                              </label>
+                              <input
+                                type="date"
+                                id="maintenance-date"
+                                className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                                value={scheduleDate.toISOString().split('T')[0]}
+                                onChange={(e) => {
+                                  // Create date at noon to avoid timezone issues
+                                  const selectedDate = new Date(e.target.value + 'T12:00:00');
+                                  setScheduleDate(selectedDate);
+                                }}
+                              />
+                            </div>
                               
                               {/* Time Picker */}
                               <div>
