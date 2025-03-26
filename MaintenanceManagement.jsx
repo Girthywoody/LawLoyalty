@@ -188,38 +188,40 @@ const showNotification = (message, type = 'info') => {
     }
   };
   
-  const handleScheduleMaintenance = async (requestId, date) => {
-    try {
-      // Get the request details
-      const request = maintenanceRequests.find(req => req.id === requestId);
-      
-      // Create event data
-      const eventData = {
-        title: request.title,
-        start: date,
-        end: new Date(date.getTime() + 2 * 60 * 60 * 1000), // Default 2 hour duration
-        technician: currentUser?.name || 'Current User',
-        location: request.location,
-        description: request.description,
-      };
-      
-      // Schedule in Firebase
-      await scheduleMaintenanceEvent(requestId, eventData);
-      
-      // Refresh the requests data to update the UI
-      const updatedRequests = maintenanceRequests.map(req => 
-        req.id === requestId 
-          ? {...req, status: 'scheduled', scheduledDate: date}
-          : req
-      );
-      setMaintenanceRequests(updatedRequests);
-      
-      showNotification('Maintenance scheduled successfully!', 'success');
-    } catch (error) {
-      console.error("Error scheduling maintenance:", error);
-      showNotification('Failed to schedule maintenance', 'error');
-    }
-  };
+// Modify the handleScheduleMaintenance function for the "Go there now" case
+const handleImmediateSchedule = async (requestId) => {
+  try {
+    // Get the request details
+    const request = maintenanceRequests.find(req => req.id === requestId);
+    
+    // Create event data with server timestamp
+    const eventData = {
+      title: request.title,
+      // We'll use serverTimestamp() directly in the scheduleMaintenanceEvent function
+      technician: currentUser?.name || 'Current User',
+      location: request.location,
+      description: request.description,
+      isImmediate: true // Flag to indicate this is an immediate maintenance
+    };
+    
+    // Schedule in Firebase using serverTimestamp
+    await scheduleMaintenanceEvent(requestId, eventData);
+    
+    // Update the UI without depending on the exact server time
+    const updatedRequests = maintenanceRequests.map(req => 
+      req.id === requestId 
+        ? {...req, status: 'scheduled', scheduledDate: new Date()}
+        : req
+    );
+    setMaintenanceRequests(updatedRequests);
+    setSelectedRequest({...selectedRequest, status: 'scheduled', scheduledDate: new Date()});
+    
+    showNotification('Maintenance scheduled for immediate attention!', 'success');
+  } catch (error) {
+    console.error("Error scheduling immediate maintenance:", error);
+    showNotification('Failed to schedule immediate maintenance', 'error');
+  }
+};
   
   const handleMarkAsCompleted = async (requestId) => {
     try {
@@ -1178,13 +1180,8 @@ const formatTime = (date) => {
                   <>
                     <button
                       type="button"
-                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
-                      onClick={() => {
-                        const now = new Date();
-                        handleScheduleMaintenance(selectedRequest.id, now);
-                        showNotification('Maintenance scheduled for right now!', 'success');
-                        setSelectedRequest({...selectedRequest, status: 'scheduled', scheduledDate: now});
-                      }}
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      onClick={() => handleImmediateSchedule(selectedRequest.id)}
                     >
                       <Clock size={16} className="mr-2" />
                       Go there now

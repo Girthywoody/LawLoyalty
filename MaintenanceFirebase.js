@@ -66,10 +66,15 @@ const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
   // Schedule maintenance
   export const scheduleMaintenanceEvent = async (requestId, eventData) => {
     try {
+      // Ensure dates are proper Firestore timestamps
+      const startTimestamp = serverTimestamp(); // This ensures we use the server time
+      
       // Create the event
       const eventRef = await addDoc(maintenanceEventsCollection, {
         ...eventData,
         requestId,
+        start: startTimestamp, // Use server timestamp for "now"
+        end: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), // 2 hours from now
         createdAt: serverTimestamp()
       });
       
@@ -77,7 +82,7 @@ const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
       const requestRef = doc(db, 'maintenanceRequests', requestId);
       await updateDoc(requestRef, { 
         status: 'scheduled',
-        scheduledDate: eventData.start,
+        scheduledDate: startTimestamp, // Use same timestamp
         updatedAt: serverTimestamp() 
       });
       
