@@ -325,12 +325,12 @@ const formatTime = (date) => {
   // Get urgency label
   const getUrgencyLabel = (level) => {
     switch(level) {
-      case 1: return { text: 'Very Low', color: 'bg-gray-100 text-gray-800' };
-      case 2: return { text: 'Low', color: 'bg-blue-100 text-blue-800' };
-      case 3: return { text: 'Medium', color: 'bg-yellow-100 text-yellow-800' };
-      case 4: return { text: 'High', color: 'bg-orange-100 text-orange-800' };
-      case 5: return { text: 'Critical', color: 'bg-red-100 text-red-800' };
-      default: return { text: 'Unknown', color: 'bg-gray-100 text-gray-800' };
+      case 1: return { text: 'Very Low', color: 'bg-gray-50 text-gray-700' };
+      case 2: return { text: 'Low', color: 'bg-blue-50 text-blue-700' };
+      case 3: return { text: 'Medium', color: 'bg-yellow-50 text-yellow-700' };
+      case 4: return { text: 'High', color: 'bg-orange-50 text-orange-700' };
+      case 5: return { text: 'Critical', color: 'bg-red-50 text-red-700' };
+      default: return { text: 'Unknown', color: 'bg-gray-50 text-gray-700' };
     }
   };
   
@@ -339,25 +339,25 @@ const formatTime = (date) => {
     switch(status) {
       case 'pending': 
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/50 text-yellow-300 border border-yellow-800">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-100">
             <AlertTriangle size={12} className="mr-1" /> Pending
           </span>
         );
       case 'scheduled': 
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/50 text-blue-300 border border-blue-800">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
             <Calendar size={12} className="mr-1" /> Scheduled
           </span>
         );
       case 'completed': 
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-300 border border-green-800">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
             <Check size={12} className="mr-1" /> Completed
           </span>
         );
       default: 
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-gray-300 border border-gray-700">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-700 border border-gray-100">
             Unknown
           </span>
         );
@@ -438,7 +438,7 @@ const formatTime = (date) => {
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setShowAddRequestModal(true)}
-                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
                 >
                   <PlusCircle size={16} className="mr-2" />
                   New Request
@@ -525,7 +525,7 @@ const formatTime = (date) => {
       <div className="mt-6">
         <button
           onClick={() => setShowAddRequestModal(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
         >
           <PlusCircle size={16} className="mr-2" />
           New Request
@@ -697,9 +697,7 @@ const formatTime = (date) => {
                           {dayObj.events && dayObj.events.map((event) => (
                             <div 
                               key={event.id} 
-                              className="px-3 py-2 text-xs rounded-lg bg-gradient-to-r from-indigo-900 to-violet-900 text-indigo-200 shadow-sm truncate border border-indigo-800"
-                              title={`${event.title} - ${formatTime(event.start)} to ${formatTime(event.end)}`}
-                            >
+                              className="px-3 py-2 text-xs rounded-lg bg-blue-50 text-blue-700 border border-blue-100 shadow-sm truncate">
                               <div className="font-medium">{event.title}</div>
                               <div className="text-indigo-700">{formatTime(event.start)}</div>
                             </div>
@@ -918,7 +916,7 @@ const formatTime = (date) => {
               <div className="bg-gray-700 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button
                   type="button"
-                  className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-base font-medium text-white hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-200"
+                  className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-200"
                   onClick={handleAddRequest}
                 >
                   Submit Request
@@ -1067,7 +1065,7 @@ const formatTime = (date) => {
                             onChange={(e) => setNewComment(e.target.value)}
                           />
                             <button
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-lg shadow-sm text-gray-900 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-lg shadow-sm text-gray-900 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
                               onClick={() => handleAddComment(selectedRequest.id)}
                             >
                               <MessageCircle size={16} className="mr-2" />
@@ -1145,7 +1143,7 @@ const formatTime = (date) => {
                       <div className="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
                         <button
                           type="button"
-                          className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-base font-medium text-white hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                          className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
                           onClick={() => {
                             // Combine date and time
                             const dateTime = new Date(scheduleDate);
@@ -1180,7 +1178,7 @@ const formatTime = (date) => {
                   <>
                     <button
                       type="button"
-                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
                       onClick={() => {
                         const now = new Date();
                         handleScheduleMaintenance(selectedRequest.id, now);
@@ -1194,7 +1192,7 @@ const formatTime = (date) => {
                     
                     <button
                       type="button"
-                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-base font-medium text-white hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
                       onClick={() => setShowSchedulePicker(true)}
                     >
                       <Calendar size={16} className="mr-2" />
@@ -1206,7 +1204,7 @@ const formatTime = (date) => {
                 {selectedRequest.status === 'scheduled' && (
                   <button
                     type="button"
-                    className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-base font-medium text-white hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-all duration-200"
+                    className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-all duration-200"
                     onClick={() => handleMarkAsCompleted(selectedRequest.id)}
                   >
                     <Check size={16} className="mr-2" />
