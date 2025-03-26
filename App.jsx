@@ -152,6 +152,74 @@ const RestaurantLoyaltyApp = () => {
     { id: "jlaw-workers", name: "JLaw Workers", discount: 50 },
   ]
 
+// Add this useEffect below your existing localStorage useEffect in RestaurantLoyaltyApp component
+useEffect(() => {
+  // This listens to Firebase auth state changes
+  const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      // User is signed in
+      try {
+        // Check if we already have user data in localStorage
+        const storedUser = localStorage.getItem('currentUser');
+        
+        if (!storedUser) {
+          // If not in localStorage, fetch user data from Firestore
+          const employeesRef = collection(db, 'employees');
+          const q = query(employeesRef, where("uid", "==", user.uid));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const employeeData = querySnapshot.docs[0].data();
+            
+            // Build the user object
+            const userData = {
+              id: user.uid,
+              name: employeeData.name || user.displayName || user.email,
+              email: user.email.toLowerCase(),
+              jobTitle: employeeData.jobTitle || 'Employee',
+              restaurantId: employeeData.restaurantId || null,
+              restaurantName: employeeData.restaurantName || null
+            };
+            
+            // Add managed restaurants for general managers
+            if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
+              userData.managedRestaurants = employeeData.managedRestaurants;
+            }
+            
+            // Set user data in state
+            setCurrentUser(userData);
+            
+            // Determine view based on role
+            const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
+                           (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
+                           'manager' : 'employee');
+            
+            // Set the view
+            setView(userView);
+            
+            // Save to localStorage
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            localStorage.setItem('currentView', userView);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        // Optional: Handle the error appropriately
+      }
+    } else {
+      // User is signed out - clear localStorage if not already done
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser && !currentUser) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('currentView');
+      }
+    }
+  });
+  
+  // Clean up the listener when component unmounts
+  return () => unsubscribe();
+}, []);
+
 // Add a more sophisticated restaurant filtering function
 const filteredRestaurants = () => {
   // If current user is an employee, they can see all restaurants
@@ -396,7 +464,7 @@ useEffect(() => {
     });
   };
 
-// Replace your entire handleLogin function with this version:
+// Replace your existing handleLogin function with this version:
 const handleLogin = async (e) => {
   e.preventDefault();
   
@@ -473,7 +541,11 @@ const handleLogin = async (e) => {
     // Set the view
     setView(userView);
     
-    // Save to localStorage
+    // Save to localStorage with an expiration timestamp (30 days)
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    
+    userData.sessionExpires = thirtyDaysFromNow.getTime();
     localStorage.setItem('currentUser', JSON.stringify(userData));
     localStorage.setItem('currentView', userView);
     
@@ -486,19 +558,29 @@ const handleLogin = async (e) => {
   }
 };
 
-// Handle logout
 const handleLogout = async () => {
   try {
-    await logoutUser(); // Firebase logout
+    // Firebase logout
+    await logoutUser();
+    
     // Clear localStorage
     localStorage.removeItem('currentUser');
     localStorage.removeItem('currentView');
+    localStorage.removeItem('emailForSignIn');
     
+    // Reset all relevant state
     setView('login');
     setEmail('');
     setPassword('');
     setSelectedLocation('');
     setCurrentUser(null);
+    setActiveRestaurant(null);
+    setSelectedRestaurant(null);
+    setCooldownInfo(null);
+    setCooldownChecked(false);
+    
+    // Show notification
+    showNotification("Successfully logged out", "success");
   } catch (error) {
     console.error("Logout error:", error);
     showNotification("Error logging out", "error");

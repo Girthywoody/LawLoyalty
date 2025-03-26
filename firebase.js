@@ -2,6 +2,8 @@
 import { deleteUser as firebaseDeleteUser } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 import { getStorage } from 'firebase/storage';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+
 
 import { 
   getFirestore, 
@@ -55,13 +57,20 @@ const storage = getStorage(app);
 
 
 
+
 // Collection references
 const employeesCollection = collection(db, 'employees');
 const restaurantsCollection = collection(db, 'restaurants');
 const invitesCollection = collection(db, 'invites');
 
 
-export { db, auth, storage, isSignInWithEmailLink, sendPasswordResetEmail, sendEmailVerification };
+export { db, auth, storage, isSignInWithEmailLink, sendPasswordResetEmail, sendEmailVerification, browserLocalPersistence};
+
+setPersistence(auth, browserLocalPersistence)
+  .catch((error) => {
+    console.error("Error setting auth persistence:", error);
+  });
+  
 
 export const addEmployee = async (employeeData) => {
   try {
