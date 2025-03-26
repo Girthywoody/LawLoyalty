@@ -680,6 +680,7 @@ const handleSelectRestaurant = (restaurant) => {
   setShowVerification(true);
 };
 
+
   const handleSendInvite = async () => {
     if (!inviteEmail) {
       showNotification('Please enter an email address', 'error');
@@ -1969,6 +1970,13 @@ if (view === 'employee') {
 )}
             </div>
           </div>
+          <EmployeeRestaurantSelector
+  restaurants={filteredRestaurants()}
+  currentUser={currentUser}
+  selectedRestaurant={selectedRestaurant}
+  onSelectRestaurant={handleSelectRestaurant}
+  cooldownInfo={cooldownInfo}
+/>
 
           {/* Discount display */}
           {selectedLocation ? (

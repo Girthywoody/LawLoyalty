@@ -19,7 +19,7 @@ const VerificationPopup = ({ restaurantName, onConfirm, onCancel }) => {
             Are you sure you are at <span className="font-bold text-indigo-600">{restaurantName}</span>?
           </p>
           <p className="text-gray-600 mb-6 text-sm">
-            You will not be able to access another discount for 1 hour after confirmation.
+            You will not be able to access another discount for 15 minutes after confirmation.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
