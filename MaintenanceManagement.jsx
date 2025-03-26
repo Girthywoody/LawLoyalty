@@ -387,14 +387,19 @@ const showNotification = (message, type = 'info') => {
     return calendarDays;
   };
   
-  // Format date helper
-  const formatDate = (date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date);
-  };
+// Format date helper
+const formatDate = (date) => {
+  // Check if date is valid before formatting
+  if (!date || isNaN(new Date(date).getTime())) {
+    return 'N/A'; // Return a placeholder for invalid dates
+  }
+  
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(date);
+};
   
 // Format time helper
 const formatTime = (date) => {
