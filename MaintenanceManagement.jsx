@@ -443,20 +443,6 @@ const formatTime = (date) => {
   {/* Header */}
   <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
     <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <div className="bg-indigo-600 p-2 rounded-lg">
-            <Wrench size={24} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 ml-3">Maintenance Management</h1>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center bg-gray-100 px-4 py-2 rounded-lg">
-            <User size={18} className="text-gray-600 mr-2" />
-            <span className="text-sm text-gray-600">Logged in as <strong className="text-indigo-600">{currentUser?.name || 'User'}</strong></span>
-          </div>
-        </div>
-      </div>
     </div>
   </header>
 
