@@ -112,9 +112,7 @@ const RestaurantLoyaltyApp = () => {
     { id: "js-roadhouse", name: "J's Roadhouse", discount: 20 },
     { id: "swiss-chalet", name: "Swiss Chalet", discount: 20 },
     { id: "poke-bar", name: "Poke Bar", discount: 20 },
-    { id: "northern-climate", name: "Northern Climate", discount: 20 },
-    { id: "flooring-and-more-superstore", name: "Flooring and More Superstore", discount: 20 },
-    { id: "wellness-studio", name: "Wellness Studio", discount: 20 },
+    { id: "wellness-studio", name: "Wellness Studio", discount: 10 },
     { id: "east-side-marios-orillia", name: "East Side Mario's Orillia", discount: 20 },
     {
       id: "lot-88",
