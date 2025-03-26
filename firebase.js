@@ -45,14 +45,14 @@ const firebaseConfig = {
 
 
 // After initializing the Firebase app
-const storage = getStorage(app);
 
-// Add storage to your exports
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
+
 
 
 // Collection references
