@@ -13,9 +13,8 @@ import {
     serverTimestamp,
     getDoc
   } from 'firebase/firestore';
-  import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-  import { db, storage } from './firebase';
-  
+
+import { db } from './firebase';
   // Collection references
   const maintenanceRequestsCollection = collection(db, 'maintenanceRequests');
   const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
