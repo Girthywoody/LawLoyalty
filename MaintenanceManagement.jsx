@@ -28,8 +28,7 @@ import {
   subscribeToMaintenanceEvents, 
   scheduleMaintenanceEvent, 
   addCommentToRequest, 
-  completeMaintenanceRequest,
-  subscribeToMaintenanceEvents
+  completeMaintenanceRequest
 } from './MaintenanceFirebase';
 
 
