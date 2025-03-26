@@ -1,4 +1,5 @@
-// MaintenanceFirebase.js
+// In MaintenanceFirebase.js
+// Change:
 import { 
     collection, 
     addDoc, 
@@ -13,25 +14,14 @@ import {
     serverTimestamp,
     getDoc
   } from 'firebase/firestore';
-
-import { db } from './firebase';
-  // Collection references
-  const maintenanceRequestsCollection = collection(db, 'maintenanceRequests');
-  const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
   
-  // Create a new maintenance request
+  import { db } from './firebase';
+  
+  // And modify the createMaintenanceRequest function to:
   export const createMaintenanceRequest = async (requestData, imageFiles = []) => {
     try {
-      // Upload images if any
+      // For testing, just store image URLs as strings or skip them
       const imageUrls = [];
-      for (const file of imageFiles) {
-        if (file instanceof File) {
-          const storageRef = ref(storage, `maintenance/${Date.now()}_${file.name}`);
-          const snapshot = await uploadBytes(storageRef, file);
-          const downloadUrl = await getDownloadURL(snapshot.ref);
-          imageUrls.push(downloadUrl);
-        }
-      }
       
       // Create request document
       const docRef = await addDoc(maintenanceRequestsCollection, {
@@ -39,10 +29,17 @@ import { db } from './firebase';
         images: imageUrls,
         status: 'pending',
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        comments: [] // Add empty comments array by default
       });
       
-      return { id: docRef.id, ...requestData, images: imageUrls };
+      return { 
+        id: docRef.id, 
+        ...requestData, 
+        images: imageUrls,
+        createdAt: new Date(),
+        comments: []
+      };
     } catch (error) {
       console.error("Error creating maintenance request:", error);
       throw error;

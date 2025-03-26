@@ -25,12 +25,14 @@ import {
 import { 
   createMaintenanceRequest, 
   subscribeToMaintenanceRequests, 
-  schedribeToMaintenanceEvents, 
+  subscribeToMaintenanceEvents, 
   scheduleMaintenanceEvent, 
   addCommentToRequest, 
   completeMaintenanceRequest,
   subscribeToMaintenanceEvents
 } from './MaintenanceFirebase';
+
+
 
 // Placeholder for your Firebase imports
 // import { collection, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDocs, onSnapshot, doc, serverTimestamp } from 'firebase/firestore';
@@ -39,6 +41,7 @@ import {
 
 const MaintenanceManagement = ({ currentUser }) => {
   // State variables
+  const [notification, setNotification] = useState(null);
   const [activeView, setActiveView] = useState('requests'); // 'requests' or 'calendar'
   const [maintenanceRequests, setMaintenanceRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
@@ -82,6 +85,33 @@ const MaintenanceManagement = ({ currentUser }) => {
     const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
       setMaintenanceEvents(events);
     });
+
+
+// Notification component
+  const Notification = ({ message, type }) => {
+    const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
+                    type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
+                    'bg-blue-100 border-blue-400 text-blue-700';
+    
+    const icon = type === 'success' ? <Check size={20} className="text-green-500" /> :
+                type === 'error' ? <X size={20} className="text-red-500" /> :
+                null;
+    
+    return (
+      <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg border ${bgColor} shadow-lg flex items-center z-50`}>
+        {icon && <span className="mr-2">{icon}</span>}
+        <span>{message}</span>
+      </div>
+    );
+  };
+
+// Show notification
+const showNotification = (message, type = 'info') => {
+  setNotification({ message, type });
+  setTimeout(() => {
+    setNotification(null);
+  }, 3000);
+};
     
     // Cleanup on unmount
     return () => {
@@ -323,7 +353,10 @@ const formatTime = (date) => {
   };
 
   return (
-<div className="flex flex-col min-h-screen bg-white text-gray-900">
+    <div className="flex flex-col min-h-screen bg-white text-gray-900">
+      {notification && <Notification message={notification.message} type={notification.type} />}
+      
+      {/* Rest of your component */}
   {/* Header */}
   <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
     <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
