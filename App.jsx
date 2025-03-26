@@ -506,13 +506,13 @@ useEffect(() => {
       // Get the employee data
       const employeeData = querySnapshot.docs[0].data();
       
-      // Check if the user has been approved
+      // Check if the user has been approved - IMPROVED CHECK
       if (employeeData.status === 'pending') {
-        throw new Error('Your account is still pending approval from the restaurant manager. Please check back later or contact support for assistance.');
+        throw new Error('Your account is pending approval from your manager. Please contact your manager for assistance.');
       }
       
       if (employeeData.status === 'rejected') {
-        throw new Error('Your application has been declined. Please contact the restaurant manager for more information.');
+        throw new Error('Your application has been declined. Please contact your restaurant manager for more information.');
       }
       
       // Build the current user object - without discount field
