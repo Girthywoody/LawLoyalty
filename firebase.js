@@ -48,7 +48,6 @@ const firebaseConfig = {
 const storage = getStorage(app);
 
 // Add storage to your exports
-export { db, auth, storage, isSignInWithEmailLink, sendPasswordResetEmail, sendEmailVerification };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -62,8 +61,7 @@ const restaurantsCollection = collection(db, 'restaurants');
 const invitesCollection = collection(db, 'invites');
 
 
-export { db, auth, isSignInWithEmailLink, sendPasswordResetEmail, sendEmailVerification };
-
+export { db, auth, storage, isSignInWithEmailLink, sendPasswordResetEmail, sendEmailVerification };
 
 export const addEmployee = async (employeeData) => {
   try {
