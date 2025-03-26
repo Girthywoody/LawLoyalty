@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import MaintenanceManagement from './MaintenanceManagement';
 import { subscribeToUserCooldown } from './RestaurantAnalytics';
-import EmployeeRestaurantSelector from './EmployeeRestaurantSelector';
 
 import { Store } from 'lucide-react';
 
