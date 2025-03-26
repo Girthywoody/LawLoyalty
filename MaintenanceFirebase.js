@@ -1,178 +1,1200 @@
-// In MaintenanceFirebase.js
-// Change:
-import { 
-    collection, 
-    addDoc, 
-    updateDoc, 
-    deleteDoc, 
-    doc, 
-    query, 
-    where, 
-    orderBy, 
-    getDocs, 
-    onSnapshot,
-    serverTimestamp,
-    getDoc
-  } from 'firebase/firestore';
-  
-  import { db } from './firebase';
+import React, { useState, useEffect } from 'react';
+import {
+  Calendar,
+  Clock,
+  AlertTriangle,
+  Camera,
+  Upload,
+  Wrench,
+  Filter,
+  Check,
+  X,
+  ChevronDown,
+  User,
+  Trash2,
+  Edit,
+  MessageCircle,
+  PlusCircle,
+  PlusSquare,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Search
+} from 'lucide-react';
 
-  // Collection references
-const maintenanceRequestsCollection = collection(db, 'maintenanceRequests');
-const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
+import { 
+  createMaintenanceRequest, 
+  subscribeToMaintenanceRequests, 
+  subscribeToMaintenanceEvents, 
+  scheduleMaintenanceEvent, 
+  addCommentToRequest, 
+  completeMaintenanceRequest
+} from './MaintenanceFirebase';
+
+
+
+// Placeholder for your Firebase imports
+// import { collection, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDocs, onSnapshot, doc, serverTimestamp } from 'firebase/firestore';
+// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+// import { db, storage } from './firebase';
+
+const MaintenanceManagement = ({ currentUser }) => {
+  // State variables
+  const [notification, setNotification] = useState(null);
+  const [activeView, setActiveView] = useState('requests'); // 'requests' or 'calendar'
+  const [maintenanceRequests, setMaintenanceRequests] = useState([]);
+  const [filteredRequests, setFilteredRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAddRequestModal, setShowAddRequestModal] = useState(false);
+  const [maintenanceEvents, setMaintenanceEvents] = useState([]);
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'pending', 'scheduled', 'completed'
+  const [filterUrgency, setFilterUrgency] = useState('all'); // 'all', '1', '2', '3', '4', '5'
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(new Date());
+  const [scheduleTime, setScheduleTime] = useState('09:00');
+  // Current Month for Calendar View
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  // And modify the createMaintenanceRequest function to:
-  export const createMaintenanceRequest = async (requestData, imageFiles = []) => {
+  // Form state for new request
+  const [newRequest, setNewRequest] = useState({
+    title: '',
+    description: '',
+    urgencyLevel: 3, // Default to medium urgency
+    images: [],
+    location: '',
+    status: 'pending',
+    imagePreviewUrls: []
+  });
+  
+  // Comment state
+  const [newComment, setNewComment] = useState('');
+  
+  useEffect(() => {
+    setIsLoading(true);
+    
+    // Subscribe to maintenance requests
+    const unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
+      setMaintenanceRequests(requests);
+      setFilteredRequests(requests);
+      setIsLoading(false);
+    });
+    
+    // Subscribe to maintenance events
+    const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
+      setMaintenanceEvents(events);
+    });
+
+
+// Notification component
+  const Notification = ({ message, type }) => {
+    const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
+                    type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
+                    'bg-blue-100 border-blue-400 text-blue-700';
+    
+    const icon = type === 'success' ? <Check size={20} className="text-green-500" /> :
+                type === 'error' ? <X size={20} className="text-red-500" /> :
+                null;
+    
+    return (
+      <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg border ${bgColor} shadow-lg flex items-center z-50`}>
+        {icon && <span className="mr-2">{icon}</span>}
+        <span>{message}</span>
+      </div>
+    );
+  };
+
+// Show notification
+const showNotification = (message, type = 'info') => {
+  setNotification({ message, type });
+  setTimeout(() => {
+    setNotification(null);
+  }, 3000);
+};
+    
+    // Cleanup on unmount
+    return () => {
+      unsubRequestsSnapshot && unsubRequestsSnapshot();
+      unsubEventsSnapshot && unsubEventsSnapshot();
+    };
+  }, []);
+  
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...maintenanceRequests];
+    
+    // Filter by status
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(request => request.status === filterStatus);
+    }
+    
+    // Filter by urgency
+    if (filterUrgency !== 'all') {
+      filtered = filtered.filter(request => request.urgencyLevel === parseInt(filterUrgency));
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(request => 
+        request.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        request.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.location.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Sort by urgency (highest first) and then by date (newest first)
+    filtered.sort((a, b) => {
+      if (a.urgencyLevel !== b.urgencyLevel) {
+        return b.urgencyLevel - a.urgencyLevel;
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    
+    setFilteredRequests(filtered);
+  }, [filterStatus, filterUrgency, maintenanceRequests, searchTerm]);
+  
+  const handleAddRequest = async () => {
     try {
-      // For testing, just store image URLs as strings or skip them
-      const imageUrls = [];
+      const requestData = {
+        title: newRequest.title,
+        description: newRequest.description,
+        urgencyLevel: newRequest.urgencyLevel,
+        location: newRequest.location,
+        createdBy: currentUser?.name || 'Current User',
+      };
       
-      // Create request document
-      const docRef = await addDoc(maintenanceRequestsCollection, {
-        ...requestData,
-        images: imageUrls,
+      // Create the request in Firebase
+      await createMaintenanceRequest(requestData, newRequest.images);
+      
+      // Reset form
+      setNewRequest({
+        title: '',
+        description: '',
+        urgencyLevel: 3,
+        images: [],
+        location: '',
         status: 'pending',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        comments: [] // Add empty comments array by default
+        imagePreviewUrls: []
       });
       
-      return { 
-        id: docRef.id, 
-        ...requestData, 
-        images: imageUrls,
-        createdAt: new Date(),
-        comments: []
-      };
+      // Close modal
+      setShowAddRequestModal(false);
+      showNotification('Maintenance request created successfully!', 'success');
     } catch (error) {
-      console.error("Error creating maintenance request:", error);
-      throw error;
+      console.error("Error adding request:", error);
+      showNotification('Failed to create maintenance request', 'error');
     }
   };
-  
-  export const scheduleMaintenanceEvent = async (requestId, eventData) => {
+
+  const handleReschedule = (requestId) => {
+    // Simply show the schedule picker with the current date/time
+    setShowSchedulePicker(true);
+  };
+
+  const handleScheduleMaintenanceWithDate = async (requestId, date) => {
     try {
-      // Use the provided date if available, otherwise use current date
-      const startDate = eventData.start || new Date();
-      const endDate = eventData.end || new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours from start
+      // Get the request details
+      const request = maintenanceRequests.find(req => req.id === requestId);
       
-      // Create the event with the provided dates
-      const eventRef = await addDoc(maintenanceEventsCollection, {
-        ...eventData,
-        requestId,
-        start: startDate, // Use provided date or current date
-        end: endDate,
-        createdAt: serverTimestamp()
-      });
-      
-      // Update the request status
-      const requestRef = doc(db, 'maintenanceRequests', requestId);
-      await updateDoc(requestRef, { 
-        status: 'scheduled',
-        scheduledDate: startDate, // Use provided date
-        updatedAt: serverTimestamp() 
-      });
-      
-      return { 
-        id: eventRef.id, 
-        ...eventData,
-        start: startDate,
-        end: endDate
-      };
-    } catch (error) {
-      console.error("Error scheduling maintenance:", error);
-      throw error;
-    }
-  };
-  
-  // Get maintenance events
-// In subscribeToMaintenanceRequests
-export const subscribeToMaintenanceRequests = (callback) => {
-    const q = query(maintenanceRequestsCollection, orderBy("createdAt", "desc"));
-    return onSnapshot(q, (snapshot) => {
-      const requests = snapshot.docs.map(doc => {
-        const data = doc.data();
-        // Handle all possible date fields
-        return {
-          id: doc.id,
-          ...data,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate() || new Date(),
-          scheduledDate: data.scheduledDate?.toDate ? data.scheduledDate.toDate() : 
-                        data.scheduledDate instanceof Date ? data.scheduledDate : 
-                        new Date(),
-          completedDate: data.completedDate?.toDate ? data.completedDate.toDate() : 
-                        data.completedDate instanceof Date ? data.completedDate : 
-                        null
-        };
-      });
-      callback(requests);
-    });
-  };
-  
-  // Similarly for subscribeToMaintenanceEvents
-  export const subscribeToMaintenanceEvents = (callback) => {
-    const q = query(maintenanceEventsCollection, orderBy("start", "asc"));
-    return onSnapshot(q, (snapshot) => {
-      const events = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          start: data.start?.toDate ? data.start.toDate() : 
-                data.start instanceof Date ? data.start : 
-                new Date(),
-          end: data.end?.toDate ? data.end.toDate() : 
-              data.end instanceof Date ? data.end : 
-              new Date(new Date().getTime() + 2 * 60 * 60 * 1000)
-        };
-      });
-      callback(events);
-    });
-  };
-  
-  // Add comment to a request
-  export const addCommentToRequest = async (requestId, commentData) => {
-    try {
-      const requestRef = doc(db, 'maintenanceRequests', requestId);
-      const requestDoc = await getDoc(requestRef);
-      
-      if (!requestDoc.exists()) {
-        throw new Error('Request not found');
+      if (!request) {
+        throw new Error("Request not found");
       }
       
-      const currentComments = requestDoc.data().comments || [];
-      const newComment = {
-        id: `c${Date.now()}`,
-        ...commentData,
-        createdAt: new Date()
+      // Create event data with the selected date
+      const eventData = {
+        title: request.title,
+        technician: currentUser?.name || 'Current User',
+        location: request.location,
+        description: request.description,
+        start: date,
+        end: new Date(date.getTime() + 2 * 60 * 60 * 1000), // 2 hours from selected time
       };
       
-      await updateDoc(requestRef, {
-        comments: [...currentComments, newComment],
-        updatedAt: serverTimestamp()
+      // We need to modify the scheduleMaintenanceEvent function to use our provided date
+      const result = await scheduleMaintenanceEvent(requestId, eventData);
+      
+      // Update the selected request
+      setSelectedRequest({
+        ...selectedRequest, 
+        status: 'scheduled', 
+        scheduledDate: date
       });
       
-      return newComment;
+      // Update the request in the maintenanceRequests array
+      const updatedRequests = maintenanceRequests.map(req => 
+        req.id === requestId 
+          ? {...req, status: 'scheduled', scheduledDate: date}
+          : req
+      );
+      setMaintenanceRequests(updatedRequests);
+      
+      showNotification('Maintenance scheduled successfully!', 'success');
+      setShowSchedulePicker(false);
     } catch (error) {
-      console.error("Error adding comment:", error);
-      throw error;
+      console.error("Error scheduling maintenance:", error);
+      showNotification('Failed to schedule maintenance', 'error');
     }
   };
   
-  // Mark request as completed
-  export const completeMaintenanceRequest = async (requestId) => {
+  const handleImmediateSchedule = async (requestId) => {
     try {
-      const requestRef = doc(db, 'maintenanceRequests', requestId);
-      await updateDoc(requestRef, {
-        status: 'completed',
-        completedDate: new Date(),
-        updatedAt: serverTimestamp()
+      // Get the request details
+      const request = maintenanceRequests.find(req => req.id === requestId);
+      
+      // Create event data with a concrete JavaScript Date
+      const now = new Date();
+      const eventData = {
+        title: request.title,
+        technician: currentUser?.name || 'Current User',
+        location: request.location,
+        description: request.description,
+        // Don't include start/end here - scheduleMaintenanceEvent will add them
+      };
+      
+      // Schedule in Firebase
+      const result = await scheduleMaintenanceEvent(requestId, eventData);
+      
+      // Update the selected request with the returned data
+      setSelectedRequest({
+        ...selectedRequest, 
+        status: 'scheduled', 
+        scheduledDate: result.start
       });
       
-      return { success: true, id: requestId };
+      // Also update the request in the maintenanceRequests array
+      const updatedRequests = maintenanceRequests.map(req => 
+        req.id === requestId 
+          ? {...req, status: 'scheduled', scheduledDate: result.start}
+          : req
+      );
+      setMaintenanceRequests(updatedRequests);
+      
+      showNotification('Maintenance scheduled for immediate attention!', 'success');
+      
+      // Close the detail modal
+      setShowDetailModal(false);
     } catch (error) {
-      console.error("Error completing request:", error);
-      throw error;
+      console.error("Error scheduling immediate maintenance:", error);
+      showNotification('Failed to schedule immediate maintenance', 'error');
     }
   };
+  
+  const handleMarkAsCompleted = async (requestId) => {
+    try {
+      await completeMaintenanceRequest(requestId);
+      showNotification('Maintenance marked as completed!', 'success');
+      setShowDetailModal(false);
+    } catch (error) {
+      console.error("Error completing maintenance:", error);
+      showNotification('Failed to complete maintenance', 'error');
+    }
+  };
+  
+  const handleAddComment = async (requestId) => {
+    if (!newComment.trim()) return;
+    
+    try {
+      const commentData = {
+        text: newComment,
+        createdBy: currentUser?.name || 'Current User',
+      };
+      
+      await addCommentToRequest(requestId, commentData);
+      setNewComment('');
+      showNotification('Comment added successfully!', 'success');
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      showNotification('Failed to add comment', 'error');
+    }
+  };
+  
+  const handleFileChange = (e) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      
+      // Preview URLs for display
+      const imagePreviewUrls = filesArray.map(file => URL.createObjectURL(file));
+      
+      setNewRequest({
+        ...newRequest,
+        images: [...newRequest.images, ...filesArray],
+        imagePreviewUrls: [...newRequest.imagePreviewUrls, ...imagePreviewUrls]
+      });
+    }
+  };
+  
+  const generateCalendarDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    
+    // Get the first day of the month
+    const firstDay = new Date(year, month, 1);
+    
+    // Get the last day of the month
+    const lastDay = new Date(year, month + 1, 0);
+    
+    // Get the day of the week for the first day (0 is Sunday)
+    const firstDayOfWeek = firstDay.getDay();
+    
+    // Array to hold all calendar days, including empty spots for proper alignment
+    const calendarDays = [];
+    
+    // Add empty days for proper alignment
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      calendarDays.push({ day: null, date: null });
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const date = new Date(year, month, day);
+      
+      // Find events for this day
+      const eventsForDay = maintenanceEvents.filter(event => {
+        const eventDate = new Date(event.start);
+        return eventDate.getDate() === day && 
+               eventDate.getMonth() === month && 
+               eventDate.getFullYear() === year;
+      });
+      
+      calendarDays.push({ day, date, events: eventsForDay });
+    }
+    
+    return calendarDays;
+  };
+  
+  // Format date helper
+  const formatDate = (date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+  };
+  
+// Format time helper
+const formatTime = (date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    }).format(date);
+  };
+  
+  // Get urgency label
+  const getUrgencyLabel = (level) => {
+    switch(level) {
+      case 1: return { text: 'Very Low', color: 'bg-gray-50 text-gray-700' };
+      case 2: return { text: 'Low', color: 'bg-blue-50 text-blue-700' };
+      case 3: return { text: 'Medium', color: 'bg-yellow-50 text-yellow-700' };
+      case 4: return { text: 'High', color: 'bg-orange-50 text-orange-700' };
+      case 5: return { text: 'Critical', color: 'bg-red-50 text-red-700' };
+      default: return { text: 'Unknown', color: 'bg-gray-50 text-gray-700' };
+    }
+  };
+  
+  // Get status badge
+  const getStatusBadge = (status) => {
+    switch(status) {
+      case 'pending': 
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-100">
+            <AlertTriangle size={12} className="mr-1" /> Pending
+          </span>
+        );
+      case 'scheduled': 
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+            <Calendar size={12} className="mr-1" /> Scheduled
+          </span>
+        );
+      case 'completed': 
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+            <Check size={12} className="mr-1" /> Completed
+          </span>
+        );
+      default: 
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-700 border border-gray-100">
+            Unknown
+          </span>
+        );
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-white text-gray-900">
+      {notification && <Notification message={notification.message} type={notification.type} />}
+      
+      {/* Rest of your component */}
+  {/* Header */}
+  <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="bg-indigo-600 p-2 rounded-lg">
+            <Wrench size={24} className="text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 ml-3">Maintenance Management</h1>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center bg-gray-100 px-4 py-2 rounded-lg">
+            <User size={18} className="text-gray-600 mr-2" />
+            <span className="text-sm text-gray-600">Logged in as <strong className="text-indigo-600">{currentUser?.name || 'User'}</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+      {/* Navigation Tabs */}
+          <div className="bg-white border-b border-gray-200">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex">
+                <button
+                  onClick={() => setActiveView('requests')}
+                  className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
+                    activeView === 'requests' 
+                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <AlertTriangle size={16} className="mr-2" />
+                    Maintenance Requests
+                  </div>
+                </button>
+                <button
+                  onClick={() => setActiveView('calendar')}
+                  className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
+                    activeView === 'calendar' 
+                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <Calendar size={16} className="mr-2" />
+                    Maintenance Calendar
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+{/* Main Content Area */}
+      <main className="flex-grow w-full mx-auto py-4 px-2 sm:py-6 sm:px-4 max-w-7xl">
+        {/* Requests View */}
+        {activeView === 'requests' && (
+          <div className="space-y-4 sm:space-y-6">
+            {/* Header and Actions */}
+            <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Maintenance Requests</h2>
+                <p className="text-sm text-gray-400 mt-1">Track and manage maintenance issues</p>
+              </div>
+              
+              <button
+                onClick={() => setShowAddRequestModal(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-sm"
+              >
+                <PlusCircle size={16} className="mr-2" />
+                New Request
+              </button>
+            </div>
+
+            {/* Filters and Search - Mobile Optimized */}
+            <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm space-y-4">
+              <div className="flex flex-col space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search size={18} className="text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search requests..."
+                    className="block w-full pl-10 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 placeholder-gray-400 transition-all duration-200"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="block w-full pl-3 pr-10 py-2.5 bg-white border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="pending">Pending</option>
+                      <option value="scheduled">Scheduled</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <select
+                      value={filterUrgency}
+                      onChange={(e) => setFilterUrgency(e.target.value)}
+                      className="block w-full pl-3 pr-10 py-2.5 bg-white border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
+                    >
+                      <option value="all">All Urgency Levels</option>
+                      <option value="1">Very Low</option>
+                      <option value="2">Low</option>
+                      <option value="3">Medium</option>
+                      <option value="4">High</option>
+                      <option value="5">Critical</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Requests List - Mobile Optimized */}
+            <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+              {isLoading ? (
+                <div className="p-8 flex justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+                </div>
+              ) : filteredRequests.length === 0 ? (
+                <div className="p-6 sm:p-12 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 mb-4">
+                    <Wrench size={32} className="text-indigo-400" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900">No maintenance requests found</h3>
+                  <p className="mt-2 text-sm text-gray-400">
+                    {searchTerm || filterStatus !== 'all' || filterUrgency !== 'all'
+                      ? 'Try adjusting your search or filters'
+                      : 'Get started by creating a new maintenance request'}
+                  </p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-200">
+                  {filteredRequests.map((request) => (
+                    <li 
+                      key={request.id} 
+                      className="p-4 sm:p-6 hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setShowDetailModal(true);
+                      }}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex-grow">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 mr-4">
+                              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                                request.urgencyLevel >= 4 ? 'bg-red-100' : 
+                                request.urgencyLevel === 3 ? 'bg-yellow-100' : 
+                                'bg-blue-100'
+                              }`}>
+                                <AlertTriangle 
+                                  size={24} 
+                                  className={`${
+                                    request.urgencyLevel >= 4 ? 'text-red-600' : 
+                                    request.urgencyLevel === 3 ? 'text-yellow-600' : 'text-blue-600'
+                                  }`} 
+                                />
+                              </div>
+                            </div>
+                            <div className="flex-grow">
+                              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{request.title}</h3>
+                              <div className="mt-1 flex items-center text-sm text-gray-400">
+                                <MapPin size={14} className="mr-1" />
+                                <span>{request.location}</span>
+                              </div>
+                              <p className="mt-2 text-sm text-gray-500 line-clamp-2">{request.description}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {getStatusBadge(request.status)}
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              request.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
+                              request.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                              {getUrgencyLabel(request.urgencyLevel).text}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Calendar View - Mobile Optimized */}
+        {activeView === 'calendar' && (
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Maintenance Calendar</h2>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    const prevMonth = new Date(currentMonth);
+                    prevMonth.setMonth(prevMonth.getMonth() - 1);
+                    setCurrentMonth(prevMonth);
+                  }}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <span className="text-base sm:text-xl font-semibold text-gray-700 hidden sm:inline">
+                  {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </span>
+                <span className="text-base font-semibold text-gray-700 sm:hidden">
+                  {currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' })}
+                </span>
+                <button
+                  onClick={() => {
+                    const nextMonth = new Date(currentMonth);
+                    nextMonth.setMonth(nextMonth.getMonth() + 1);
+                    setCurrentMonth(nextMonth);
+                  }}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Calendar Grid - Mobile Optimized */}
+            <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
+              <div className="grid grid-cols-7 gap-px bg-gray-200">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
+                  <div key={day} className="bg-gray-100 py-2 text-center text-sm font-medium text-gray-600">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="grid grid-cols-7 gap-px bg-gray-200">
+                {generateCalendarDays().map((dayObj, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`bg-white h-24 sm:h-32 p-1 sm:p-2 overflow-hidden transition-colors duration-300 ${
+                      !dayObj.day ? 'bg-gray-50' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {dayObj.day && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs sm:text-sm font-medium ${
+                            dayObj.date?.toDateString() === new Date().toDateString() 
+                              ? 'bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center' 
+                              : 'text-gray-700'
+                          }`}>
+                            {dayObj.day}
+                          </span>
+                        </div>
+                        
+                        <div className="mt-1 space-y-1 max-h-16 sm:max-h-24 overflow-y-auto">
+                          {dayObj.events?.map((event) => (
+                            <div 
+                              key={event.id} 
+                              className="px-1 py-0.5 text-xs rounded bg-blue-50 text-blue-700 truncate"
+                            >
+                              {event.title}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+      
+      {/* Add Request Modal */}
+      {showAddRequestModal && (
+        <div className="fixed inset-0 overflow-y-auto z-20" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
+              aria-hidden="true"
+              onClick={() => setShowAddRequestModal(false)}
+            ></div>
+
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">              <div className="px-6 pt-5 pb-4 sm:p-6">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 sm:mx-0 sm:h-10 sm:w-10 shadow-md">
+                    <PlusCircle size={20} className="text-white" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
+                      Create Maintenance Request
+                    </h3>
+                    
+                    <form className="mt-6 space-y-4">
+                      {/* Title */}
+                      <div>
+                        <label htmlFor="request-title" className="block text-sm font-medium text-gray-700">
+                          Title
+                        </label>
+                        <input
+                          type="text"
+                          id="request-title"
+                          className="mt-1 block w-full border border-gray-200 rounded-xl shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                          placeholder="Brief description of the issue"
+                          value={newRequest.title}
+                          onChange={(e) => setNewRequest({...newRequest, title: e.target.value})}
+                          required
+                        />
+                      </div>
+                      
+                      {/* Location */}
+                      <div>
+                        <label htmlFor="request-location" className="block text-sm font-medium text-gray-700">
+                          Location
+                        </label>
+                        <input
+                          type="text"
+                          id="request-location"
+                          className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                          placeholder="Where is the issue located?"
+                          value={newRequest.location}
+                          onChange={(e) => setNewRequest({...newRequest, location: e.target.value})}
+                          required
+                        />
+                      </div>
+                      
+                      {/* Description */}
+                      <div>
+                        <label htmlFor="request-description" className="block text-sm font-medium text-gray-700">
+                          Description
+                        </label>
+                        <textarea
+                          id="request-description"
+                          rows={3}
+                          className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                          placeholder="Detailed description of the issue"
+                          value={newRequest.description}
+                          onChange={(e) => setNewRequest({...newRequest, description: e.target.value})}
+                          required
+                        />
+                      </div>
+                      
+                      {/* Urgency Level */}
+                      <div>
+                        <label htmlFor="urgency-level" className="block text-sm font-medium text-gray-700">
+                          Urgency Level
+                        </label>
+                        <select
+                          id="urgency-level"
+                          className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                          value={newRequest.urgencyLevel}
+                          onChange={(e) => setNewRequest({...newRequest, urgencyLevel: parseInt(e.target.value)})}
+                        >
+                          <option value="1">1 - Very Low</option>
+                          <option value="2">2 - Low</option>
+                          <option value="3">3 - Medium</option>
+                          <option value="4">4 - High</option>
+                          <option value="5">5 - Critical</option>
+                        </select>
+                      </div>
+                      
+                      {/* Image Upload */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Images
+                        </label>
+                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors duration-200">
+                          <div className="space-y-1 text-center">
+                            <Camera size={28} className="mx-auto text-gray-400" />
+                            <div className="flex text-sm text-gray-600">
+                              <label
+                                htmlFor="image-upload"
+                                className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none"
+                              >
+                                <span>Upload images</span>
+                                <input 
+                                  id="image-upload" 
+                                  name="image-upload" 
+                                  type="file" 
+                                  className="sr-only" 
+                                  multiple
+                                  accept="image/*"
+                                  onChange={handleFileChange}
+                                />
+                              </label>
+                              <p className="pl-1">or drag and drop</p>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              PNG, JPG, GIF up to 10MB
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Image previews */}
+                        {newRequest.imagePreviewUrls.length > 0 && (
+                          <div className="mt-4 grid grid-cols-3 gap-3">
+                            {newRequest.imagePreviewUrls.map((url, index) => (
+                              <div key={index} className="relative group">
+                                <img 
+                                  src={url} 
+                                  alt={`Preview ${index}`}
+                                  className="h-24 w-full object-cover rounded-lg shadow-sm" 
+                                />
+                                <button
+                                  type="button"
+                                  className="absolute top-2 right-2 rounded-full bg-red-100 p-1.5 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                  onClick={() => {
+                                    const updatedImages = [...newRequest.images];
+                                    updatedImages.splice(index, 1);
+                                    
+                                    const updatedPreviews = [...newRequest.imagePreviewUrls];
+                                    updatedPreviews.splice(index, 1);
+                                    
+                                    setNewRequest({
+                                      ...newRequest, 
+                                      images: updatedImages,
+                                      imagePreviewUrls: updatedPreviews
+                                    });
+                                  }}
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-700 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-200"
+                  onClick={handleAddRequest}
+                >
+                  Submit Request
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-200"
+                  onClick={() => setShowAddRequestModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Request Detail Modal */}
+{/* Request Detail Modal */}
+{showDetailModal && selectedRequest && (
+  <div className="fixed inset-0 overflow-y-auto z-20" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      {/* Background overlay */}
+      <div 
+        className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
+        aria-hidden="true"
+        onClick={() => setShowDetailModal(false)}
+      ></div>
+
+      {/* Modal panel */}
+      <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200">
+        <div className="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div className="sm:flex sm:items-start">
+            <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
+              <AlertTriangle size={20} className="text-white" />
+            </div>
+            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+              <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
+                {selectedRequest.title}
+              </h3>
+                    
+                    <div className="mt-4">
+                      {/* Meta Info */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {getStatusBadge(selectedRequest.status)}
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
+                          selectedRequest.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
+                          selectedRequest.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          Urgency: {getUrgencyLabel(selectedRequest.urgencyLevel).text}
+                        </span>
+                      </div>
+                      
+                      {/* Location & Created Info */}
+                      <div className="flex justify-between text-sm text-gray-500 mb-4">
+                        <div className="flex items-center">
+                          <MapPin size={16} className="mr-1" />
+                          {selectedRequest.location}
+                        </div>
+                        <div>
+                          Created by {selectedRequest.createdBy} on {formatDate(selectedRequest.createdAt)}
+                        </div>
+                      </div>
+                      
+                      {/* Description */}
+                      <div className="mt-2 mb-4">
+                        <h4 className="text-sm font-medium text-gray-300 mb-1">Description</h4>
+                        <p className="text-sm text-gray-400 whitespace-pre-wrap">
+                          {selectedRequest.description}
+                        </p>
+                      </div>
+                      
+                      {/* Status Info */}
+                      {selectedRequest.status === 'scheduled' && (
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+                          <div className="flex items-center">
+                            <Calendar size={18} className="text-blue-600 mr-2" />
+                            <div>
+                              <p className="text-sm font-medium text-blue-800">
+                                Scheduled for {formatDate(selectedRequest.scheduledDate)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {selectedRequest.status === 'completed' && (
+                        <div className="bg-green-50 border border-green-100 rounded-lg p-4 mb-4">
+                          <div className="flex items-center">
+                            <Check size={18} className="text-green-600 mr-2" />
+                            <div>
+                              <p className="text-sm font-medium text-green-800">
+                                Completed on {formatDate(selectedRequest.completedDate)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Images */}
+                      {selectedRequest.images && selectedRequest.images.length > 0 && (
+                        <div className="mt-4">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Images</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            {selectedRequest.images.map((image, index) => (
+                              <img 
+                                key={index}
+                                src={image}
+                                alt={`Issue ${index + 1}`}
+                                className="h-48 w-full object-cover rounded-lg shadow-sm"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Comments */}
+                      <div className="mt-6">
+                      <h4 className="text-sm font-medium text-gray-300 mb-3">Comments</h4>
+                        
+                        {selectedRequest.comments.length === 0 ? (
+                          <p className="text-sm text-gray-400 italic">No comments yet</p>
+                        ) : (
+                          <ul className="space-y-4">
+                            {selectedRequest.comments.map((comment) => (
+                              <li key={comment.id} className="bg-gray-100 rounded-lg p-4">
+                                <div className="flex justify-between items-start">
+                                  <span className="text-sm font-medium text-gray-900">{comment.createdBy}</span>
+                                  <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
+                                </div>
+                                <p className="mt-1 text-sm text-gray-600">{comment.text}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        
+                        {/* Add Comment Form */}
+                        <div className="mt-4">
+                          <div className="flex">
+                          <input 
+                            type="text"
+                            className="flex-grow rounded-l-lg border-gray-300 bg-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm text-gray-900 placeholder-gray-400"
+                            placeholder="Add a comment..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                          />
+                            <button
+                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-lg shadow-sm text-gray-900 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                              onClick={() => handleAddComment(selectedRequest.id)}
+                            >
+                              <MessageCircle size={16} className="mr-2" />
+                              Post
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {showSchedulePicker && selectedRequest && (
+                <div className="fixed inset-0 overflow-y-auto z-30" aria-labelledby="schedule-modal-title" role="dialog" aria-modal="true">
+                  <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    {/* Background overlay */}
+                    <div 
+                      className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
+                      aria-hidden="true"
+                      onClick={() => setShowSchedulePicker(false)}
+                    ></div>
+
+                    {/* Modal panel */}
+                    <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200">
+                      <div className="bg-white px-6 pt-5 pb-4 sm:p-6">
+                        <div className="sm:flex sm:items-start">
+                          <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
+                            <Calendar size={20} className="text-white" />
+                          </div>
+                          <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 className="text-xl font-semibold text-gray-900" id="schedule-modal-title">
+                              Schedule Maintenance
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                              Select a date and time for this maintenance request.
+                            </p>
+                            
+                            <div className="mt-6 space-y-6">
+                              {/* Date Picker */}
+                              <div>
+                                <label htmlFor="maintenance-date" className="block text-sm font-medium text-gray-700">
+                                  Date
+                                </label>
+                                <input
+                                  type="date"
+                                  id="maintenance-date"
+                                  className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                                  value={scheduleDate.toISOString().split('T')[0]}
+                                  onChange={(e) => {
+                                    const newDate = new Date(e.target.value);
+                                    setScheduleDate(newDate);
+                                  }}
+                                />
+                              </div>
+                              
+                              {/* Time Picker */}
+                              <div>
+                                <label htmlFor="maintenance-time" className="block text-sm font-medium text-gray-700">
+                                  Time
+                                </label>
+                                <input
+                                  type="time"
+                                  id="maintenance-time"
+                                  className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                                  value={scheduleTime}
+                                  onChange={(e) => setScheduleTime(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button
+                          type="button"
+                          className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                          onClick={() => {
+                            // Combine date and time
+                            const dateTime = new Date(scheduleDate);
+                            const [hours, minutes] = scheduleTime.split(':');
+                            dateTime.setHours(parseInt(hours), parseInt(minutes), 0);
+                            
+                            // Schedule maintenance with the combined date
+                            handleScheduleMaintenanceWithDate(selectedRequest.id, dateTime);
+                            setShowSchedulePicker(false);
+                            setSelectedRequest({...selectedRequest, status: 'scheduled', scheduledDate: dateTime});
+                            showNotification('Maintenance scheduled successfully!', 'success');
+                          }}
+                        >
+                          Confirm Schedule
+                        </button>
+                        
+                        <button
+                          type="button"
+                          className="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-200"
+                          onClick={() => setShowSchedulePicker(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
+                {selectedRequest.status === 'pending' && (
+                  <>
+                    <button
+                      type="button"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      onClick={() => handleImmediateSchedule(selectedRequest.id)}
+                    >
+                      <Clock size={16} className="mr-2" />
+                      Go there now
+                    </button>
+                    
+                    <button
+                      type="button"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      onClick={() => setShowSchedulePicker(true)}
+                    >
+                      <Calendar size={16} className="mr-2" />
+                      Schedule Maintenance
+                    </button>
+                  </>
+                )}
+                
+                {selectedRequest.status === 'scheduled' && (
+                  <>
+                    <button
+                      type="button"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-all duration-200"
+                      onClick={() => handleMarkAsCompleted(selectedRequest.id)}
+                    >
+                      <Check size={16} className="mr-2" />
+                      Mark as Completed
+                    </button>
+                    
+                    <button
+                      type="button"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      onClick={() => handleReschedule(selectedRequest.id)}
+                    >
+                      <Calendar size={16} className="mr-2" />
+                      Reschedule
+                    </button>
+                  </>
+                )}
+                
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-200"
+                  onClick={() => setShowDetailModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+    </div>
+  );
+};
+
+export default MaintenanceManagement;

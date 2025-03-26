@@ -150,7 +150,6 @@ const RestaurantLoyaltyApp = () => {
         { id: "happy-life-espanola", name: "Espanola", discount: 10 }
       ]
     },
-    { id: "jlaw-workers", name: "JLaw Workers", discount: 50 },
   ]
 
 // Add this useEffect below your existing localStorage useEffect in RestaurantLoyaltyApp component
