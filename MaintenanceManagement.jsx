@@ -188,35 +188,35 @@ const showNotification = (message, type = 'info') => {
     }
   };
   
-// Modify the handleScheduleMaintenance function for the "Go there now" case
 const handleImmediateSchedule = async (requestId) => {
   try {
     // Get the request details
     const request = maintenanceRequests.find(req => req.id === requestId);
     
-    // Create event data with server timestamp
+    // Create event data with a concrete JavaScript Date
+    const now = new Date();
     const eventData = {
       title: request.title,
-      // We'll use serverTimestamp() directly in the scheduleMaintenanceEvent function
       technician: currentUser?.name || 'Current User',
       location: request.location,
       description: request.description,
-      isImmediate: true // Flag to indicate this is an immediate maintenance
+      // Don't include start/end here - the scheduleMaintenanceEvent will add them
     };
     
-    // Schedule in Firebase using serverTimestamp
-    await scheduleMaintenanceEvent(requestId, eventData);
+    // Schedule in Firebase
+    const result = await scheduleMaintenanceEvent(requestId, eventData);
     
-    // Update the UI without depending on the exact server time
-    const updatedRequests = maintenanceRequests.map(req => 
-      req.id === requestId 
-        ? {...req, status: 'scheduled', scheduledDate: new Date()}
-        : req
-    );
-    setMaintenanceRequests(updatedRequests);
-    setSelectedRequest({...selectedRequest, status: 'scheduled', scheduledDate: new Date()});
+    // Use the returned dates which should be proper Date objects
+    setSelectedRequest({
+      ...selectedRequest, 
+      status: 'scheduled', 
+      scheduledDate: result.start
+    });
     
     showNotification('Maintenance scheduled for immediate attention!', 'success');
+    
+    // Close the detail modal
+    setShowDetailModal(false);
   } catch (error) {
     console.error("Error scheduling immediate maintenance:", error);
     showNotification('Failed to schedule immediate maintenance', 'error');

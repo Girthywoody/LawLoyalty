@@ -50,43 +50,35 @@ const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
     }
   };
   
-  // Get all maintenance requests
-  export const subscribeToMaintenanceRequests = (callback) => {
-    const q = query(maintenanceRequestsCollection, orderBy("createdAt", "desc"));
-    return onSnapshot(q, (snapshot) => {
-      const requests = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date()
-      }));
-      callback(requests);
-    });
-  };
-  
-  // Schedule maintenance
-  export const scheduleMaintenanceEvent = async (requestId, eventData) => {
+// Schedule maintenance
+export const scheduleMaintenanceEvent = async (requestId, eventData) => {
     try {
-      // Ensure dates are proper Firestore timestamps
-      const startTimestamp = serverTimestamp(); // This ensures we use the server time
+      // Use a proper JavaScript Date object for immediate use
+      const now = new Date();
       
-      // Create the event
+      // Create the event with concrete dates (not server timestamps)
       const eventRef = await addDoc(maintenanceEventsCollection, {
         ...eventData,
         requestId,
-        start: startTimestamp, // Use server timestamp for "now"
-        end: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), // 2 hours from now
-        createdAt: serverTimestamp()
+        start: now, // Use concrete date
+        end: new Date(now.getTime() + 2 * 60 * 60 * 1000), // 2 hours from now
+        createdAt: serverTimestamp() // This one can stay as serverTimestamp
       });
       
-      // Update the request status
+      // Update the request status with a concrete date too
       const requestRef = doc(db, 'maintenanceRequests', requestId);
       await updateDoc(requestRef, { 
         status: 'scheduled',
-        scheduledDate: startTimestamp, // Use same timestamp
+        scheduledDate: now, // Use concrete date
         updatedAt: serverTimestamp() 
       });
       
-      return { id: eventRef.id, ...eventData };
+      return { 
+        id: eventRef.id, 
+        ...eventData,
+        start: now, // Return the same concrete date
+        end: new Date(now.getTime() + 2 * 60 * 60 * 1000)
+      };
     } catch (error) {
       console.error("Error scheduling maintenance:", error);
       throw error;
@@ -94,15 +86,47 @@ const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
   };
   
   // Get maintenance events
+// In subscribeToMaintenanceRequests
+export const subscribeToMaintenanceRequests = (callback) => {
+    const q = query(maintenanceRequestsCollection, orderBy("createdAt", "desc"));
+    return onSnapshot(q, (snapshot) => {
+      const requests = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Handle all possible date fields
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          scheduledDate: data.scheduledDate?.toDate ? data.scheduledDate.toDate() : 
+                        data.scheduledDate instanceof Date ? data.scheduledDate : 
+                        new Date(),
+          completedDate: data.completedDate?.toDate ? data.completedDate.toDate() : 
+                        data.completedDate instanceof Date ? data.completedDate : 
+                        null
+        };
+      });
+      callback(requests);
+    });
+  };
+  
+  // Similarly for subscribeToMaintenanceEvents
   export const subscribeToMaintenanceEvents = (callback) => {
     const q = query(maintenanceEventsCollection, orderBy("start", "asc"));
     return onSnapshot(q, (snapshot) => {
-      const events = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        start: doc.data().start?.toDate() || new Date(),
-        end: doc.data().end?.toDate() || new Date()
-      }));
+      const events = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          start: data.start?.toDate ? data.start.toDate() : 
+                data.start instanceof Date ? data.start : 
+                new Date(),
+          end: data.end?.toDate ? data.end.toDate() : 
+              data.end instanceof Date ? data.end : 
+              new Date(new Date().getTime() + 2 * 60 * 60 * 1000)
+        };
+      });
       callback(events);
     });
   };
