@@ -444,12 +444,12 @@ useEffect(() => {
       // Update cooldown information
       setCooldownInfo({
         inCooldown: true,
-        cooldownUntil: new Date(Date.now() + 3 * 60 * 60 * 1000),
+        cooldownUntil: new Date(Date.now() + 1 * 60 * 60 * 1000),
         visitedRestaurant: pendingRestaurant.name
       });
       
       // Show notification
-      showNotification(`You've selected ${pendingRestaurant.name}. This selection will be locked for 3 hours.`, 'success');
+      showNotification(`You've selected ${pendingRestaurant.name}. This selection will be locked for 1 hour.`, 'success');
     } catch (error) {
       console.error("Error confirming restaurant:", error);
       showNotification("Failed to record your restaurant selection", "error");
