@@ -439,12 +439,6 @@ const formatTime = (date) => {
     <div className="flex flex-col min-h-screen bg-white text-gray-900">
       {notification && <Notification message={notification.message} type={notification.type} />}
       
-      {/* Rest of your component */}
-  {/* Header */}
-  <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-    <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-    </div>
-  </header>
 
       {/* Navigation Tabs */}
           <div className="bg-white border-b border-gray-200">
