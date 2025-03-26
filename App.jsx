@@ -479,19 +479,13 @@ useEffect(() => {
         throw new Error('Please enter both email and password');
       }
       
-      // Implement actual Firebase login
-      const user = await loginWithEmailAndPassword(email, password);
-      
-      // Query Firestore to get the user's role information
+      // First check if the user exists in our database and has approved status
       const employeesRef = collection(db, 'employees');
-      // Try with both original and lowercase email
       const normalizedEmail = email.toLowerCase();
       
-      let querySnapshot;
-      
-      // First try with the email as provided
+      // Try with both original and lowercase email
       const q1 = query(employeesRef, where("email", "==", email));
-      querySnapshot = await getDocs(q1);
+      let querySnapshot = await getDocs(q1);
       
       // If no match, try with lowercase email
       if (querySnapshot.empty) {
@@ -506,7 +500,7 @@ useEffect(() => {
       // Get the employee data
       const employeeData = querySnapshot.docs[0].data();
       
-      // Check if the user has been approved - IMPROVED CHECK
+      // Check approval status BEFORE authentication
       if (employeeData.status === 'pending') {
         throw new Error('Your account is pending approval from your manager. Please contact your manager for assistance.');
       }
@@ -515,11 +509,14 @@ useEffect(() => {
         throw new Error('Your application has been declined. Please contact your restaurant manager for more information.');
       }
       
-      // Build the current user object - without discount field
+      // Only proceed with Firebase login if approved
+      const user = await loginWithEmailAndPassword(email, password);
+      
+      // Build the current user object
       const userData = {
         id: user.uid,
         name: employeeData.name || user.displayName || email,
-        email: normalizedEmail, // Always use lowercase email for consistency
+        email: normalizedEmail,
         jobTitle: employeeData.jobTitle || 'Employee',
         restaurantId: employeeData.restaurantId || null,
         restaurantName: employeeData.restaurantName || null
@@ -548,6 +545,12 @@ useEffect(() => {
     } catch (error) {
       console.error("Login error:", error);
       setLoginError(error.message || 'Login failed. Check your credentials.');
+      
+      // Ensure they're logged out if they tried with invalid credentials
+      await logoutUser();
+      setCurrentUser(null);
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('currentView');
     } finally {
       setIsLoading(false);
     }
