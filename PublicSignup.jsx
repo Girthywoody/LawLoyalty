@@ -42,50 +42,85 @@ const PublicSignup = () => {
       try {
         // Using predefined restaurants from App.jsx for consistency
         const RESTAURANTS = [
-            { id: "montanas", name: "Montana's" },
-            { id: "kelseys", name: "Kelsey's" },
-            { id: "coras", name: "Cora's Breakfast" },
-            { id: "js-roadhouse", name: "J's Roadhouse" },
-            { id: "swiss-chalet", name: "Swiss Chalet" },
-            { id: "northern-climate", name: "Northern Climate" },
-            { id: "wellness-studio", name: "Wellness Studio" },
-            { id: "montanas", name: "Montana's" },
-            { id: "flooring-and-more-superstore", name: "Flooring and More Superstore" },
-            {
-              id: "lot-88",
-              name: "Lot 88",
-              locations: [
-                { id: "lot88-sudbury", name: "Sudbury" },
-                { id: "lot88-timmins", name: "Timmins" },
-                { id: "lot88-orillia", name: "Orillia" },
-                { id: "lot88-north-bay", name: "North Bay" }
-              ]
-            },
-            {
-              id: "overtime-bar",
-              name: "Overtime Bar",
-              locations: [
-                { id: "overtime-sudbury", name: "Sudbury" },
-                { id: "overtime-val-caron", name: "Val Caron" },
-                { id: "overtime-chelmsford", name: "Chelmsford" }
-              ]
-            },
-            { id: "poke-bar", name: "Poke Bar" },
-            {
-              id: "happy-life",
-              name: "Happy Life",
-              locations: [
-                { id: "happy-life-kingsway", name: "Kingsway" },
-                { id: "happy-life-val-caron", name: "Val Caron" },
-                { id: "happy-life-chelmsford", name: "Chelmsford" },
-                { id: "happy-life-timmins", name: "Timmins" },
-                { id: "happy-life-lakeshore", name: "Lakeshore" },
-                { id: "happy-life-alqonquin", name: "Alqonquin" },
-                { id: "happy-life-espanola", name: "Espanola" }
-              ]
-            },
-            { id: "jlaw-workers", name: "JLaw Workers" },
-          ];
+          { id: "kelseys", name: "Kelseys"},
+          { id: "coras", name: "Cora's Breakfast"},
+          { id: "js-roadhouse", name: "J's Roadhouse"},
+          { id: "swiss-chalet", name: "Swiss Chalet"},
+          { id: "poke-bar", name: "Poke Bar"},
+          { id: "northern-climate", name: "Northern Climate"},
+          { id: "flooring-and-more-superstore", name: "Flooring and More Superstore"},
+          { id: "wellness-studio", name: "Wellness Studio"},
+          { id: "east-side-marios-orillia", name: "East Side Mario's Orillia"},
+          { id: "kelseys-sudbury", name: "Kelseys Sudbury"},
+          { id: "osmows-winnipeg", name: "Osmows Winnipeg"},
+          {
+            id: "lot-88",
+            name: "Lot 88",
+            discount: 20,
+            locations: [
+              { id: "lot88-sudbury", name: "Sudbury"},
+              { id: "lot88-timmins", name: "Timmins"},
+              { id: "lot88-orillia", name: "Orillia"},
+              { id: "lot88-north-bay", name: "North Bay"},
+              { id: "lot88-thunder-bay", name: "Thunder Bay"},
+              { id: "lot88-burlington", name: "Burlington"}
+            ]
+          }, 
+          {
+            id: "montanas",
+            name: "Montana's",
+            discount: 20,
+            locations: [
+              { id: "montanas-sudbury", name: "Sudbury"},
+              { id: "montanas-polo-park", name: "Polo Park"},
+              { id: "montanas-Sterling-Lyon ", name: "Sterling Lyon"},
+              { id: "montanas-St-vital", name: "St Vital"},
+              { id: "montanas-regent", name: "Regent"},
+              { id: "montanas-orillia", name: "Orillia"}
+            ]
+          }, 
+          {
+            id: "kelseys",
+            name: "Kelseys",
+            discount: 20,
+            locations: [
+              { id: "kelseys-sudbury", name: "Sudbury"},
+              { id: "kelseys-orillia", name: "Orillia"},
+            ]
+          }, 
+          {
+            id: "kelseys",
+            name: "Kelseys",
+            discount: 20,
+            locations: [
+              { id: "kelseys-sudbury", name: "Sudbury"},
+              { id: "kelseys-orillia", name: "Orillia"}
+            ]
+          }, 
+          {
+            id: "overtime-bar",
+            name: "Overtime Bar",
+            discount: 20,
+            locations: [
+              { id: "overtime-sudbury", name: "Sudbury"},
+              { id: "overtime-val-caron", name: "Val Caron"},
+              { id: "overtime-chelmsford", name: "Chelmsford"}
+            ]
+          },   {
+            id: "happy-life",
+            name: "Happy Life",
+            discount: 10,
+            locations: [
+              { id: "happy-life-kingsway", name: "Kingsway"},
+              { id: "happy-life-val-caron", name: "Val Caron "},
+              { id: "happy-life-chelmsford", name: "Chelmsford "},
+              { id: "happy-life-timmins", name: "Timmins "},
+              { id: "happy-life-lakeshore", name: "Lakeshore"},
+              { id: "happy-life-alqonquin", name: "Alqonquin"},
+              { id: "happy-life-espanola", name: "Espanola"}
+            ]
+          },
+        ]
         
         setRestaurants(RESTAURANTS);
       } catch (err) {

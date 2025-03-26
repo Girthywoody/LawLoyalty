@@ -58,10 +58,6 @@ import RestaurantSelector from './RestaurantSelector';
 import PendingEmployeeApprovals from './PendingEmployeeApprovals';
 window.showAppNotification = null;
 
-import EnhancedRestaurantDropdown from './EnhancedRestaurantDropdown';
-import EmployeeRestaurantSelector from './EmployeeRestaurantSelector';
-import ManagerRestaurantSelector from './ManagerRestaurantSelector';
-
 
 const RestaurantLoyaltyApp = () => {
   // App state
@@ -1840,29 +1836,117 @@ if (view === 'employee') {
             <UserProfileBadge user={currentUser} />
           </div>
 
+          {/* Location selector */}
           <div className="p-6 border-b border-gray-200">
-            <EmployeeRestaurantSelector
-              restaurants={RESTAURANTS}
-              currentUser={currentUser}
-              selectedRestaurant={selectedRestaurant}
-              onSelectRestaurant={(restaurant) => {
-                if (cooldownInfo && cooldownInfo.inCooldown) {
-                  const cooldownEnds = new Date(cooldownInfo.cooldownUntil);
-                  const hoursLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60 * 60));
-                  const minutesLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60)) % 60;
+            <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-4">
+              Select Location
+            </label>
+            
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  if (cooldownInfo && cooldownInfo.inCooldown) {
+                    const cooldownEnds = new Date(cooldownInfo.cooldownUntil);
+                    const hoursLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60 * 60));
+                    const minutesLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60)) % 60;
+                    
+                    showNotification(
+                      `You already selected ${cooldownInfo.visitedRestaurant}. Please wait ${hoursLeft}h ${minutesLeft}m before selecting another restaurant.`, 
+                      'error'
+                    );
+                    return;
+                  }
                   
-                  showNotification(
-                    `You already selected ${cooldownInfo.visitedRestaurant}. Please wait ${hoursLeft}h ${minutesLeft}m before selecting another restaurant.`, 
-                    'error'
-                  );
-                  return;
-                }
-                
-                setPendingRestaurant(restaurant);
-                setShowVerification(true);
-              }}
-              cooldownInfo={cooldownInfo}
-            />
+                  setShowRestaurantDropdown(!showRestaurantDropdown);
+                }}
+                className="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Building size={20} className="text-gray-400 mr-3" />
+                    <span className="text-gray-700">
+                      {selectedRestaurant ? selectedRestaurant.name : 'Select a restaurant'}
+                    </span>
+                  </div>
+                  <svg
+                    className={`h-5 w-5 text-gray-400 transform transition-transform duration-200 ${
+                      showRestaurantDropdown ? 'rotate-180' : ''
+                    }`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </button>
+
+{showRestaurantDropdown && (
+  <div className="absolute z-10 mt-2 w-full rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+    <div className="max-h-60 overflow-auto">
+      {filteredRestaurants().map((restaurant) => (
+        <div key={restaurant.id} className="px-1 py-1">
+          {!restaurant.locations ? (
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+              onClick={() => handleSelectRestaurant(restaurant)}
+            >
+              <Store size={16} className="text-indigo-600 flex-shrink-0" />
+              <div>
+                <div className="font-medium text-gray-900">{restaurant.name}</div>
+              </div>
+            </button>
+          ) : (
+            // For restaurants with multiple locations
+            <>
+              <button
+                type="button"
+                className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+                onClick={() => {
+                  setSelectedRestaurant(restaurant);
+                  setSelectedLocation(restaurant.name);
+                  setShowRestaurantDropdown(false);
+                }}
+              >
+                <Store size={16} className="text-indigo-600 flex-shrink-0" />
+                <div>
+                  <div className="font-medium text-gray-900">{restaurant.name}</div>
+                </div>
+              </button>
+              <div className="ml-4 mt-1 space-y-1 mb-2">
+              {restaurant.locations.map((location) => (
+                <button
+                  key={location.id}
+                  type="button"
+                  className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+                  onClick={() => {
+                    // We need to create a combined restaurant+location object
+                    const restaurantWithLocation = {
+                      ...restaurant,
+                      name: `${restaurant.name} - ${location.name}`,
+                      locationName: location.name,
+                      discount: location.discount // Make sure the location discount comes with it
+                    };
+                    handleSelectRestaurant(restaurantWithLocation);
+                  }}
+                >
+                  <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
+                  <div>
+                    <div className="font-medium text-gray-900">{location.name}</div>
+                  </div>
+                </button>
+              ))}
+              </div>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+            </div>
           </div>
 
           {/* Discount display */}
@@ -2044,10 +2128,9 @@ if (view === 'manager') {
 
 
       {currentUser && (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Admin') && (
-        <ManagerRestaurantSelector 
+        <RestaurantSelector 
           currentUser={currentUser}
           restaurants={RESTAURANTS}
-          activeRestaurant={activeRestaurant}
           onSelectRestaurant={(restaurant) => {
             console.log("Restaurant selected:", restaurant);
             setActiveRestaurant(restaurant);
@@ -2247,14 +2330,47 @@ if (view === 'manager') {
 
             {/* Location selector for discount view */}
             <div className="p-6 border-b border-gray-200">
-  <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-4">
-    Select Restaurant Location for Discount Preview
-  </label>
-  
-  <EnhancedRestaurantDropdown
-    restaurants={RESTAURANTS}
-    selectedRestaurant={selectedRestaurant || activeRestaurant}
-    onSelectRestaurant={(restaurant) => {
+              <label htmlFor="restaurant" className="block text-sm font-medium text-gray-700 mb-4">
+                Select Restaurant Location for Discount Preview
+              </label>
+              
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowRestaurantDropdown(!showRestaurantDropdown)}
+                  className="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Building size={20} className="text-gray-400 mr-3" />
+                      <span className="text-gray-700">
+                        {selectedRestaurant ? selectedRestaurant.name : (activeRestaurant ? activeRestaurant.name : 'Select a restaurant')}
+                      </span>
+                    </div>
+                    <svg
+                      className={`h-5 w-5 text-gray-400 transform transition-transform duration-200 ${
+                        showRestaurantDropdown ? 'rotate-180' : ''
+                      }`}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* Dropdown menu */}
+                {showRestaurantDropdown && (
+                  <div className="absolute z-10 mt-2 w-full rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                    <div className="max-h-60 overflow-auto">
+                      {RESTAURANTS.map((restaurant) => (
+                        <div key={restaurant.id} className="px-1 py-1">
+{!restaurant.locations ? (
+  <button
+    type="button"
+    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+    onClick={() => {
       setSelectedRestaurant(restaurant);
       setSelectedLocation(restaurant.name);
       setShowRestaurantDropdown(false);
@@ -2263,9 +2379,58 @@ if (view === 'manager') {
         setActiveRestaurant(restaurant);
       }
     }}
-    placeholder="Select a restaurant to preview discount"
-  />
-</div>
+  >
+    <Store size={16} className="text-indigo-600 flex-shrink-0" />
+    <div>
+      <div className="font-medium text-gray-900">{restaurant.name}</div>
+    </div>
+  </button>
+) : (
+  // For restaurants with multiple locations
+  <>
+    <button
+      type="button"
+      className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+      onClick={() => {
+        setSelectedRestaurant(restaurant);
+        setSelectedLocation(restaurant.name);
+        setShowRestaurantDropdown(false);
+      }}
+    >
+      <Store size={16} className="text-indigo-600 flex-shrink-0" />
+      <div>
+        <div className="font-medium text-gray-900">{restaurant.name}</div>
+      </div>
+    </button>
+    <div className="ml-4 mt-1 space-y-1 mb-2">
+    {restaurant.locations.map((location) => (
+    <button
+      key={location.id}
+      type="button"
+      className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+      onClick={() => {
+        // Set both the location name and the parent restaurant
+        setSelectedLocation(location.name);
+        setSelectedRestaurant(restaurant); // Make sure we update the parent restaurant too
+        setShowRestaurantDropdown(false);
+      }}
+    >
+      <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
+      <div>
+        <div className="font-medium text-gray-900">{location.name}</div>
+      </div>
+    </button>
+  ))}
+    </div>
+  </>
+)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Discount display */}
             {selectedLocation || activeRestaurant ? (
