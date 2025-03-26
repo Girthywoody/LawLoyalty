@@ -14,9 +14,14 @@ import {
   Shield,
   Award,
   MapPin,
-  Mail
+  Mail,
+  Wrench,
+  ChevronLeft
 } from 'lucide-react';
+import MaintenanceManagement from './MaintenanceManagement';
 
+
+// In the admin view section, add a button to access maintenance management
 import { Store } from 'lucide-react';
 
 import VerificationPopup from './VerificationPopup';
@@ -98,6 +103,8 @@ const RestaurantLoyaltyApp = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showCompletePassword, setShowCompletePassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showMaintenanceView, setShowMaintenanceView] = useState(false);
+
 
   const RESTAURANTS = [
     { id: "montanas", name: "Montana's", discount: 20 },
@@ -1107,6 +1114,54 @@ if (view === 'register') {
 
 // ADMIN VIEW
 if (view === 'admin') {
+  if (showMaintenanceView) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        {notification && <Notification message={notification.message} type={notification.type} />}
+        
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div className="flex items-center">
+              <Shield size={24} className="text-indigo-600 mr-2" />
+              <h1 className="text-xl font-semibold text-indigo-700">Maintenance Management</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button 
+                onClick={() => setShowMaintenanceView(false)}
+                className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
+              >
+                <ChevronLeft size={18} className="mr-1" />
+                <span>Back to Admin</span>
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+                aria-label="Logout"
+              >
+                <LogOut size={18} className="mr-1" />
+                <span className="hidden md:inline">Logout</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Main content */}
+        <main className="flex-grow">
+          <MaintenanceManagement currentUser={currentUser} />
+        </main>
+        
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 py-4 mt-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="text-xs text-center text-gray-500">
+              &copy; {new Date().getFullYear()} Josh Law • All rights reserved
+            </p>
+          </div>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -1120,6 +1175,14 @@ if (view === 'admin') {
             <h1 className="text-xl font-semibold text-indigo-700">Admin Dashboard</h1>
           </div>
           <div className="flex items-center space-x-4">
+            {/* Add Maintenance Management Button Here */}
+            <button 
+              onClick={() => setShowMaintenanceView(true)}
+              className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
+            >
+              <Wrench size={18} className="mr-1" />
+              <span className="hidden md:inline">Maintenance Management</span>
+            </button>
             <button 
               onClick={handleLogout}
               className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
