@@ -586,7 +586,7 @@ const handleLogout = async () => {
 };
 
 const getDiscount = (locationName) => {
-  // Check if this is a combined restaurant-location name (e.g. "Happy Life - Sudbury")
+  // Check if this is a combined restaurant-location name (e.g. "Happy Life - Timmins")
   if (locationName.includes(' - ')) {
     const [restaurantName, specificLocation] = locationName.split(' - ');
     
@@ -606,6 +606,26 @@ const getDiscount = (locationName) => {
       }
     }
   }
+  
+  // Original logic for direct restaurant match
+  const restaurantByName = RESTAURANTS.find(r => r.name === locationName);
+  if (restaurantByName && typeof restaurantByName.discount === 'number') {
+    return restaurantByName.discount;
+  }
+  
+  // Original logic for checking locations
+  for (const restaurant of RESTAURANTS) {
+    if (restaurant.locations) {
+      const locationObj = restaurant.locations.find(l => l.name === locationName);
+      if (locationObj && typeof locationObj.discount === 'number') {
+        return locationObj.discount;
+      }
+    }
+  }
+  
+  // Default return if no match found
+  return 20; // Default discount
+};
   
   // Original logic for direct restaurant match
   const restaurantByName = RESTAURANTS.find(r => r.name === locationName);
