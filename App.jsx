@@ -108,7 +108,7 @@ const RestaurantLoyaltyApp = () => {
 
   const RESTAURANTS = [
     { id: "montanas", name: "Montana's", discount: 20 },
-    { id: "kelseys", name: "Kelsey's", discount: 20 },
+    { id: "kelseys", name: "Kelseys", discount: 20 },
     { id: "coras", name: "Cora's Breakfast", discount: 10 },
     { id: "js-roadhouse", name: "J's Roadhouse", discount: 20 },
     { id: "swiss-chalet", name: "Swiss Chalet", discount: 20 },
@@ -116,6 +116,7 @@ const RestaurantLoyaltyApp = () => {
     { id: "northern-climate", name: "Northern Climate", discount: 20 },
     { id: "flooring-and-more-superstore", name: "Flooring and More Superstore", discount: 20 },
     { id: "wellness-studio", name: "Wellness Studio", discount: 20 },
+    { id: "east-side-marios-orillia", name: "East Side Mario's Orillia", discount: 20 },
     {
       id: "lot-88",
       name: "Lot 88",
@@ -142,9 +143,9 @@ const RestaurantLoyaltyApp = () => {
       discount: 10,
       locations: [
         { id: "happy-life-kingsway", name: "Kingsway", discount: 10 },
-        { id: "happy-life-val-caron", name: "Val Caron", discount: 10 },
-        { id: "happy-life-chelmsford", name: "Chelmsford", discount: 10 },
-        { id: "happy-life-timmins", name: "Timmins", discount: 10 },
+        { id: "happy-life-val-caron", name: "Val Caron ", discount: 10 },
+        { id: "happy-life-chelmsford", name: "Chelmsford ", discount: 10 },
+        { id: "happy-life-timmins", name: "Timmins ", discount: 10 },
         { id: "happy-life-lakeshore", name: "Lakeshore", discount: 10 },
         { id: "happy-life-alqonquin", name: "Alqonquin", discount: 10 },
         { id: "happy-life-espanola", name: "Espanola", discount: 10 }

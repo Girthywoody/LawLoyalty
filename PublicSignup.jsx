@@ -137,28 +137,30 @@ const PublicSignup = () => {
       const restaurantId = restaurantParts[0];
       const restaurantName = restaurantParts[1];
       
+
       // Create the user in Firebase Auth
       const user = await createUser(email, password);
-      
+
       // Send verification email
       await sendEmailVerification(auth.currentUser);
-      
+
       // Add user to Firestore with pending status
       await addEmployee({
         firstName: firstName,
         lastName: lastName,
-        name: `${firstName} ${lastName}`, // Keep the name field for backward compatibility
+        name: `${firstName} ${lastName}`,
         email: email,
-        jobTitle: 'Employee', // Default to Employee role
-        discount: 20, // Default discount
+        jobTitle: 'Employee',
+        discount: 20,
         restaurantId: restaurantId,
         restaurantName: restaurantName,
-        status: 'pending', // Add pending status
+        status: 'pending',
         createdAt: new Date(),
         updatedAt: new Date(),
         uid: user.uid,
-        emailVerified: false // Track email verification status
+        emailVerified: false
       });
+
       
       // Show success message
       setSuccess(true);
@@ -166,15 +168,17 @@ const PublicSignup = () => {
       // Navigate to the login page after successful registration (with a delay)
       setTimeout(() => {
         navigate('/');
-      }, 5000);
+      }, 3000);
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
       setIsLoading(false);
+      await logoutUser();
+
     }
   };
-  
+
   // Success state
   if (success) {
     return (
