@@ -963,22 +963,71 @@ const formatTime = (date) => {
                             <div className="flex flex-wrap gap-2 mb-4">
                               {getStatusBadge(selectedRequest.status)}
                               <div className="flex items-center gap-2">
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
-                                  selectedRequest.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
-                                  selectedRequest.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-blue-100 text-blue-800'
-                                }`}>
-                                  Urgency: {getUrgencyLabel(selectedRequest.urgencyLevel).text}
-                                </span>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsEditingUrgency(!isEditingUrgency);
-                                  }}
-                                  className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-                                >
-                                  <Edit size={14} className="text-gray-600" />
-                                </button>
+                                {isEditingUrgency ? (
+                                  <div className="flex items-center gap-2">
+                                    <select
+                                      className="rounded-lg border border-gray-300 shadow-sm py-1 px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200"
+                                      value={selectedRequest.urgencyLevel}
+                                      onChange={(e) => {
+                                        setSelectedRequest({...selectedRequest, urgencyLevel: parseInt(e.target.value)});
+                                      }}
+                                    >
+                                      <option value="1">1 - Very Low</option>
+                                      <option value="2">2 - Low</option>
+                                      <option value="3">3 - Medium</option>
+                                      <option value="4">4 - High</option>
+                                      <option value="5">5 - Critical</option>
+                                    </select>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Update urgency in Firestore
+                                        const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
+                                        updateDoc(requestRef, { 
+                                          urgencyLevel: selectedRequest.urgencyLevel,
+                                          updatedAt: serverTimestamp() 
+                                        }).then(() => {
+                                          showNotification('Urgency updated successfully', 'success');
+                                          setIsEditingUrgency(false);
+                                        }).catch((error) => {
+                                          console.error("Error updating urgency:", error);
+                                          showNotification('Failed to update urgency', 'error');
+                                        });
+                                      }}
+                                      className="p-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-200"
+                                    >
+                                      <Check size={16} className="text-green-600" />
+                                    </button>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditingUrgency(false);
+                                      }}
+                                      className="p-1 rounded-full bg-red-100 hover:bg-red-200 transition-colors duration-200"
+                                    >
+                                      <X size={16} className="text-red-600" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
+                                      selectedRequest.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
+                                      selectedRequest.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-blue-100 text-blue-800'
+                                    }`}>
+                                      Urgency: {getUrgencyLabel(selectedRequest.urgencyLevel).text}
+                                    </span>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditingUrgency(true);
+                                      }}
+                                      className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+                                    >
+                                      <Edit size={14} className="text-gray-600" />
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </div>
 
