@@ -1970,13 +1970,13 @@ if (view === 'employee') {
 )}
             </div>
           </div>
-          <EmployeeRestaurantSelector
+          {/* <EmployeeRestaurantSelector
   restaurants={filteredRestaurants()}
   currentUser={currentUser}
   selectedRestaurant={selectedRestaurant}
   onSelectRestaurant={handleSelectRestaurant}
   cooldownInfo={cooldownInfo}
-/>
+/> */}
 
           {/* Discount display */}
           {selectedLocation ? (
