@@ -52,7 +52,9 @@ const MaintenanceManagement = ({ currentUser }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(new Date());
+  const [scheduleTime, setScheduleTime] = useState('09:00');
   // Current Month for Calendar View
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
@@ -196,11 +198,22 @@ const showNotification = (message, type = 'info') => {
         title: request.title,
         start: date,
         end: new Date(date.getTime() + 2 * 60 * 60 * 1000), // Default 2 hour duration
-        technician: 'TBD'
+        technician: currentUser?.name || 'Current User',
+        location: request.location,
+        description: request.description,
       };
       
       // Schedule in Firebase
       await scheduleMaintenanceEvent(requestId, eventData);
+      
+      // Refresh the requests data to update the UI
+      const updatedRequests = maintenanceRequests.map(req => 
+        req.id === requestId 
+          ? {...req, status: 'scheduled', scheduledDate: date}
+          : req
+      );
+      setMaintenanceRequests(updatedRequests);
+      
       showNotification('Maintenance scheduled successfully!', 'success');
     } catch (error) {
       console.error("Error scheduling maintenance:", error);
@@ -1067,22 +1080,127 @@ const formatTime = (date) => {
                   </div>
                 </div>
               </div>
+
+              {showSchedulePicker && selectedRequest && (
+                <div className="fixed inset-0 overflow-y-auto z-30" aria-labelledby="schedule-modal-title" role="dialog" aria-modal="true">
+                  <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    {/* Background overlay */}
+                    <div 
+                      className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
+                      aria-hidden="true"
+                      onClick={() => setShowSchedulePicker(false)}
+                    ></div>
+
+                    {/* Modal panel */}
+                    <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200">
+                      <div className="bg-white px-6 pt-5 pb-4 sm:p-6">
+                        <div className="sm:flex sm:items-start">
+                          <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
+                            <Calendar size={20} className="text-white" />
+                          </div>
+                          <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 className="text-xl font-semibold text-gray-900" id="schedule-modal-title">
+                              Schedule Maintenance
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                              Select a date and time for this maintenance request.
+                            </p>
+                            
+                            <div className="mt-6 space-y-6">
+                              {/* Date Picker */}
+                              <div>
+                                <label htmlFor="maintenance-date" className="block text-sm font-medium text-gray-700">
+                                  Date
+                                </label>
+                                <input
+                                  type="date"
+                                  id="maintenance-date"
+                                  className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                                  value={scheduleDate.toISOString().split('T')[0]}
+                                  onChange={(e) => {
+                                    const newDate = new Date(e.target.value);
+                                    setScheduleDate(newDate);
+                                  }}
+                                />
+                              </div>
+                              
+                              {/* Time Picker */}
+                              <div>
+                                <label htmlFor="maintenance-time" className="block text-sm font-medium text-gray-700">
+                                  Time
+                                </label>
+                                <input
+                                  type="time"
+                                  id="maintenance-time"
+                                  className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                                  value={scheduleTime}
+                                  onChange={(e) => setScheduleTime(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button
+                          type="button"
+                          className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-base font-medium text-white hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                          onClick={() => {
+                            // Combine date and time
+                            const dateTime = new Date(scheduleDate);
+                            const [hours, minutes] = scheduleTime.split(':');
+                            dateTime.setHours(parseInt(hours), parseInt(minutes), 0);
+                            
+                            // Schedule maintenance
+                            handleScheduleMaintenance(selectedRequest.id, dateTime);
+                            setShowSchedulePicker(false);
+                            setSelectedRequest({...selectedRequest, status: 'scheduled', scheduledDate: dateTime});
+                            showNotification('Maintenance scheduled successfully!', 'success');
+                          }}
+                        >
+                          Confirm Schedule
+                        </button>
+                        
+                        <button
+                          type="button"
+                          className="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-200"
+                          onClick={() => setShowSchedulePicker(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
                 {selectedRequest.status === 'pending' && (
-                  <button
-                    type="button"
-                    className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-base font-medium text-white hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
-                    onClick={() => {
-                      const scheduleDate = new Date();
-                      scheduleDate.setDate(scheduleDate.getDate() + 7);
-                      handleScheduleMaintenance(selectedRequest.id, scheduleDate);
-                      setShowDetailModal(false);
-                    }}
-                  >
-                    <Calendar size={16} className="mr-2" />
-                    Schedule Maintenance
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      onClick={() => {
+                        const now = new Date();
+                        handleScheduleMaintenance(selectedRequest.id, now);
+                        showNotification('Maintenance scheduled for right now!', 'success');
+                        setSelectedRequest({...selectedRequest, status: 'scheduled', scheduledDate: now});
+                      }}
+                    >
+                      <Clock size={16} className="mr-2" />
+                      Go there now
+                    </button>
+                    
+                    <button
+                      type="button"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-base font-medium text-white hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                      onClick={() => setShowSchedulePicker(true)}
+                    >
+                      <Calendar size={16} className="mr-2" />
+                      Schedule Maintenance
+                    </button>
+                  </>
                 )}
                 
                 {selectedRequest.status === 'scheduled' && (
