@@ -211,6 +211,15 @@ useEffect(() => {
           
           // Set the current user
           setCurrentUser(userData);
+
+          // Immediately check cooldown status for this user
+          try {
+            const cooldownStatus = await checkCooldownPeriod(userData.id);
+            setCooldownInfo(cooldownStatus);
+            setCooldownChecked(true);
+          } catch (err) {
+            console.error("Error checking cooldown status:", err);
+          }
           
           // Determine which view to show
           const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
@@ -321,6 +330,9 @@ useEffect(() => {
 // Add these lines after setCurrentUser(null)
 localStorage.removeItem('currentUser');
 localStorage.removeItem('currentView');
+// In handleLogout function, add:
+setCooldownInfo(null);
+setCooldownChecked(false);
 
 useEffect(() => {
   const loadEmployees = async () => {
