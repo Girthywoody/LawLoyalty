@@ -46,7 +46,8 @@ import {
   deleteEmployee, 
   subscribeToEmployees,
   completeRegistration,
-  db
+  db,
+  auth
 } from './firebase';
 
 import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
@@ -464,7 +465,7 @@ useEffect(() => {
     });
   };
 
-// Replace your existing handleLogin function with this version:
+// Replace your entire handleLogin function with this version:
 const handleLogin = async (e) => {
   e.preventDefault();
   
@@ -541,11 +542,7 @@ const handleLogin = async (e) => {
     // Set the view
     setView(userView);
     
-    // Save to localStorage with an expiration timestamp (30 days)
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    
-    userData.sessionExpires = thirtyDaysFromNow.getTime();
+    // Save to localStorage
     localStorage.setItem('currentUser', JSON.stringify(userData));
     localStorage.setItem('currentView', userView);
     
