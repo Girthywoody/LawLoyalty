@@ -427,21 +427,21 @@ const formatTime = (date) => {
   };
 
   return (
-<div className="flex flex-col min-h-screen bg-gray-900 text-white">
+<div className="flex flex-col min-h-screen bg-white text-gray-900">
   {/* Header */}
-  <header className="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
+  <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
     <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <div className="bg-indigo-600 p-2 rounded-lg">
             <Wrench size={24} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white ml-3">Maintenance Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900 ml-3">Maintenance Management</h1>
         </div>
         <div className="flex items-center space-x-4">
-          <div className="flex items-center bg-gray-700 px-4 py-2 rounded-lg">
-            <User size={18} className="text-gray-300 mr-2" />
-            <span className="text-sm text-gray-300">Logged in as <strong className="text-indigo-400">{currentUser?.name || 'User'}</strong></span>
+          <div className="flex items-center bg-gray-100 px-4 py-2 rounded-lg">
+            <User size={18} className="text-gray-600 mr-2" />
+            <span className="text-sm text-gray-600">Logged in as <strong className="text-indigo-600">{currentUser?.name || 'User'}</strong></span>
           </div>
         </div>
       </div>
@@ -449,15 +449,15 @@ const formatTime = (date) => {
   </header>
 
       {/* Navigation Tabs */}
-          <div className="bg-gray-900 text-white border-b border-gray-800">
+          <div className="bg-white border-b border-gray-200">
             <div className="max-w-7xl mx-auto">
               <div className="flex">
                 <button
                   onClick={() => setActiveView('requests')}
                   className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
                     activeView === 'requests' 
-                      ? 'text-white border-b-2 border-indigo-400 bg-gray-800' 
-                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   <div className="flex items-center">
@@ -469,8 +469,8 @@ const formatTime = (date) => {
                   onClick={() => setActiveView('calendar')}
                   className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
                     activeView === 'calendar' 
-                      ? 'text-white border-b-2 border-indigo-400 bg-gray-800' 
-                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   <div className="flex items-center">
@@ -490,7 +490,7 @@ const formatTime = (date) => {
             {/* Header and Actions */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h2 className="text-3xl font-bold text-white">Maintenance Requests</h2>
+                <h2 className="text-3xl font-bold text-gray-900">Maintenance Requests</h2>
                 <p className="text-gray-400 mt-1">Track and manage maintenance issues</p>
               </div>
               
@@ -506,7 +506,7 @@ const formatTime = (date) => {
             </div>
             
 {/* Filters and Search */}
-<div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+<div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
   <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
     <div className="flex-grow">
       <div className="relative">
@@ -516,7 +516,7 @@ const formatTime = (date) => {
         <input
           type="text"
           placeholder="Search requests..."
-          className="block w-full pl-10 pr-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-white placeholder-gray-400 transition-all duration-200"
+          className="block w-full pl-10 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 placeholder-gray-400 transition-all duration-200"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -532,7 +532,7 @@ const formatTime = (date) => {
           id="status-filter"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="block w-full pl-3 pr-10 py-2.5 bg-gray-700 border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
+          className="block w-full pl-3 pr-10 py-2.5 bg-white border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
         >
           <option value="all">All Statuses</option>
           <option value="pending">Pending</option>
@@ -549,7 +549,7 @@ const formatTime = (date) => {
           id="urgency-filter"
           value={filterUrgency}
           onChange={(e) => setFilterUrgency(e.target.value)}
-          className="block w-full pl-3 pr-10 py-2.5 bg-gray-700 border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
+          className="block w-full pl-3 pr-10 py-2.5 bg-white border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
         >
           <option value="all">All Urgency Levels</option>
           <option value="1">Very Low</option>
@@ -565,17 +565,17 @@ const formatTime = (date) => {
             
             {/* Requests List */}
 {/* Requests List */}
-<div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+<div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
   {isLoading ? (
     <div className="p-12 flex justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
     </div>
   ) : filteredRequests.length === 0 ? (
     <div className="p-12 text-center">
-      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-700 mb-4">
+      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
         <Wrench size={32} className="text-indigo-400" />
       </div>
-      <h3 className="text-xl font-semibold text-white">No maintenance requests found</h3>
+      <h3 className="text-xl font-semibold text-gray-900">No maintenance requests found</h3>
       <p className="mt-2 text-sm text-gray-400">
         {searchTerm || filterStatus !== 'all' || filterUrgency !== 'all'
           ? 'Try adjusting your search or filters'
@@ -592,11 +592,11 @@ const formatTime = (date) => {
       </div>
     </div>
   ) : (
-    <ul className="divide-y divide-gray-700">
+    <ul className="divide-y divide-gray-200">
       {filteredRequests.map((request) => (
         <li 
           key={request.id} 
-          className="p-6 hover:bg-gray-700 cursor-pointer transition-all duration-200"
+          className="p-6 hover:bg-gray-100 cursor-pointer transition-all duration-200"
           onClick={() => {
             setSelectedRequest(request);
             setShowDetailModal(true);
@@ -621,7 +621,7 @@ const formatTime = (date) => {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-white">{request.title}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">{request.title}</h3>
                   <div className="mt-2 flex items-center">
                     <MapPin size={16} className="text-gray-400 mr-1" />
                     <span className="text-sm text-gray-400">{request.location}</span>
@@ -656,7 +656,7 @@ const formatTime = (date) => {
               </div>
             </div>
             <div className="flex flex-col items-end text-sm text-gray-400">
-              <div className="font-medium text-gray-300">Created by {request.createdBy}</div>
+              <div className="font-medium text-gray-600">Created by {request.createdBy}</div>
               <time dateTime={request.createdAt.toISOString()} className="mt-1">
                 {formatDate(request.createdAt)}
               </time>
@@ -680,7 +680,7 @@ const formatTime = (date) => {
         {activeView === 'calendar' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-white">Maintenance Calendar</h2>
+              <h2 className="text-3xl font-bold text-gray-900">Maintenance Calendar</h2>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => {
@@ -709,23 +709,23 @@ const formatTime = (date) => {
             </div>
             
             {/* Calendar Grid */}
-            <div className="bg-gray-800 shadow-lg rounded-xl overflow-hidden border border-gray-700">
+            <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
               {/* Weekday headers */}
-              <div className="grid grid-cols-7 gap-px bg-gray-700">
+              <div className="grid grid-cols-7 gap-px bg-gray-200">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <div key={day} className="bg-gray-800 py-3 text-center text-sm font-medium text-gray-300">
+                  <div key={day} className="bg-gray-100 py-3 text-center text-sm font-medium text-gray-600">
                     {day}
                   </div>
                 ))}
               </div>
               
               {/* Calendar days */}
-              <div className="grid grid-cols-7 gap-px bg-gray-700">
+              <div className="grid grid-cols-7 gap-px bg-gray-200">
                 {generateCalendarDays().map((dayObj, idx) => (
                 <div 
                   key={idx} 
-                  className={`bg-gray-800 h-44 p-4 overflow-hidden transition-colors duration-300 ${
-                    !dayObj.day ? 'bg-gray-900' : 'hover:bg-gradient-to-b hover:from-gray-800 hover:to-gray-700'
+                  className={`bg-gray-100 h-44 p-4 overflow-hidden transition-colors duration-300 ${
+                    !dayObj.day ? 'bg-gray-200' : 'hover:bg-gradient-to-b hover:from-gray-100 hover:to-gray-200'
                   }`}
                 >
                     {dayObj.day && (
@@ -734,7 +734,7 @@ const formatTime = (date) => {
                         <span className={`text-sm font-medium ${
                           dayObj.date.toDateString() === new Date().toDateString() 
                             ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full w-7 h-7 flex items-center justify-center' 
-                            : 'text-gray-300'
+                            : 'text-gray-600'
                         }`}>
                             {dayObj.day}
                           </span>
@@ -772,8 +772,8 @@ const formatTime = (date) => {
             </div>
             
             {/* Events Legend */}
-            <div className="bg-gray-800 shadow-lg rounded-xl p-6 border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">Upcoming Maintenance</h3>
+            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Upcoming Maintenance</h3>
               
               {maintenanceEvents.length === 0 ? (
                 <p className="text-gray-400 text-sm">No upcoming maintenance events scheduled.</p>
@@ -784,12 +784,12 @@ const formatTime = (date) => {
                     .sort((a, b) => new Date(a.start) - new Date(b.start))
                     .slice(0, 5)
                     .map(event => (
-                      <div key={event.id} className="flex items-start p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+                      <div key={event.id} className="flex items-start p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
                         <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-r from-indigo-900 to-purple-900 flex items-center justify-center mr-4 shadow-sm">
                           <Wrench size={20} className="text-indigo-400" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-medium text-white">{event.title}</h4>
+                          <h4 className="text-sm font-medium text-gray-900">{event.title}</h4>
                           <div className="mt-1 flex items-center">
                             <Calendar size={14} className="text-gray-400 mr-1" />
                             <span className="text-sm text-gray-400">
@@ -825,7 +825,6 @@ const formatTime = (date) => {
             ></div>
 
             {/* Modal panel */}
-            // Replace modal panel classes
             <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">              <div className="px-6 pt-5 pb-4 sm:p-6">
                 <div className="sm:flex sm:items-start">
                   <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 sm:mx-0 sm:h-10 sm:w-10 shadow-md">
@@ -1003,20 +1002,20 @@ const formatTime = (date) => {
     <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
       {/* Background overlay */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-75 transition-opacity backdrop-blur-sm" 
+        className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
         aria-hidden="true"
         onClick={() => setShowDetailModal(false)}
       ></div>
 
       {/* Modal panel */}
-      <div className="inline-block align-bottom bg-gray-800 rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-700">
-        <div className="bg-gray-800 px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
+      <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200">
+        <div className="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div className="sm:flex sm:items-start">
             <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
               <AlertTriangle size={20} className="text-white" />
             </div>
             <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 className="text-xl font-semibold text-white" id="modal-title">
+              <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
                 {selectedRequest.title}
               </h3>
                     
@@ -1105,12 +1104,12 @@ const formatTime = (date) => {
                         ) : (
                           <ul className="space-y-4">
                             {selectedRequest.comments.map((comment) => (
-                              <li key={comment.id} className="bg-gray-700 rounded-lg p-4">
+                              <li key={comment.id} className="bg-gray-100 rounded-lg p-4">
                                 <div className="flex justify-between items-start">
-                                  <span className="text-sm font-medium text-white">{comment.createdBy}</span>
+                                  <span className="text-sm font-medium text-gray-900">{comment.createdBy}</span>
                                   <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
                                 </div>
-                                <p className="mt-1 text-sm text-gray-300">{comment.text}</p>
+                                <p className="mt-1 text-sm text-gray-600">{comment.text}</p>
                               </li>
                             ))}
                           </ul>
@@ -1121,13 +1120,13 @@ const formatTime = (date) => {
                           <div className="flex">
                           <input 
                             type="text"
-                            className="flex-grow rounded-l-lg border-gray-600 bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm text-white placeholder-gray-400"
+                            className="flex-grow rounded-l-lg border-gray-300 bg-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm text-gray-900 placeholder-gray-400"
                             placeholder="Add a comment..."
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
                           />
                             <button
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-lg shadow-sm text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-lg shadow-sm text-gray-900 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
                               onClick={() => handleAddComment(selectedRequest.id)}
                             >
                               <MessageCircle size={16} className="mr-2" />
@@ -1183,9 +1182,9 @@ const formatTime = (date) => {
       )}
       
       {/* Footer */}
-      <footer className="bg-gray-800 border-t border-gray-700">
+      <footer className="bg-white border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-sm text-center opacity-90">
+          <p className="text-sm text-center text-gray-600">
             &copy; {new Date().getFullYear()} Josh Law • All rights reserved
           </p>
         </div>
