@@ -16,6 +16,10 @@ import {
   } from 'firebase/firestore';
   
   import { db } from './firebase';
+
+  // Collection references
+const maintenanceRequestsCollection = collection(db, 'maintenanceRequests');
+const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
   
   // And modify the createMaintenanceRequest function to:
   export const createMaintenanceRequest = async (requestData, imageFiles = []) => {
