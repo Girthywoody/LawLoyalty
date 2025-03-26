@@ -16,7 +16,7 @@ const VerificationPopup = ({ restaurantName, onConfirm, onCancel }) => {
         <div className="text-center py-4">
           <h3 className="text-xl font-semibold text-gray-900 mb-3">Confirm Restaurant Selection</h3>
           <p className="text-gray-600 mb-6">
-            Are you sure you are dining at <span className="font-bold text-indigo-600">{restaurantName}</span>?
+            Are you sure you are at <span className="font-bold text-indigo-600">{restaurantName}</span>?
           </p>
           <p className="text-gray-600 mb-6 text-sm">
             You will not be able to access another discount for 1 hour after confirmation.

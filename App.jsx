@@ -19,6 +19,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import MaintenanceManagement from './MaintenanceManagement';
+import { subscribeToUserCooldown } from './RestaurantAnalytics';
 
 
 import { Store } from 'lucide-react';
@@ -403,22 +404,26 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    const checkUserCooldown = async () => {
-      if (currentUser && !cooldownChecked) {
-        try {
-          const cooldown = await checkCooldownPeriod(currentUser.id);
-          setCooldownInfo(cooldown);
-          setCooldownChecked(true);
-        } catch (error) {
-          console.error("Error checking cooldown:", error);
-          // Still mark as checked to prevent constant retries
-          setCooldownChecked(true);
-        }
+    let unsubCooldown = null;
+    
+    if (currentUser) {
+      // Subscribe to cooldown updates in real-time
+      unsubCooldown = subscribeToUserCooldown(currentUser.id, (cooldownInfo) => {
+        setCooldownInfo(cooldownInfo);
+        setCooldownChecked(true);
+      });
+    } else {
+      setCooldownInfo(null);
+      setCooldownChecked(false);
+    }
+    
+    // Cleanup subscription on unmount or when user changes
+    return () => {
+      if (unsubCooldown) {
+        unsubCooldown();
       }
     };
-    
-    checkUserCooldown();
-  }, [currentUser, cooldownChecked]);
+  }, [currentUser]);
 
   const handleConfirmRestaurant = async () => {
     if (!pendingRestaurant) return;
@@ -441,15 +446,15 @@ useEffect(() => {
       }
       setShowRestaurantDropdown(false);
       
-      // Update cooldown information
+      // Update cooldown information (now 15 minutes)
       setCooldownInfo({
         inCooldown: true,
-        cooldownUntil: new Date(Date.now() + 1 * 60 * 60 * 1000),
+        cooldownUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
         visitedRestaurant: pendingRestaurant.name
       });
       
       // Show notification
-      showNotification(`You've selected ${pendingRestaurant.name}. This selection will be locked for 1 hour.`, 'success');
+      showNotification(`You've selected ${pendingRestaurant.name}. This selection will be locked for 15 minutes.`, 'success');
     } catch (error) {
       console.error("Error confirming restaurant:", error);
       showNotification("Failed to record your restaurant selection", "error");
@@ -661,11 +666,10 @@ const handleSelectRestaurant = (restaurant) => {
   // First check if user is in cooldown period
   if (cooldownInfo && cooldownInfo.inCooldown) {
     const cooldownEnds = new Date(cooldownInfo.cooldownUntil);
-    const hoursLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60 * 60));
-    const minutesLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60)) % 60;
+    const minutesLeft = Math.ceil((cooldownEnds - new Date()) / (1000 * 60));
     
     showNotification(
-      `You already selected ${cooldownInfo.visitedRestaurant}. Please wait ${hoursLeft}h ${minutesLeft}m before selecting another restaurant.`, 
+      `You already selected ${cooldownInfo.visitedRestaurant}. Please wait ${minutesLeft} minutes before selecting another restaurant.`, 
       'error'
     );
     return;
@@ -675,7 +679,6 @@ const handleSelectRestaurant = (restaurant) => {
   setPendingRestaurant(restaurant);
   setShowVerification(true);
 };
-
 
   const handleSendInvite = async () => {
     if (!inviteEmail) {

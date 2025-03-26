@@ -1,19 +1,22 @@
 import { db } from './firebase';
-import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, limit } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, limit, onSnapshot } from 'firebase/firestore';
 
 // Collection name for restaurant visits
 const VISITS_COLLECTION = 'restaurantVisits';
 
-// Record a new restaurant visit
+// Record a new restaurant visit and set a 15-minute cooldown
 export const recordRestaurantVisit = async (userId, employeeRestaurant, selectedRestaurant) => {
   try {
+    // Calculate cooldown time (15 minutes from now)
+    const cooldownUntil = new Date(Date.now() + 15 * 60 * 1000);
+    
     await addDoc(collection(db, VISITS_COLLECTION), {
       userId,
       employeeRestaurant, // Where the employee works
       visitedRestaurant: selectedRestaurant, // Where they're dining
       timestamp: Timestamp.now(),
-      // Track the 3-hour cooldown period
-      cooldownUntil: Timestamp.fromDate(new Date(Date.now() + 3 * 60 * 60 * 1000))
+      // Track the 15-minute cooldown period
+      cooldownUntil: Timestamp.fromDate(cooldownUntil)
     });
     
     return true;
@@ -23,14 +26,51 @@ export const recordRestaurantVisit = async (userId, employeeRestaurant, selected
   }
 };
 
-// Check if user is in cooldown period
+// Check if user is in cooldown period - this function now uses realtime updates
+export const subscribeToUserCooldown = (userId, callback) => {
+  try {
+    const visitsRef = collection(db, VISITS_COLLECTION);
+    const q = query(
+      visitsRef,
+      where("userId", "==", userId),
+      orderBy("cooldownUntil", "desc"),
+      limit(1)
+    );
+    
+    // Use onSnapshot to listen for changes in realtime
+    return onSnapshot(q, (snapshot) => {
+      if (snapshot.empty) {
+        callback({ inCooldown: false });
+        return;
+      }
+      
+      const data = snapshot.docs[0].data();
+      const cooldownUntil = data.cooldownUntil.toDate();
+      const now = new Date();
+      
+      // Check if the cooldown period is still active
+      const inCooldown = cooldownUntil > now;
+      
+      callback({ 
+        inCooldown, 
+        cooldownUntil: data.cooldownUntil.toDate(),
+        visitedRestaurant: data.visitedRestaurant
+      });
+    });
+  } catch (error) {
+    console.error("Error checking cooldown period:", error);
+    throw error;
+  }
+};
+
+// For backward compatibility, maintain the original function but update it
+// to check the most recent cooldown period
 export const checkCooldownPeriod = async (userId) => {
   try {
     const visitsRef = collection(db, VISITS_COLLECTION);
     const q = query(
       visitsRef,
       where("userId", "==", userId),
-      where("cooldownUntil", ">", Timestamp.now()),
       orderBy("cooldownUntil", "desc"),
       limit(1)
     );
@@ -42,9 +82,15 @@ export const checkCooldownPeriod = async (userId) => {
     }
     
     const data = snapshot.docs[0].data();
+    const cooldownUntil = data.cooldownUntil.toDate();
+    const now = new Date();
+    
+    // Check if the cooldown period is still active
+    const inCooldown = cooldownUntil > now;
+    
     return { 
-      inCooldown: true, 
-      cooldownUntil: data.cooldownUntil.toDate(),
+      inCooldown, 
+      cooldownUntil: cooldownUntil,
       visitedRestaurant: data.visitedRestaurant
     };
   } catch (error) {
