@@ -187,6 +187,39 @@ const showNotification = (message, type = 'info') => {
       showNotification('Failed to create maintenance request', 'error');
     }
   };
+
+  const handleScheduleMaintenance = async (requestId, date) => {
+    try {
+      // Get the request details
+      const request = maintenanceRequests.find(req => req.id === requestId);
+      
+      // Create event data
+      const eventData = {
+        title: request.title,
+        start: date,
+        end: new Date(date.getTime() + 2 * 60 * 60 * 1000), // Default 2 hour duration
+        technician: currentUser?.name || 'Current User',
+        location: request.location,
+        description: request.description,
+      };
+      
+      // Schedule in Firebase
+      await scheduleMaintenanceEvent(requestId, eventData);
+      
+      // Refresh the requests data to update the UI
+      const updatedRequests = maintenanceRequests.map(req => 
+        req.id === requestId 
+          ? {...req, status: 'scheduled', scheduledDate: date}
+          : req
+      );
+      setMaintenanceRequests(updatedRequests);
+      
+      showNotification('Maintenance scheduled successfully!', 'success');
+    } catch (error) {
+      console.error("Error scheduling maintenance:", error);
+      showNotification('Failed to schedule maintenance', 'error');
+    }
+  };
   
 const handleImmediateSchedule = async (requestId) => {
   try {
