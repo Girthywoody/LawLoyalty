@@ -164,8 +164,8 @@ const RestaurantLoyaltyApp = () => {
     },
   ]
 
-// Add this check in the auth.onAuthStateChanged listener in App.jsx
 
+  // Add this useEffect at the top level of your App component
 useEffect(() => {
   // This listens to Firebase auth state changes
   const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -195,27 +195,62 @@ useEffect(() => {
             return;
           }
           
-          // Continue with normal login flow for approved users
-          const storedUser = localStorage.getItem('currentUser');
+          // User is approved, update the current user state with full employee data
+          const userData = {
+            id: user.uid,
+            name: employeeData.name || user.displayName || user.email,
+            email: user.email,
+            jobTitle: employeeData.jobTitle || 'Employee',
+            restaurantId: employeeData.restaurantId || null,
+            restaurantName: employeeData.restaurantName || null
+          };
           
-          if (!storedUser) {
-            // If not in localStorage, process user data
-            // Rest of your existing code...
+          // Add managed restaurants for general managers
+          if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
+            userData.managedRestaurants = employeeData.managedRestaurants;
           }
+          
+          // Set the current user
+          setCurrentUser(userData);
+          
+          // Determine which view to show
+          const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
+                        (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
+                        'manager' : 'employee');
+          
+          // Set the view
+          setView(userView);
+          
+          // Save to localStorage for persistence
+          localStorage.setItem('currentUser', JSON.stringify(userData));
+          localStorage.setItem('currentView', userView);
         } else {
           // No employee record found, sign them out
           await logoutUser();
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('currentView');
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
         await logoutUser();
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('currentView');
       }
+    } else {
+      // User is signed out
+      setCurrentUser(null);
+      setView('login');
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('currentView');
     }
   });
   
   // Clean up the listener when component unmounts
   return () => unsubscribe();
 }, []);
+// Add this check in the auth.onAuthStateChanged listener in App.jsx
+
+
 
 // Add a more sophisticated restaurant filtering function
 const filteredRestaurants = () => {
