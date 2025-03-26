@@ -28,7 +28,10 @@ import {
   subscribeToMaintenanceEvents, 
   scheduleMaintenanceEvent, 
   addCommentToRequest, 
-  completeMaintenanceRequest
+  completeMaintenanceRequest,
+  doc,
+  updateDoc,
+  serverTimestamp
 } from './MaintenanceFirebase';
 
 
@@ -55,6 +58,8 @@ const MaintenanceManagement = ({ currentUser }) => {
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(new Date());
   const [scheduleTime, setScheduleTime] = useState('09:00');
+  // Add this with your other state variables
+  const [isEditingUrgency, setIsEditingUrgency] = useState(false);  
   // Current Month for Calendar View
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
@@ -312,7 +317,14 @@ const showNotification = (message, type = 'info') => {
         createdBy: currentUser?.name || 'Current User',
       };
       
-      await addCommentToRequest(requestId, commentData);
+      const newCommentObj = await addCommentToRequest(requestId, commentData);
+      
+      // Update the selected request locally so we don't have to reload to see the new comment
+      setSelectedRequest({
+        ...selectedRequest,
+        comments: [...(selectedRequest.comments || []), newCommentObj]
+      });
+      
       setNewComment('');
       showNotification('Comment added successfully!', 'success');
     } catch (error) {
@@ -320,7 +332,7 @@ const showNotification = (message, type = 'info') => {
       showNotification('Failed to add comment', 'error');
     }
   };
-  
+
   const handleFileChange = (e) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
@@ -925,14 +937,50 @@ const formatTime = (date) => {
                       {/* Meta Info */}
                       <div className="flex flex-wrap gap-2 mb-4">
                         {getStatusBadge(selectedRequest.status)}
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
-                          selectedRequest.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
-                          selectedRequest.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          Urgency: {getUrgencyLabel(selectedRequest.urgencyLevel).text}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
+                            selectedRequest.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
+                            selectedRequest.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            Urgency: {getUrgencyLabel(selectedRequest.urgencyLevel).text}
+                          </span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsEditingUrgency(!isEditingUrgency);
+                            }}
+                            className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+                          >
+                            <Edit size={14} className="text-gray-600" />
+                          </button>
+                        </div>
                       </div>
+
+                      {isEditingUrgency && (
+                        <div className="mb-4">
+                          <select
+                            className="block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                            value={selectedRequest.urgencyLevel}
+                            onChange={(e) => {
+                              const newUrgencyLevel = parseInt(e.target.value);
+                              setSelectedRequest({...selectedRequest, urgencyLevel: newUrgencyLevel});
+                              // Update urgency in Firestore
+                              const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
+                              updateDoc(requestRef, { 
+                                urgencyLevel: newUrgencyLevel,
+                                updatedAt: serverTimestamp() 
+                              });
+                            }}
+                          >
+                            <option value="1">1 - Very Low</option>
+                            <option value="2">2 - Low</option>
+                            <option value="3">3 - Medium</option>
+                            <option value="4">4 - High</option>
+                            <option value="5">5 - Critical</option>
+                          </select>
+                        </div>
+                      )}
                       
                       {/* Location & Created Info */}
                       <div className="flex justify-between text-sm text-gray-500 mb-4">
@@ -1009,7 +1057,9 @@ const formatTime = (date) => {
                               <li key={comment.id} className="bg-gray-100 rounded-lg p-4">
                                 <div className="flex justify-between items-start">
                                   <span className="text-sm font-medium text-gray-900">{comment.createdBy}</span>
-                                  <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
+                                  <span className="text-xs text-gray-400">
+                                    {comment.createdAt instanceof Date ? formatDate(comment.createdAt) : formatDate(new Date(comment.createdAt))}
+                                  </span>
                                 </div>
                                 <p className="mt-1 text-sm text-gray-600">{comment.text}</p>
                               </li>
