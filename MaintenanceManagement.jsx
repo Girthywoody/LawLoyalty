@@ -333,6 +333,27 @@ const showNotification = (message, type = 'info') => {
     }
   };
 
+  // Function to check for schedule conflicts
+const checkForConflicts = (date, time) => {
+  const [hours, minutes] = time.split(':');
+  const selectedDateTime = new Date(date);
+  selectedDateTime.setHours(parseInt(hours), parseInt(minutes), 0);
+  
+  // Time buffer (15 minutes before and after)
+  const buffer = 15 * 60 * 1000; // 15 minutes in milliseconds
+  
+  return maintenanceEvents.filter(event => {
+    const eventStart = new Date(event.start);
+    const eventEnd = new Date(event.end);
+    
+    // Check if the selected time is within 15 minutes of any existing event
+    return (
+      (selectedDateTime >= new Date(eventStart.getTime() - buffer) && 
+       selectedDateTime <= new Date(eventEnd.getTime() + buffer))
+    );
+  });
+};
+
   const handleFileChange = (e) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
@@ -907,292 +928,328 @@ const formatTime = (date) => {
       )}
       
       {/* Request Detail Modal */}
-{/* Request Detail Modal */}
-{showDetailModal && selectedRequest && (
-  <div className="fixed inset-0 overflow-y-auto z-20" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      {/* Background overlay */}
-      <div 
-        className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
-        aria-hidden="true"
-        onClick={() => setShowDetailModal(false)}
-      ></div>
+      {showDetailModal && selectedRequest && (
+        <div className="fixed inset-0 overflow-y-auto z-20" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
+              aria-hidden="true"
+              onClick={() => setShowDetailModal(false)}
+            ></div>
 
-      {/* Modal panel */}
-      <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200">
-        {/* Close button */}
-        <button
-          onClick={() => setShowDetailModal(false)}
-          className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-        >
-          <X size={20} className="text-gray-500" />
-        </button>
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200">
+              {/* Close button */}
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
 
-        <div className="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div className="sm:flex sm:items-start">
-            <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
-              <AlertTriangle size={20} className="text-white" />
-            </div>
-            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
-                {selectedRequest.title}
-              </h3>
-                    
-                    <div className="mt-4">
-                      {/* Meta Info */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {getStatusBadge(selectedRequest.status)}
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
-                            selectedRequest.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
-                            selectedRequest.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            Urgency: {getUrgencyLabel(selectedRequest.urgencyLevel).text}
-                          </span>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setIsEditingUrgency(!isEditingUrgency);
-                            }}
-                            className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-                          >
-                            <Edit size={14} className="text-gray-600" />
-                          </button>
-                        </div>
-                      </div>
+              <div className="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
+                    <AlertTriangle size={20} className="text-white" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
+                      {selectedRequest.title}
+                    </h3>
+                          
+                          <div className="mt-4">
+                            {/* Meta Info */}
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {getStatusBadge(selectedRequest.status)}
+                              <div className="flex items-center gap-2">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
+                                  selectedRequest.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
+                                  selectedRequest.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-blue-100 text-blue-800'
+                                }`}>
+                                  Urgency: {getUrgencyLabel(selectedRequest.urgencyLevel).text}
+                                </span>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsEditingUrgency(!isEditingUrgency);
+                                  }}
+                                  className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+                                >
+                                  <Edit size={14} className="text-gray-600" />
+                                </button>
+                              </div>
+                            </div>
 
-                      {isEditingUrgency && (
-                        <div className="mb-4">
-                          <select
-                            className="block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-                            value={selectedRequest.urgencyLevel}
-                            onChange={(e) => {
-                              const newUrgencyLevel = parseInt(e.target.value);
-                              setSelectedRequest({...selectedRequest, urgencyLevel: newUrgencyLevel});
-                              // Update urgency in Firestore
-                              const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
-                              updateDoc(requestRef, { 
-                                urgencyLevel: newUrgencyLevel,
-                                updatedAt: serverTimestamp() 
-                              });
-                            }}
-                          >
-                            <option value="1">1 - Very Low</option>
-                            <option value="2">2 - Low</option>
-                            <option value="3">3 - Medium</option>
-                            <option value="4">4 - High</option>
-                            <option value="5">5 - Critical</option>
-                          </select>
-                        </div>
-                      )}
-                      
-                      {/* Location & Created Info */}
-                      <div className="flex justify-between text-sm text-gray-500 mb-4">
-                        <div className="flex items-center">
-                          <MapPin size={16} className="mr-1" />
-                          {selectedRequest.location}
-                        </div>
-                        <div>
-                          Created by {selectedRequest.createdBy} on {formatDate(selectedRequest.createdAt)}
-                        </div>
-                      </div>
-                      
-                      {/* Description */}
-                      <div className="mt-2 mb-4">
-                        <h4 className="text-sm font-medium text-gray-300 mb-1">Description</h4>
-                        <p className="text-sm text-gray-400 whitespace-pre-wrap">
-                          {selectedRequest.description}
-                        </p>
-                      </div>
-                      
-                      {/* Status Info */}
-                      {selectedRequest.status === 'scheduled' && (
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
-                          <div className="flex items-center">
-                            <Calendar size={18} className="text-blue-600 mr-2" />
-                            <div>
-                              <p className="text-sm font-medium text-blue-800">
-                                Scheduled for {formatDate(selectedRequest.scheduledDate)}
+                            {isEditingUrgency && (
+                              <div className="mb-4">
+                                <select
+                                  className="block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                                  value={selectedRequest.urgencyLevel}
+                                  onChange={(e) => {
+                                    const newUrgencyLevel = parseInt(e.target.value);
+                                    setSelectedRequest({...selectedRequest, urgencyLevel: newUrgencyLevel});
+                                    // Update urgency in Firestore
+                                    const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
+                                    updateDoc(requestRef, { 
+                                      urgencyLevel: newUrgencyLevel,
+                                      updatedAt: serverTimestamp() 
+                                    });
+                                  }}
+                                >
+                                  <option value="1">1 - Very Low</option>
+                                  <option value="2">2 - Low</option>
+                                  <option value="3">3 - Medium</option>
+                                  <option value="4">4 - High</option>
+                                  <option value="5">5 - Critical</option>
+                                </select>
+                              </div>
+                            )}
+                            
+                            {/* Location & Created Info */}
+                            <div className="flex justify-between text-sm text-gray-500 mb-4">
+                              <div className="flex items-center">
+                                <MapPin size={16} className="mr-1" />
+                                {selectedRequest.location}
+                              </div>
+                              <div>
+                                Created by {selectedRequest.createdBy} on {formatDate(selectedRequest.createdAt)}
+                              </div>
+                            </div>
+                            
+                            {/* Description */}
+                            <div className="mt-2 mb-4">
+                              <h4 className="text-sm font-medium text-gray-300 mb-1">Description</h4>
+                              <p className="text-sm text-gray-400 whitespace-pre-wrap">
+                                {selectedRequest.description}
                               </p>
                             </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {selectedRequest.status === 'completed' && (
-                        <div className="bg-green-50 border border-green-100 rounded-lg p-4 mb-4">
-                          <div className="flex items-center">
-                            <Check size={18} className="text-green-600 mr-2" />
-                            <div>
-                              <p className="text-sm font-medium text-green-800">
-                                Completed on {formatDate(selectedRequest.completedDate)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Images */}
-                      {selectedRequest.images && selectedRequest.images.length > 0 && (
-                        <div className="mt-4">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Images</h4>
-                          <div className="grid grid-cols-2 gap-3">
-                            {selectedRequest.images.map((image, index) => (
-                              <img 
-                                key={index}
-                                src={image}
-                                alt={`Issue ${index + 1}`}
-                                className="h-48 w-full object-cover rounded-lg shadow-sm"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Comments */}
-                      <div className="mt-6">
-                      <h4 className="text-sm font-medium text-gray-300 mb-3">Comments</h4>
-                        
-                        {selectedRequest.comments.length === 0 ? (
-                          <p className="text-sm text-gray-400 italic">No comments yet</p>
-                        ) : (
-                          <ul className="space-y-4">
-                            {selectedRequest.comments.map((comment) => (
-                              <li key={comment.id} className="bg-gray-100 rounded-lg p-4">
-                                <div className="flex justify-between items-start">
-                                  <span className="text-sm font-medium text-gray-900">{comment.createdBy}</span>
-                                  <span className="text-xs text-gray-400">
-                                    {comment.createdAt instanceof Date ? formatDate(comment.createdAt) : formatDate(new Date(comment.createdAt))}
-                                  </span>
+                            
+                            {/* Status Info */}
+                            {selectedRequest.status === 'scheduled' && (
+                              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+                                <div className="flex items-center">
+                                  <Calendar size={18} className="text-blue-600 mr-2" />
+                                  <div>
+                                    <p className="text-sm font-medium text-blue-800">
+                                      Scheduled for {formatDate(selectedRequest.scheduledDate)}
+                                    </p>
+                                  </div>
                                 </div>
-                                <p className="mt-1 text-sm text-gray-600">{comment.text}</p>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        
-                        {/* Add Comment Form */}
-                        <div className="mt-4">
-                          <div className="flex">
-                          <input 
-                            type="text"
-                            className="flex-grow rounded-l-lg border-gray-300 bg-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm text-gray-900 placeholder-gray-400"
-                            placeholder="Add a comment..."
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                          />
-                            <button
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-lg shadow-sm text-gray-900 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-                              onClick={() => handleAddComment(selectedRequest.id)}
-                            >
-                              <MessageCircle size={16} className="mr-2" />
-                              Post
-                            </button>
+                              </div>
+                            )}
+                            
+                            {selectedRequest.status === 'completed' && (
+                              <div className="bg-green-50 border border-green-100 rounded-lg p-4 mb-4">
+                                <div className="flex items-center">
+                                  <Check size={18} className="text-green-600 mr-2" />
+                                  <div>
+                                    <p className="text-sm font-medium text-green-800">
+                                      Completed on {formatDate(selectedRequest.completedDate)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Images */}
+                            {selectedRequest.images && selectedRequest.images.length > 0 && (
+                              <div className="mt-4">
+                                <h4 className="text-sm font-medium text-gray-700 mb-2">Images</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {selectedRequest.images.map((image, index) => (
+                                    <img 
+                                      key={index}
+                                      src={image}
+                                      alt={`Issue ${index + 1}`}
+                                      className="h-48 w-full object-cover rounded-lg shadow-sm"
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Comments */}
+                            <div className="mt-6">
+                            <h4 className="text-sm font-medium text-gray-300 mb-3">Comments</h4>
+                              
+                              {selectedRequest.comments.length === 0 ? (
+                                <p className="text-sm text-gray-400 italic">No comments yet</p>
+                              ) : (
+                                <ul className="space-y-4">
+                                  {selectedRequest.comments.map((comment) => (
+                                    <li key={comment.id} className="bg-gray-100 rounded-lg p-4">
+                                      <div className="flex justify-between items-start">
+                                        <span className="text-sm font-medium text-gray-900">{comment.createdBy}</span>
+                                        <span className="text-xs text-gray-400">
+                                          {comment.createdAt instanceof Date ? formatDate(comment.createdAt) : formatDate(new Date(comment.createdAt))}
+                                        </span>
+                                      </div>
+                                      <p className="mt-1 text-sm text-gray-600">{comment.text}</p>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                              
+                              {/* Add Comment Form */}
+                              <div className="mt-4">
+                                <div className="flex">
+                                <input 
+                                  type="text"
+                                  className="flex-grow rounded-l-lg border-gray-300 bg-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm text-gray-900 placeholder-gray-400"
+                                  placeholder="Add a comment..."
+                                  value={newComment}
+                                  onChange={(e) => setNewComment(e.target.value)}
+                                />
+                                  <button
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-lg shadow-sm text-gray-900 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                                    onClick={() => handleAddComment(selectedRequest.id)}
+                                  >
+                                    <MessageCircle size={16} className="mr-2" />
+                                    Post
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {showSchedulePicker && selectedRequest && (
+        <div className="fixed inset-0 overflow-y-auto z-30" aria-labelledby="schedule-modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
+              aria-hidden="true"
+              onClick={() => setShowSchedulePicker(false)}
+            ></div>
+
+            {/* Modal panel - centered for mobile */}
+            <div className="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full max-w-md mx-4 my-8 border border-gray-200">
+              {/* Close button */}
+              <button
+                onClick={() => setShowSchedulePicker(false)}
+                className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+
+              <div className="bg-white px-4 sm:px-6 pt-5 pb-4 sm:p-6">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
+                    <Calendar size={20} className="text-white" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <h3 className="text-xl font-semibold text-gray-900" id="schedule-modal-title">
+                      Schedule Maintenance
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Select a date and time for this maintenance request.
+                    </p>
+                    
+                    <div className="mt-6 space-y-4">
+                      {/* Date Picker */}
+                      <div>
+                        <label htmlFor="maintenance-date" className="block text-sm font-medium text-gray-700">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          id="maintenance-date"
+                          className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                          value={scheduleDate.toISOString().split('T')[0]}
+                          onChange={(e) => {
+                            // Create date at noon to avoid timezone issues
+                            const selectedDate = new Date(e.target.value + 'T12:00:00');
+                            setScheduleDate(selectedDate);
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Time Picker */}
+                      <div>
+                        <label htmlFor="maintenance-time" className="block text-sm font-medium text-gray-700">
+                          Time
+                        </label>
+                        <input
+                          type="time"
+                          id="maintenance-time"
+                          className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
+                          value={scheduleTime}
+                          onChange={(e) => setScheduleTime(e.target.value)}
+                        />
+                      </div>
+                      
+                      {/* Existing Maintenance Schedule */}
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Your Schedule</h4>
+                        <div className="max-h-40 overflow-y-auto bg-gray-50 rounded-lg p-2 border border-gray-200">
+                          {maintenanceEvents
+                            .filter(event => {
+                              const eventDate = new Date(event.start);
+                              return eventDate.toDateString() === scheduleDate.toDateString();
+                            })
+                            .sort((a, b) => new Date(a.start) - new Date(b.start))
+                            .map((event, idx) => (
+                              <div key={idx} className="py-2 px-3 mb-1 bg-white rounded border border-gray-100 text-sm">
+                                <div className="font-medium text-gray-900">{event.title}</div>
+                                <div className="text-xs text-gray-500">
+                                  {new Date(event.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
+                                  {new Date(event.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </div>
+                                <div className="text-xs text-gray-400">{event.location}</div>
+                              </div>
+                            ))}
+                          {maintenanceEvents.filter(event => {
+                              const eventDate = new Date(event.start);
+                              return eventDate.toDateString() === scheduleDate.toDateString();
+                            }).length === 0 && (
+                            <p className="text-sm text-center text-gray-400 py-2">No events scheduled for this day</p>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              {showSchedulePicker && selectedRequest && (
-                <div className="fixed inset-0 overflow-y-auto z-30" aria-labelledby="schedule-modal-title" role="dialog" aria-modal="true">
-                  <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                    {/* Background overlay */}
-                    <div 
-                      className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
-                      aria-hidden="true"
-                      onClick={() => setShowSchedulePicker(false)}
-                    ></div>
-
-                    {/* Modal panel */}
-                    <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200">
-                      {/* Close button */}
-                      <button
-                        onClick={() => setShowSchedulePicker(false)}
-                        className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                      >
-                        <X size={20} className="text-gray-500" />
-                      </button>
-
-                      <div className="bg-white px-6 pt-5 pb-4 sm:p-6">
-                        <div className="sm:flex sm:items-start">
-                          <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
-                            <Calendar size={20} className="text-white" />
-                          </div>
-                          <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 className="text-xl font-semibold text-gray-900" id="schedule-modal-title">
-                              Schedule Maintenance
-                            </h3>
-                            <p className="mt-1 text-sm text-gray-500">
-                              Select a date and time for this maintenance request.
-                            </p>
-                            
-                            <div className="mt-6 space-y-6">
-                            {/* Date Picker */}
-                            <div>
-                              <label htmlFor="maintenance-date" className="block text-sm font-medium text-gray-700">
-                                Date
-                              </label>
-                              <input
-                                type="date"
-                                id="maintenance-date"
-                                className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-                                value={scheduleDate.toISOString().split('T')[0]}
-                                onChange={(e) => {
-                                  // Create date at noon to avoid timezone issues
-                                  const selectedDate = new Date(e.target.value + 'T12:00:00');
-                                  setScheduleDate(selectedDate);
-                                }}
-                              />
-                            </div>
-                              
-                              {/* Time Picker */}
-                              <div>
-                                <label htmlFor="maintenance-time" className="block text-sm font-medium text-gray-700">
-                                  Time
-                                </label>
-                                <input
-                                  type="time"
-                                  id="maintenance-time"
-                                  className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-                                  value={scheduleTime}
-                                  onChange={(e) => setScheduleTime(e.target.value)}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button
-                          type="button"
-                          className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
-                          onClick={() => {
-                            const dateTime = new Date(scheduleDate);
-                            const [hours, minutes] = scheduleTime.split(':');
-                            dateTime.setHours(parseInt(hours), parseInt(minutes), 0);
-                            handleScheduleMaintenanceWithDate(selectedRequest.id, dateTime);
-                            setShowSchedulePicker(false);
-                          }}
-                        >
-                          Confirm Schedule
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
               
-              <div className="bg-gray-50 px-6 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
+              <div className="bg-gray-50 px-4 py-4 sm:px-6 flex flex-col sm:flex-row sm:justify-end gap-3">
+                <button
+                  type="button"
+                  className="w-full sm:w-auto order-1 sm:order-2 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                  onClick={() => {
+                    const dateTime = new Date(scheduleDate);
+                    const [hours, minutes] = scheduleTime.split(':');
+                    dateTime.setHours(parseInt(hours), parseInt(minutes), 0);
+                    handleScheduleMaintenanceWithDate(selectedRequest.id, dateTime);
+                    setShowSchedulePicker(false);
+                  }}
+                >
+                  Confirm Schedule
+                </button>
+                
+                <button
+                  type="button"
+                  className="w-full sm:w-auto order-2 sm:order-1 inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                  onClick={() => setShowSchedulePicker(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+              
+              <div className="bg-gray-50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
                 {selectedRequest.status === 'pending' && (
-                  <>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full">
                     <button
                       type="button"
-                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                       onClick={() => handleImmediateSchedule(selectedRequest.id)}
                     >
                       <Clock size={16} className="mr-2" />
@@ -1201,20 +1258,20 @@ const formatTime = (date) => {
                     
                     <button
                       type="button"
-                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                       onClick={() => setShowSchedulePicker(true)}
                     >
                       <Calendar size={16} className="mr-2" />
                       Schedule Maintenance
                     </button>
-                  </>
+                  </div>
                 )}
                 
                 {selectedRequest.status === 'scheduled' && (
-                  <>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full">
                     <button
                       type="button"
-                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-all duration-200"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                       onClick={() => handleMarkAsCompleted(selectedRequest.id)}
                     >
                       <Check size={16} className="mr-2" />
@@ -1223,13 +1280,13 @@ const formatTime = (date) => {
                     
                     <button
                       type="button"
-                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                       onClick={() => handleReschedule(selectedRequest.id)}
                     >
                       <Calendar size={16} className="mr-2" />
                       Reschedule
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
