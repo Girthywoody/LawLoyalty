@@ -179,38 +179,43 @@ const PublicSignup = () => {
     }
   };
 
-  // Success state
-  if (success) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
-          <div className="text-center">
-            <div className="flex justify-center">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-4 shadow-lg">
-                <CheckCircle size={36} className="text-white" />
-              </div>
+// Success state in PublicSignup.jsx
+if (success) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+        <div className="text-center">
+          <div className="flex justify-center">
+            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-4 shadow-lg">
+              <CheckCircle size={36} className="text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-800">Registration Submitted!</h1>
-            <p className="mt-2 text-gray-500">Please verify your email</p>
           </div>
-          
-          <div className="bg-green-50 p-6 rounded-lg border border-green-100 mt-6">
-            <p className="text-green-700 font-medium mb-2">Thank you for registering!</p>
-            <p className="text-green-600 text-sm mb-4">
-              We've sent a verification email to <strong>{email}</strong>. Please check your inbox (including spam folders) and click the verification link.
-            </p>
-            <p className="text-green-600 text-sm">
-              After verifying your email, your registration will be submitted to the restaurant manager for approval. You'll be notified once your account is approved.
-            </p>
-          </div>
-          
-          <div className="flex items-center justify-center mt-6">
-            <span className="text-indigo-600 animate-pulse">Redirecting to login...</span>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-800">Registration Submitted!</h1>
+          <p className="mt-2 text-gray-500">Waiting for Approval</p>
+        </div>
+        
+        <div className="bg-green-50 p-6 rounded-lg border border-green-100 mt-6">
+          <p className="text-green-700 font-medium mb-2">Thank you for registering!</p>
+          <p className="text-green-600 text-sm mb-4">
+            Your registration has been submitted to the restaurant manager for approval. You'll need to wait for approval before you can log in.
+          </p>
+          <p className="text-green-600 text-sm">
+            Please check your email including spam folders for verification instructions. You'll be notified once your account is approved.
+          </p>
+        </div>
+        
+        <div className="mt-6">
+          <button
+            onClick={() => navigate('/')}
+            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors font-medium"
+          >
+            Return to Login
+          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
