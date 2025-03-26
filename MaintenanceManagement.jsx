@@ -22,6 +22,16 @@ import {
   Search
 } from 'lucide-react';
 
+import { 
+  createMaintenanceRequest, 
+  subscribeToMaintenanceRequests, 
+  schedribeToMaintenanceEvents, 
+  scheduleMaintenanceEvent, 
+  addCommentToRequest, 
+  completeMaintenanceRequest,
+  subscribeToMaintenanceEvents
+} from './MaintenanceFirebase';
+
 // Placeholder for your Firebase imports
 // import { collection, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDocs, onSnapshot, doc, serverTimestamp } from 'firebase/firestore';
 // import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -58,114 +68,26 @@ const MaintenanceManagement = ({ currentUser }) => {
   // Comment state
   const [newComment, setNewComment] = useState('');
   
-  // Mock data loading - replace with Firebase in actual implementation
   useEffect(() => {
-    // Simulate loading data
-    setTimeout(() => {
-      const mockRequests = [
-        {
-          id: '1',
-          title: 'Exhaust Fan Damage',
-          description: 'The kitchen exhaust fan is making loud noises and not functioning properly. Needs immediate attention as it affects food preparation.',
-          urgencyLevel: 4,
-          createdBy: 'John Smith',
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-          status: 'scheduled',
-          scheduledDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-          location: 'Kitchen',
-          images: ['/api/placeholder/600/400'],
-          comments: [
-            { id: 'c1', text: 'Technician has been notified.', createdBy: 'Maintenance Team', createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) }
-          ]
-        },
-        {
-          id: '2',
-          title: 'Broken Toilet in Men\'s Restroom',
-          description: 'The second stall in the men\'s restroom is not flushing properly. Customers have complained.',
-          urgencyLevel: 3,
-          createdBy: 'Jane Doe',
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-          status: 'pending',
-          location: 'Men\'s Restroom',
-          images: ['/api/placeholder/600/400'],
-          comments: []
-        },
-        {
-          id: '3',
-          title: 'Leaking Faucet',
-          description: 'The faucet in the bar area is leaking and causing water damage to the cabinet below.',
-          urgencyLevel: 2,
-          createdBy: 'Michael Johnson',
-          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-          status: 'completed',
-          completedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-          location: 'Bar Area',
-          images: ['/api/placeholder/600/400'],
-          comments: [
-            { id: 'c2', text: 'Technician scheduled for next Tuesday.', createdBy: 'Maintenance Team', createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000) },
-            { id: 'c3', text: 'Repair completed, replaced gasket and tightened connections.', createdBy: 'Maintenance Team', createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) }
-          ]
-        },
-        {
-          id: '4',
-          title: 'Lighting Issue in Dining Area',
-          description: 'Several lights in the main dining area are flickering and need to be replaced.',
-          urgencyLevel: 2,
-          createdBy: 'Sarah Williams',
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-          status: 'scheduled',
-          scheduledDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-          location: 'Main Dining Area',
-          images: [],
-          comments: [
-            { id: 'c4', text: 'Electrician scheduled for tomorrow.', createdBy: 'Maintenance Team', createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) }
-          ]
-        },
-        {
-          id: '5',
-          title: 'AC Not Working Properly',
-          description: 'The air conditioning in the private dining room is not cooling effectively. Room temperature is consistently above 78°F.',
-          urgencyLevel: 5,
-          createdBy: 'Robert Chen',
-          createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
-          status: 'pending',
-          location: 'Private Dining Room',
-          images: ['/api/placeholder/600/400'],
-          comments: []
-        }
-      ];
-      
-      const mockEvents = [
-        {
-          id: 'e1',
-          title: 'Exhaust Fan Repair',
-          requestId: '1',
-          start: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-          end: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000),
-          technician: 'Mark Wilson'
-        },
-        {
-          id: 'e2',
-          title: 'Lighting Replacement',
-          requestId: '4',
-          start: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-          end: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
-          technician: 'Lisa Johnson'
-        },
-        {
-          id: 'e3',
-          title: 'Monthly HVAC Maintenance',
-          start: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-          end: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
-          technician: 'HVAC Team'
-        }
-      ];
-      
-      setMaintenanceRequests(mockRequests);
-      setFilteredRequests(mockRequests);
-      setMaintenanceEvents(mockEvents);
+    setIsLoading(true);
+    
+    // Subscribe to maintenance requests
+    const unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
+      setMaintenanceRequests(requests);
+      setFilteredRequests(requests);
       setIsLoading(false);
-    }, 1000);
+    });
+    
+    // Subscribe to maintenance events
+    const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
+      setMaintenanceEvents(events);
+    });
+    
+    // Cleanup on unmount
+    return () => {
+      unsubRequestsSnapshot && unsubRequestsSnapshot();
+      unsubEventsSnapshot && unsubEventsSnapshot();
+    };
   }, []);
   
   // Apply filters
@@ -202,114 +124,88 @@ const MaintenanceManagement = ({ currentUser }) => {
     setFilteredRequests(filtered);
   }, [filterStatus, filterUrgency, maintenanceRequests, searchTerm]);
   
-  const handleAddRequest = () => {
-    // In real app, this would upload images to Firebase Storage and save request to Firestore
-    console.log('Adding request:', newRequest);
-    
-    // Create a new request with generated ID and timestamps
-    const newId = `${maintenanceRequests.length + 1}`;
-    const createdRequest = {
-      ...newRequest,
-      id: newId,
-      createdBy: currentUser?.name || 'Current User',
-      createdAt: new Date(),
-      comments: []
-    };
-    
-    // Update state
-    setMaintenanceRequests([...maintenanceRequests, createdRequest]);
-    
-    // Reset form
-    setNewRequest({
-      title: '',
-      description: '',
-      urgencyLevel: 3,
-      images: [],
-      location: '',
-      status: 'pending',
-      imagePreviewUrls: []
-    });
-    
-    // Close modal
-    setShowAddRequestModal(false);
+  const handleAddRequest = async () => {
+    try {
+      const requestData = {
+        title: newRequest.title,
+        description: newRequest.description,
+        urgencyLevel: newRequest.urgencyLevel,
+        location: newRequest.location,
+        createdBy: currentUser?.name || 'Current User',
+      };
+      
+      // Create the request in Firebase
+      await createMaintenanceRequest(requestData, newRequest.images);
+      
+      // Reset form
+      setNewRequest({
+        title: '',
+        description: '',
+        urgencyLevel: 3,
+        images: [],
+        location: '',
+        status: 'pending',
+        imagePreviewUrls: []
+      });
+      
+      // Close modal
+      setShowAddRequestModal(false);
+      showNotification('Maintenance request created successfully!', 'success');
+    } catch (error) {
+      console.error("Error adding request:", error);
+      showNotification('Failed to create maintenance request', 'error');
+    }
   };
   
-  const handleScheduleMaintenance = (requestId, date) => {
-    // In real app, this would update the request in Firestore and create an event
-    console.log(`Scheduling maintenance for request ${requestId} on ${date}`);
-    
-    // Update request status
-    const updatedRequests = maintenanceRequests.map(req => {
-      if (req.id === requestId) {
-        return {
-          ...req,
-          status: 'scheduled',
-          scheduledDate: date
-        };
-      }
-      return req;
-    });
-    
-    setMaintenanceRequests(updatedRequests);
-    
-    // Create event
-    const request = maintenanceRequests.find(req => req.id === requestId);
-    const newEvent = {
-      id: `e${maintenanceEvents.length + 1}`,
-      title: request.title,
-      requestId: requestId,
-      start: date,
-      end: new Date(date.getTime() + 2 * 60 * 60 * 1000), // Default 2 hour duration
-      technician: 'TBD'
-    };
-    
-    setMaintenanceEvents([...maintenanceEvents, newEvent]);
+  const handleScheduleMaintenance = async (requestId, date) => {
+    try {
+      // Get the request details
+      const request = maintenanceRequests.find(req => req.id === requestId);
+      
+      // Create event data
+      const eventData = {
+        title: request.title,
+        start: date,
+        end: new Date(date.getTime() + 2 * 60 * 60 * 1000), // Default 2 hour duration
+        technician: 'TBD'
+      };
+      
+      // Schedule in Firebase
+      await scheduleMaintenanceEvent(requestId, eventData);
+      showNotification('Maintenance scheduled successfully!', 'success');
+    } catch (error) {
+      console.error("Error scheduling maintenance:", error);
+      showNotification('Failed to schedule maintenance', 'error');
+    }
   };
   
-  const handleMarkAsCompleted = (requestId) => {
-    // In real app, this would update the request status in Firestore
-    const updatedRequests = maintenanceRequests.map(req => {
-      if (req.id === requestId) {
-        return {
-          ...req,
-          status: 'completed',
-          completedDate: new Date()
-        };
-      }
-      return req;
-    });
-    
-    setMaintenanceRequests(updatedRequests);
-    setShowDetailModal(false);
+  const handleMarkAsCompleted = async (requestId) => {
+    try {
+      await completeMaintenanceRequest(requestId);
+      showNotification('Maintenance marked as completed!', 'success');
+      setShowDetailModal(false);
+    } catch (error) {
+      console.error("Error completing maintenance:", error);
+      showNotification('Failed to complete maintenance', 'error');
+    }
   };
   
-  const handleAddComment = (requestId) => {
+  const handleAddComment = async (requestId) => {
     if (!newComment.trim()) return;
     
-    // In real app, this would add a comment to the request in Firestore
-    console.log(`Adding comment to request ${requestId}: ${newComment}`);
-    
-    // Update request with new comment
-    const updatedRequests = maintenanceRequests.map(req => {
-      if (req.id === requestId) {
-        return {
-          ...req,
-          comments: [
-            ...req.comments,
-            {
-              id: `c${Date.now()}`,
-              text: newComment,
-              createdBy: currentUser?.name || 'Current User',
-              createdAt: new Date()
-            }
-          ]
-        };
-      }
-      return req;
-    });
-    
-    setMaintenanceRequests(updatedRequests);
-    setNewComment('');
+    try {
+      const commentData = {
+        text: newComment,
+        createdBy: currentUser?.name || 'Current User',
+      };
+      
+      await addCommentToRequest(requestId, commentData);
+      setNewComment('');
+      showNotification('Comment added successfully!', 'success');
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      showNotification('Failed to add comment', 'error');
+    }
   };
   
   const handleFileChange = (e) => {
