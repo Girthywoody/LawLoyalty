@@ -153,66 +153,51 @@ const RestaurantLoyaltyApp = () => {
     },
   ]
 
-// Add this useEffect below your existing localStorage useEffect in RestaurantLoyaltyApp component
+// Add this check in the auth.onAuthStateChanged listener in App.jsx
+
 useEffect(() => {
   // This listens to Firebase auth state changes
   const unsubscribe = auth.onAuthStateChanged(async (user) => {
     if (user) {
       // User is signed in
       try {
-        // Check if we already have user data in localStorage
-        const storedUser = localStorage.getItem('currentUser');
+        // First check approval status before proceeding
+        const employeesRef = collection(db, 'employees');
+        const q = query(employeesRef, where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
         
-        if (!storedUser) {
-          // If not in localStorage, fetch user data from Firestore
-          const employeesRef = collection(db, 'employees');
-          const q = query(employeesRef, where("uid", "==", user.uid));
-          const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const employeeData = querySnapshot.docs[0].data();
           
-          if (!querySnapshot.empty) {
-            const employeeData = querySnapshot.docs[0].data();
-            
-            // Build the user object
-            const userData = {
-              id: user.uid,
-              name: employeeData.name || user.displayName || user.email,
-              email: user.email.toLowerCase(),
-              jobTitle: employeeData.jobTitle || 'Employee',
-              restaurantId: employeeData.restaurantId || null,
-              restaurantName: employeeData.restaurantName || null
-            };
-            
-            // Add managed restaurants for general managers
-            if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
-              userData.managedRestaurants = employeeData.managedRestaurants;
-            }
-            
-            // Set user data in state
-            setCurrentUser(userData);
-            
-            // Determine view based on role
-            const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
-                           (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
-                           'manager' : 'employee');
-            
-            // Set the view
-            setView(userView);
-            
-            // Save to localStorage
-            localStorage.setItem('currentUser', JSON.stringify(userData));
-            localStorage.setItem('currentView', userView);
+          // Check if user is approved before allowing login
+          if (employeeData.status === 'pending') {
+            // User is not approved yet, sign them out
+            await logoutUser();
+            setLoginError('Your account is pending approval from your manager. Please contact your manager for assistance.');
+            return;
           }
+          
+          if (employeeData.status === 'rejected') {
+            // User is rejected, sign them out
+            await logoutUser();
+            setLoginError('Your application has been declined. Please contact your restaurant manager for more information.');
+            return;
+          }
+          
+          // Continue with normal login flow for approved users
+          const storedUser = localStorage.getItem('currentUser');
+          
+          if (!storedUser) {
+            // If not in localStorage, process user data
+            // Rest of your existing code...
+          }
+        } else {
+          // No employee record found, sign them out
+          await logoutUser();
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
-        // Optional: Handle the error appropriately
-      }
-    } else {
-      // User is signed out - clear localStorage if not already done
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser && !currentUser) {
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('currentView');
+        await logoutUser();
       }
     }
   });
