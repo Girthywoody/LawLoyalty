@@ -42,7 +42,7 @@ const GeneralManagerManagement = ({ currentUser }) => {
   useEffect(() => {
     // Use the RESTAURANTS constant from your app
     const RESTAURANTS = [
-      { id: "montanas", name: "Montana's"},
+      { id: "montanas-sudbury", name: "Montana's Sudbury"},
       { id: "montanas-orillia", name: "Montana's Orillia"},
       { id: "kelseys-sudbury", name: "Kelsey's Sudbury"},
       { id: "kelseys-orillia", name: "Kelsey's Orillia"},
@@ -54,6 +54,8 @@ const GeneralManagerManagement = ({ currentUser }) => {
       { id: "lot88-timmins", name: "Lot88 Timmins"},
       { id: "lot88-orillia", name: "Lot88 Orillia"},
       { id: "lot88-north-bay", name: "Lot88 North Bay"},
+      { id: "lot88-thunder-bay", name: "Lot88 Thunder Bay"},
+      { id: "lot88-burlington", name: "Lot88 Burlington"},
       { id: "overtime-sudbury", name: "Overtime Sudbury"},
       { id: "overtime-val-caron", name: "Overtime Val Caron"},
       { id: "overtime-chelmsford", name: "Overtime Chelmsford"},
