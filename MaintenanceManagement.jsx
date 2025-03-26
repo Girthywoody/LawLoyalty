@@ -484,204 +484,156 @@ const formatTime = (date) => {
           </div>
 
 {/* Main Content Area */}
-      <main className="flex-grow max-w-7xl w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main className="flex-grow w-full mx-auto py-4 px-2 sm:py-6 sm:px-4 max-w-7xl">
         {/* Requests View */}
         {activeView === 'requests' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Header and Actions */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900">Maintenance Requests</h2>
-                <p className="text-gray-400 mt-1">Track and manage maintenance issues</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Maintenance Requests</h2>
+                <p className="text-sm text-gray-400 mt-1">Track and manage maintenance issues</p>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={() => setShowAddRequestModal(true)}
-                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-                >
-                  <PlusCircle size={16} className="mr-2" />
-                  New Request
-                </button>
-              </div>
+              <button
+                onClick={() => setShowAddRequestModal(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-sm"
+              >
+                <PlusCircle size={16} className="mr-2" />
+                New Request
+              </button>
             </div>
-            
-{/* Filters and Search */}
-<div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-  <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-    <div className="flex-grow">
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search size={18} className="text-gray-400" />
-        </div>
-        <input
-          type="text"
-          placeholder="Search requests..."
-          className="block w-full pl-10 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 placeholder-gray-400 transition-all duration-200"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-    </div>
-    
-    <div className="flex flex-col sm:flex-row gap-3">
-      <div>
-        <label htmlFor="status-filter" className="block text-sm font-medium text-gray-400 mb-1">
-          Status
-        </label>
-        <select
-          id="status-filter"
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="block w-full pl-3 pr-10 py-2.5 bg-white border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
-        >
-          <option value="all">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="completed">Completed</option>
-        </select>
-      </div>
-      
-      <div>
-        <label htmlFor="urgency-filter" className="block text-sm font-medium text-gray-400 mb-1">
-          Urgency
-        </label>
-        <select
-          id="urgency-filter"
-          value={filterUrgency}
-          onChange={(e) => setFilterUrgency(e.target.value)}
-          className="block w-full pl-3 pr-10 py-2.5 bg-white border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
-        >
-          <option value="all">All Urgency Levels</option>
-          <option value="1">Very Low</option>
-          <option value="2">Low</option>
-          <option value="3">Medium</option>
-          <option value="4">High</option>
-          <option value="5">Critical</option>
-        </select>
-      </div>
-    </div>
-  </div>
-</div>
-            
-            {/* Requests List */}
-{/* Requests List */}
-<div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-  {isLoading ? (
-    <div className="p-12 flex justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
-    </div>
-  ) : filteredRequests.length === 0 ? (
-    <div className="p-12 text-center">
-      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
-        <Wrench size={32} className="text-indigo-400" />
-      </div>
-      <h3 className="text-xl font-semibold text-gray-900">No maintenance requests found</h3>
-      <p className="mt-2 text-sm text-gray-400">
-        {searchTerm || filterStatus !== 'all' || filterUrgency !== 'all'
-          ? 'Try adjusting your search or filters'
-          : 'Get started by creating a new maintenance request'}
-      </p>
-      <div className="mt-6">
-        <button
-          onClick={() => setShowAddRequestModal(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-        >
-          <PlusCircle size={16} className="mr-2" />
-          New Request
-        </button>
-      </div>
-    </div>
-  ) : (
-    <ul className="divide-y divide-gray-200">
-      {filteredRequests.map((request) => (
-        <li 
-          key={request.id} 
-          className="p-6 hover:bg-gray-100 cursor-pointer transition-all duration-200"
-          onClick={() => {
-            setSelectedRequest(request);
-            setShowDetailModal(true);
-          }}
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex-grow">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 mr-4">
-                  <div className={`w-14 h-14 rounded-lg flex items-center justify-center ${
-                    request.urgencyLevel >= 4 ? 'bg-red-900' : 
-                    request.urgencyLevel === 3 ? 'bg-yellow-800' : 
-                    'bg-blue-900'
-                  }`}>
-                    <AlertTriangle 
-                      size={28} 
-                      className={`${
-                        request.urgencyLevel >= 4 ? 'text-red-300' : 
-                        request.urgencyLevel === 3 ? 'text-yellow-300' : 'text-blue-300'
-                      }`} 
-                    />
+
+            {/* Filters and Search - Mobile Optimized */}
+            <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm space-y-4">
+              <div className="flex flex-col space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search size={18} className="text-gray-400" />
                   </div>
+                  <input
+                    type="text"
+                    placeholder="Search requests..."
+                    className="block w-full pl-10 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 placeholder-gray-400 transition-all duration-200"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">{request.title}</h3>
-                  <div className="mt-2 flex items-center">
-                    <MapPin size={16} className="text-gray-400 mr-1" />
-                    <span className="text-sm text-gray-400">{request.location}</span>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="block w-full pl-3 pr-10 py-2.5 bg-white border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="pending">Pending</option>
+                      <option value="scheduled">Scheduled</option>
+                      <option value="completed">Completed</option>
+                    </select>
                   </div>
-                  <p className="mt-2 text-sm text-gray-400 line-clamp-2">{request.description}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {/* Urgency Badge */}
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      request.urgencyLevel >= 4 ? 'bg-red-900 text-red-200' :
-                      request.urgencyLevel === 3 ? 'bg-yellow-900 text-yellow-200' :
-                      'bg-blue-900 text-blue-200'
-                    }`}>
-                      Urgency: {getUrgencyLabel(request.urgencyLevel).text}
-                    </span>
-                    
-                    {/* Status Badge */}
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
-                      {request.status === 'pending' && <AlertTriangle size={12} className="mr-1 text-yellow-400" />}
-                      {request.status === 'scheduled' && <Calendar size={12} className="mr-1 text-blue-400" />}
-                      {request.status === 'completed' && <Check size={12} className="mr-1 text-green-400" />}
-                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                    </span>
-                    
-                    {/* Comments Badge */}
-                    {request.comments.length > 0 && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-700 text-gray-300">
-                        <MessageCircle size={14} className="mr-1" /> {request.comments.length}
-                      </span>
-                    )}
+                  
+                  <div>
+                    <select
+                      value={filterUrgency}
+                      onChange={(e) => setFilterUrgency(e.target.value)}
+                      className="block w-full pl-3 pr-10 py-2.5 bg-white border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg transition-all duration-200"
+                    >
+                      <option value="all">All Urgency Levels</option>
+                      <option value="1">Very Low</option>
+                      <option value="2">Low</option>
+                      <option value="3">Medium</option>
+                      <option value="4">High</option>
+                      <option value="5">Critical</option>
+                    </select>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-end text-sm text-gray-400">
-              <div className="font-medium text-gray-600">Created by {request.createdBy}</div>
-              <time dateTime={request.createdAt.toISOString()} className="mt-1">
-                {formatDate(request.createdAt)}
-              </time>
-              {request.status === 'scheduled' && (
-                <div className="mt-2 text-indigo-400 font-medium flex items-center">
-                  <Calendar size={14} className="mr-1" />
-                  Scheduled: {formatDate(request.scheduledDate)}
+
+            {/* Requests List - Mobile Optimized */}
+            <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+              {isLoading ? (
+                <div className="p-8 flex justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
                 </div>
+              ) : filteredRequests.length === 0 ? (
+                <div className="p-6 sm:p-12 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 mb-4">
+                    <Wrench size={32} className="text-indigo-400" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900">No maintenance requests found</h3>
+                  <p className="mt-2 text-sm text-gray-400">
+                    {searchTerm || filterStatus !== 'all' || filterUrgency !== 'all'
+                      ? 'Try adjusting your search or filters'
+                      : 'Get started by creating a new maintenance request'}
+                  </p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-200">
+                  {filteredRequests.map((request) => (
+                    <li 
+                      key={request.id} 
+                      className="p-4 sm:p-6 hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setShowDetailModal(true);
+                      }}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex-grow">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 mr-4">
+                              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                                request.urgencyLevel >= 4 ? 'bg-red-100' : 
+                                request.urgencyLevel === 3 ? 'bg-yellow-100' : 
+                                'bg-blue-100'
+                              }`}>
+                                <AlertTriangle 
+                                  size={24} 
+                                  className={`${
+                                    request.urgencyLevel >= 4 ? 'text-red-600' : 
+                                    request.urgencyLevel === 3 ? 'text-yellow-600' : 'text-blue-600'
+                                  }`} 
+                                />
+                              </div>
+                            </div>
+                            <div className="flex-grow">
+                              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{request.title}</h3>
+                              <div className="mt-1 flex items-center text-sm text-gray-400">
+                                <MapPin size={14} className="mr-1" />
+                                <span>{request.location}</span>
+                              </div>
+                              <p className="mt-2 text-sm text-gray-500 line-clamp-2">{request.description}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {getStatusBadge(request.status)}
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              request.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
+                              request.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                              {getUrgencyLabel(request.urgencyLevel).text}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </div>
-        </li>
-      ))}
-    </ul>
-  )}
-</div>
-          </div>
         )}
         
-        {/* Calendar View */}
+        {/* Calendar View - Mobile Optimized */}
         {activeView === 'calendar' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-gray-900">Maintenance Calendar</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Maintenance Calendar</h2>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => {
@@ -693,8 +645,11 @@ const formatTime = (date) => {
                 >
                   <ChevronLeft size={20} />
                 </button>
-                <span className="text-xl font-semibold text-gray-700">
+                <span className="text-base sm:text-xl font-semibold text-gray-700 hidden sm:inline">
                   {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </span>
+                <span className="text-base font-semibold text-gray-700 sm:hidden">
+                  {currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' })}
                 </span>
                 <button
                   onClick={() => {
@@ -708,58 +663,44 @@ const formatTime = (date) => {
                 </button>
               </div>
             </div>
-            
-            {/* Calendar Grid */}
+
+            {/* Calendar Grid - Mobile Optimized */}
             <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-              {/* Weekday headers */}
               <div className="grid grid-cols-7 gap-px bg-gray-200">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <div key={day} className="bg-gray-100 py-3 text-center text-sm font-medium text-gray-600">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
+                  <div key={day} className="bg-gray-100 py-2 text-center text-sm font-medium text-gray-600">
                     {day}
                   </div>
                 ))}
               </div>
               
-              {/* Calendar days */}
               <div className="grid grid-cols-7 gap-px bg-gray-200">
                 {generateCalendarDays().map((dayObj, idx) => (
-                <div 
-                  key={idx} 
-                  className={`bg-gray-100 h-44 p-4 overflow-hidden transition-colors duration-300 ${
-                    !dayObj.day ? 'bg-gray-200' : 'hover:bg-gradient-to-b hover:from-gray-100 hover:to-gray-200'
-                  }`}
-                >
+                  <div 
+                    key={idx} 
+                    className={`bg-white h-24 sm:h-32 p-1 sm:p-2 overflow-hidden transition-colors duration-300 ${
+                      !dayObj.day ? 'bg-gray-50' : 'hover:bg-gray-50'
+                    }`}
+                  >
                     {dayObj.day && (
                       <>
                         <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${
-                          dayObj.date.toDateString() === new Date().toDateString() 
-                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full w-7 h-7 flex items-center justify-center' 
-                            : 'text-gray-600'
-                        }`}>
+                          <span className={`text-xs sm:text-sm font-medium ${
+                            dayObj.date?.toDateString() === new Date().toDateString() 
+                              ? 'bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center' 
+                              : 'text-gray-700'
+                          }`}>
                             {dayObj.day}
                           </span>
-                          
-                          {/* Add event button */}
-                          <button 
-                            className="text-gray-400 hover:text-indigo-600 transition-colors duration-200"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log("Add event on", dayObj.date);
-                            }}
-                          >
-                            <PlusCircle size={14} />
-                          </button>
                         </div>
                         
-                        {/* Events for this day */}
-                        <div className="mt-2 space-y-1 max-h-28 overflow-y-auto">
-                          {dayObj.events && dayObj.events.map((event) => (
+                        <div className="mt-1 space-y-1 max-h-16 sm:max-h-24 overflow-y-auto">
+                          {dayObj.events?.map((event) => (
                             <div 
                               key={event.id} 
-                              className="px-3 py-2 text-xs rounded-lg bg-blue-50 text-blue-700 border border-blue-100 shadow-sm truncate">
-                              <div className="font-medium">{event.title}</div>
-                              <div className="text-indigo-700">{formatTime(event.start)}</div>
+                              className="px-1 py-0.5 text-xs rounded bg-blue-50 text-blue-700 truncate"
+                            >
+                              {event.title}
                             </div>
                           ))}
                         </div>
@@ -768,45 +709,6 @@ const formatTime = (date) => {
                   </div>
                 ))}
               </div>
-            </div>
-            
-            {/* Events Legend */}
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Upcoming Maintenance</h3>
-              
-              {maintenanceEvents.length === 0 ? (
-                <p className="text-gray-400 text-sm">No upcoming maintenance events scheduled.</p>
-              ) : (
-                <div className="space-y-4">
-                  {maintenanceEvents
-                    .filter(event => new Date(event.start) > new Date())
-                    .sort((a, b) => new Date(a.start) - new Date(b.start))
-                    .slice(0, 5)
-                    .map(event => (
-                      <div key={event.id} className="flex items-start p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-r from-indigo-900 to-purple-900 flex items-center justify-center mr-4 shadow-sm">
-                          <Wrench size={20} className="text-indigo-400" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900">{event.title}</h4>
-                          <div className="mt-1 flex items-center">
-                            <Calendar size={14} className="text-gray-400 mr-1" />
-                            <span className="text-sm text-gray-400">
-                              {formatDate(event.start)} • {formatTime(event.start)} - {formatTime(event.end)}
-                            </span>
-                          </div>
-                          {event.technician && (
-                            <div className="mt-1 flex items-center">
-                              <User size={14} className="text-gray-400 mr-1" />
-                              <span className="text-sm text-gray-500">{event.technician}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  }
-                </div>
-              )}
             </div>
           </div>
         )}
