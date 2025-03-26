@@ -1,6 +1,8 @@
 // firebase.js
 import { deleteUser as firebaseDeleteUser } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
+import { getStorage } from 'firebase/storage';
+
 import { 
   getFirestore, 
   collection, 
@@ -40,6 +42,13 @@ const firebaseConfig = {
     appId: "1:18898180139:web:115ada8b7ab0d8a9edb26e",
     measurementId: "G-XTKBQK7L33"
 };
+
+
+// After initializing the Firebase app
+const storage = getStorage(app);
+
+// Add storage to your exports
+export { db, auth, storage, isSignInWithEmailLink, sendPasswordResetEmail, sendEmailVerification };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
