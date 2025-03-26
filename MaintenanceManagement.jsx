@@ -937,7 +937,6 @@ const formatTime = (date) => {
               aria-hidden="true"
               onClick={() => setShowDetailModal(false)}
             ></div>
-
             {/* Modal panel */}
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200">
               {/* Close button */}
@@ -957,7 +956,6 @@ const formatTime = (date) => {
                     <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
                       {selectedRequest.title}
                     </h3>
-                          
                           <div className="mt-4">
                             {/* Meta Info */}
                             <div className="flex flex-wrap gap-2 mb-4">

@@ -464,95 +464,94 @@ useEffect(() => {
     });
   };
 
-// Replace your entire handleLogin function with this version:
-const handleLogin = async (e) => {
-  e.preventDefault();
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    
+    // Don't proceed if already loading
+    if (isLoading) return;
+    
+    setLoginError('');
+    setIsLoading(true);
+    
+    try {
+      // Basic validation
+      if (!email || !password) {
+        throw new Error('Please enter both email and password');
+      }
+      
+      // Implement actual Firebase login
+      const user = await loginWithEmailAndPassword(email, password);
+      
+      // Query Firestore to get the user's role information
+      const employeesRef = collection(db, 'employees');
+      // Try with both original and lowercase email
+      const normalizedEmail = email.toLowerCase();
+      
+      let querySnapshot;
+      
+      // First try with the email as provided
+      const q1 = query(employeesRef, where("email", "==", email));
+      querySnapshot = await getDocs(q1);
+      
+      // If no match, try with lowercase email
+      if (querySnapshot.empty) {
+        const q2 = query(employeesRef, where("email", "==", normalizedEmail));
+        querySnapshot = await getDocs(q2);
+      }
+      
+      if (querySnapshot.empty) {
+        throw new Error('User not found in employees database');
+      }
+      
+      // Get the employee data
+      const employeeData = querySnapshot.docs[0].data();
+      
+      // Check if the user has been approved
+      if (employeeData.status === 'pending') {
+        throw new Error('Your account is still pending approval from the restaurant manager. Please check back later or contact support for assistance.');
+      }
+      
+      if (employeeData.status === 'rejected') {
+        throw new Error('Your application has been declined. Please contact the restaurant manager for more information.');
+      }
+      
+      // Build the current user object - without discount field
+      const userData = {
+        id: user.uid,
+        name: employeeData.name || user.displayName || email,
+        email: normalizedEmail, // Always use lowercase email for consistency
+        jobTitle: employeeData.jobTitle || 'Employee',
+        restaurantId: employeeData.restaurantId || null,
+        restaurantName: employeeData.restaurantName || null
+      };
+      
+      // Add managed restaurants for general managers
+      if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
+        userData.managedRestaurants = employeeData.managedRestaurants;
+      }
+      
+      setCurrentUser(userData);
   
-  // Don't proceed if already loading
-  if (isLoading) return;
-  
-  setLoginError('');
-  setIsLoading(true);
-  
-  try {
-    // Basic validation
-    if (!email || !password) {
-      throw new Error('Please enter both email and password');
+      // Determine which view to show
+      const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
+                      (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
+                      'manager' : 'employee');
+      
+      // Set the view
+      setView(userView);
+      
+      // Save to localStorage
+      localStorage.setItem('currentUser', JSON.stringify(userData));
+      localStorage.setItem('currentView', userView);
+      
+      showNotification('Login successful', 'success');
+    } catch (error) {
+      console.error("Login error:", error);
+      setLoginError(error.message || 'Login failed. Check your credentials.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Implement actual Firebase login
-    const user = await loginWithEmailAndPassword(email, password);
-    
-    // Query Firestore to get the user's role information
-    const employeesRef = collection(db, 'employees');
-    // Try with both original and lowercase email
-    const normalizedEmail = email.toLowerCase();
-    
-    let querySnapshot;
-    
-    // First try with the email as provided
-    const q1 = query(employeesRef, where("email", "==", email));
-    querySnapshot = await getDocs(q1);
-    
-    // If no match, try with lowercase email
-    if (querySnapshot.empty) {
-      const q2 = query(employeesRef, where("email", "==", normalizedEmail));
-      querySnapshot = await getDocs(q2);
-    }
-    
-    if (querySnapshot.empty) {
-      throw new Error('User not found in employees database');
-    }
-    
-    // Get the employee data
-    const employeeData = querySnapshot.docs[0].data();
-    
-    // Check if the user has been approved
-    if (employeeData.status === 'pending') {
-      throw new Error('Your account is still pending approval from the restaurant manager.');
-    }
-    
-    if (employeeData.status === 'rejected') {
-      throw new Error('Your application has been declined. Please contact the restaurant manager for more information.');
-    }
-    
-    // Build the current user object - without discount field
-    const userData = {
-      id: user.uid,
-      name: employeeData.name || user.displayName || email,
-      email: normalizedEmail, // Always use lowercase email for consistency
-      jobTitle: employeeData.jobTitle || 'Employee',
-      restaurantId: employeeData.restaurantId || null,
-      restaurantName: employeeData.restaurantName || null
-    };
-    
-    // Add managed restaurants for general managers
-    if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
-      userData.managedRestaurants = employeeData.managedRestaurants;
-    }
-    
-    setCurrentUser(userData);
-
-    // Determine which view to show
-    const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
-                    (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
-                    'manager' : 'employee');
-    
-    // Set the view
-    setView(userView);
-    
-    // Save to localStorage
-    localStorage.setItem('currentUser', JSON.stringify(userData));
-    localStorage.setItem('currentView', userView);
-    
-    showNotification('Login successful', 'success');
-  } catch (error) {
-    console.error("Login error:", error);
-    setLoginError(error.message || 'Login failed. Check your credentials.');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
 const handleLogout = async () => {
   try {
@@ -1167,9 +1166,9 @@ if (view === 'register') {
           </div>
 
           {loginError && (
-            <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex items-center">
-              <XCircle size={16} className="mr-2" />
-              {loginError}
+            <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm flex items-center">
+              <XCircle size={16} className="mr-2 flex-shrink-0" />
+              <span>{loginError}</span>
             </div>
           )}
 
