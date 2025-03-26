@@ -1870,16 +1870,17 @@ if (view === 'employee') {
             <UserProfileBadge user={currentUser} />
           </div>
 
-          {/* Location selector */}
 {/* Location selector */}
 <div className="p-6 border-b border-gray-200">
-  <EmployeeRestaurantSelector 
-    restaurants={filteredRestaurants()} 
-    currentUser={currentUser} 
-    selectedRestaurant={selectedRestaurant} 
-    onSelectRestaurant={handleSelectRestaurant} 
-    cooldownInfo={cooldownInfo} 
-  />
+  {cooldownChecked && ( // Make sure cooldown is checked before rendering
+    <EmployeeRestaurantSelector 
+      restaurants={filteredRestaurants()} 
+      currentUser={currentUser} 
+      selectedRestaurant={selectedRestaurant} 
+      onSelectRestaurant={handleSelectRestaurant} 
+      cooldownInfo={cooldownInfo || {}} // Provide default empty object if null
+    />
+  )}
 </div>
 
           {/* Discount display */}
