@@ -586,7 +586,7 @@ const handleLogout = async () => {
 };
 
 const getDiscount = (locationName) => {
-  // Check if this is a combined restaurant-location name (e.g. "Happy Life - Timmins")
+  // Check if this is a combined restaurant-location name (e.g. "Happy Life - Sudbury")
   if (locationName.includes(' - ')) {
     const [restaurantName, specificLocation] = locationName.split(' - ');
     
