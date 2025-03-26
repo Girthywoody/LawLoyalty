@@ -43,9 +43,9 @@ const GeneralManagerManagement = ({ currentUser }) => {
     // Use the RESTAURANTS constant from your app
     const RESTAURANTS = [
       { id: "montanas-sudbury", name: "Montana's Sudbury"},
-      { id: "montanas-orillia", name: "Montana's Orillia"},
       { id: "kelseys-sudbury", name: "Kelsey's Sudbury"},
       { id: "kelseys-orillia", name: "Kelsey's Orillia"},
+      { id: "east-side-marios-orillia", name: "East Side Mario's Orillia"},
       { id: "coras", name: "Cora's Breakfast"},
       { id: "js-roadhouse", name: "J's Roadhouse"},
       { id: "swiss-chalet", name: "Swiss Chalet"},
