@@ -50,34 +50,34 @@ const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
     }
   };
   
-// Schedule maintenance
-export const scheduleMaintenanceEvent = async (requestId, eventData) => {
+  export const scheduleMaintenanceEvent = async (requestId, eventData) => {
     try {
-      // Use a proper JavaScript Date object for immediate use
-      const now = new Date();
+      // Use the provided date if available, otherwise use current date
+      const startDate = eventData.start || new Date();
+      const endDate = eventData.end || new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours from start
       
-      // Create the event with concrete dates (not server timestamps)
+      // Create the event with the provided dates
       const eventRef = await addDoc(maintenanceEventsCollection, {
         ...eventData,
         requestId,
-        start: now, // Use concrete date
-        end: new Date(now.getTime() + 2 * 60 * 60 * 1000), // 2 hours from now
-        createdAt: serverTimestamp() // This one can stay as serverTimestamp
+        start: startDate, // Use provided date or current date
+        end: endDate,
+        createdAt: serverTimestamp()
       });
       
-      // Update the request status with a concrete date too
+      // Update the request status
       const requestRef = doc(db, 'maintenanceRequests', requestId);
       await updateDoc(requestRef, { 
         status: 'scheduled',
-        scheduledDate: now, // Use concrete date
+        scheduledDate: startDate, // Use provided date
         updatedAt: serverTimestamp() 
       });
       
       return { 
         id: eventRef.id, 
         ...eventData,
-        start: now, // Return the same concrete date
-        end: new Date(now.getTime() + 2 * 60 * 60 * 1000)
+        start: startDate,
+        end: endDate
       };
     } catch (error) {
       console.error("Error scheduling maintenance:", error);

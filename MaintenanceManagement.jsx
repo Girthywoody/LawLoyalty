@@ -188,25 +188,41 @@ const showNotification = (message, type = 'info') => {
     }
   };
 
-  const handleScheduleMaintenance = async (requestId, date) => {
+  const handleReschedule = (requestId) => {
+    // Simply show the schedule picker with the current date/time
+    setShowSchedulePicker(true);
+  };
+
+  const handleScheduleMaintenanceWithDate = async (requestId, date) => {
     try {
       // Get the request details
       const request = maintenanceRequests.find(req => req.id === requestId);
       
-      // Create event data
+      if (!request) {
+        throw new Error("Request not found");
+      }
+      
+      // Create event data with the selected date
       const eventData = {
         title: request.title,
-        start: date,
-        end: new Date(date.getTime() + 2 * 60 * 60 * 1000), // Default 2 hour duration
         technician: currentUser?.name || 'Current User',
         location: request.location,
         description: request.description,
+        start: date,
+        end: new Date(date.getTime() + 2 * 60 * 60 * 1000), // 2 hours from selected time
       };
       
-      // Schedule in Firebase
-      await scheduleMaintenanceEvent(requestId, eventData);
+      // We need to modify the scheduleMaintenanceEvent function to use our provided date
+      const result = await scheduleMaintenanceEvent(requestId, eventData);
       
-      // Refresh the requests data to update the UI
+      // Update the selected request
+      setSelectedRequest({
+        ...selectedRequest, 
+        status: 'scheduled', 
+        scheduledDate: date
+      });
+      
+      // Update the request in the maintenanceRequests array
       const updatedRequests = maintenanceRequests.map(req => 
         req.id === requestId 
           ? {...req, status: 'scheduled', scheduledDate: date}
@@ -215,46 +231,55 @@ const showNotification = (message, type = 'info') => {
       setMaintenanceRequests(updatedRequests);
       
       showNotification('Maintenance scheduled successfully!', 'success');
+      setShowSchedulePicker(false);
     } catch (error) {
       console.error("Error scheduling maintenance:", error);
       showNotification('Failed to schedule maintenance', 'error');
     }
   };
   
-const handleImmediateSchedule = async (requestId) => {
-  try {
-    // Get the request details
-    const request = maintenanceRequests.find(req => req.id === requestId);
-    
-    // Create event data with a concrete JavaScript Date
-    const now = new Date();
-    const eventData = {
-      title: request.title,
-      technician: currentUser?.name || 'Current User',
-      location: request.location,
-      description: request.description,
-      // Don't include start/end here - the scheduleMaintenanceEvent will add them
-    };
-    
-    // Schedule in Firebase
-    const result = await scheduleMaintenanceEvent(requestId, eventData);
-    
-    // Use the returned dates which should be proper Date objects
-    setSelectedRequest({
-      ...selectedRequest, 
-      status: 'scheduled', 
-      scheduledDate: result.start
-    });
-    
-    showNotification('Maintenance scheduled for immediate attention!', 'success');
-    
-    // Close the detail modal
-    setShowDetailModal(false);
-  } catch (error) {
-    console.error("Error scheduling immediate maintenance:", error);
-    showNotification('Failed to schedule immediate maintenance', 'error');
-  }
-};
+  const handleImmediateSchedule = async (requestId) => {
+    try {
+      // Get the request details
+      const request = maintenanceRequests.find(req => req.id === requestId);
+      
+      // Create event data with a concrete JavaScript Date
+      const now = new Date();
+      const eventData = {
+        title: request.title,
+        technician: currentUser?.name || 'Current User',
+        location: request.location,
+        description: request.description,
+        // Don't include start/end here - scheduleMaintenanceEvent will add them
+      };
+      
+      // Schedule in Firebase
+      const result = await scheduleMaintenanceEvent(requestId, eventData);
+      
+      // Update the selected request with the returned data
+      setSelectedRequest({
+        ...selectedRequest, 
+        status: 'scheduled', 
+        scheduledDate: result.start
+      });
+      
+      // Also update the request in the maintenanceRequests array
+      const updatedRequests = maintenanceRequests.map(req => 
+        req.id === requestId 
+          ? {...req, status: 'scheduled', scheduledDate: result.start}
+          : req
+      );
+      setMaintenanceRequests(updatedRequests);
+      
+      showNotification('Maintenance scheduled for immediate attention!', 'success');
+      
+      // Close the detail modal
+      setShowDetailModal(false);
+    } catch (error) {
+      console.error("Error scheduling immediate maintenance:", error);
+      showNotification('Failed to schedule immediate maintenance', 'error');
+    }
+  };
   
   const handleMarkAsCompleted = async (requestId) => {
     try {
@@ -1185,8 +1210,8 @@ const formatTime = (date) => {
                             const [hours, minutes] = scheduleTime.split(':');
                             dateTime.setHours(parseInt(hours), parseInt(minutes), 0);
                             
-                            // Schedule maintenance
-                            handleScheduleMaintenance(selectedRequest.id, dateTime);
+                            // Schedule maintenance with the combined date
+                            handleScheduleMaintenanceWithDate(selectedRequest.id, dateTime);
                             setShowSchedulePicker(false);
                             setSelectedRequest({...selectedRequest, status: 'scheduled', scheduledDate: dateTime});
                             showNotification('Maintenance scheduled successfully!', 'success');
@@ -1232,14 +1257,25 @@ const formatTime = (date) => {
                 )}
                 
                 {selectedRequest.status === 'scheduled' && (
-                  <button
-                    type="button"
-                    className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-all duration-200"
-                    onClick={() => handleMarkAsCompleted(selectedRequest.id)}
-                  >
-                    <Check size={16} className="mr-2" />
-                    Mark as Completed
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-all duration-200"
+                      onClick={() => handleMarkAsCompleted(selectedRequest.id)}
+                    >
+                      <Check size={16} className="mr-2" />
+                      Mark as Completed
+                    </button>
+                    
+                    <button
+                      type="button"
+                      className="ml-3 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-all duration-200"
+                      onClick={() => handleReschedule(selectedRequest.id)}
+                    >
+                      <Calendar size={16} className="mr-2" />
+                      Reschedule
+                    </button>
+                  </>
                 )}
                 
                 <button
