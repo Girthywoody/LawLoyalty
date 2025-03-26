@@ -16,15 +16,10 @@ import {
   MapPin,
   Mail,
   Wrench,
+  ChevronLeft
 } from 'lucide-react';
 import MaintenanceManagement from './MaintenanceManagement';
-import React, { useState, useEffect } from 'react';
-import { 
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight
-} from 'lucide-react';
+
 
 import { Store } from 'lucide-react';
 
@@ -62,103 +57,6 @@ import RestaurantSelector from './RestaurantSelector';
 
 import PendingEmployeeApprovals from './PendingEmployeeApprovals';
 window.showAppNotification = null;
-
-const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pageNumbers = [];
-    
-    // Show 5 page numbers at most
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + 4);
-    
-    // Adjust if we're near the end
-    if (endPage - startPage < 4) {
-      startPage = Math.max(1, endPage - 4);
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
-    }
-    
-    return pageNumbers;
-  };
-  
-  if (totalPages <= 1) return null;
-  
-  return (
-    <div className="flex justify-center items-center space-x-2 mt-4">
-      {/* First page button */}
-      <button
-        onClick={() => onPageChange(1)}
-        disabled={currentPage === 1}
-        className={`p-2 rounded-md ${
-          currentPage === 1 
-            ? 'text-gray-400 cursor-not-allowed' 
-            : 'text-indigo-600 hover:bg-indigo-50'
-        }`}
-      >
-        <ChevronsLeft size={16} />
-      </button>
-      
-      {/* Previous page button */}
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className={`p-2 rounded-md ${
-          currentPage === 1 
-            ? 'text-gray-400 cursor-not-allowed' 
-            : 'text-indigo-600 hover:bg-indigo-50'
-        }`}
-      >
-        <ChevronLeft size={16} />
-      </button>
-      
-      {/* Page numbers */}
-      {getPageNumbers().map(number => (
-        <button
-          key={number}
-          onClick={() => onPageChange(number)}
-          className={`p-2 rounded-md w-8 h-8 flex items-center justify-center ${
-            currentPage === number
-              ? 'bg-indigo-600 text-white font-medium'
-              : 'text-gray-700 hover:bg-indigo-50'
-          }`}
-        >
-          {number}
-        </button>
-      ))}
-      
-      {/* Next page button */}
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className={`p-2 rounded-md ${
-          currentPage === totalPages 
-            ? 'text-gray-400 cursor-not-allowed' 
-            : 'text-indigo-600 hover:bg-indigo-50'
-        }`}
-      >
-        <ChevronRight size={16} />
-      </button>
-      
-      {/* Last page button */}
-      <button
-        onClick={() => onPageChange(totalPages)}
-        disabled={currentPage === totalPages}
-        className={`p-2 rounded-md ${
-          currentPage === totalPages 
-            ? 'text-gray-400 cursor-not-allowed' 
-            : 'text-indigo-600 hover:bg-indigo-50'
-        }`}
-      >
-        <ChevronsRight size={16} />
-      </button>
-    </div>
-  );
-};
 
 
 const RestaurantLoyaltyApp = () => {
@@ -206,8 +104,7 @@ const RestaurantLoyaltyApp = () => {
   const [showCompletePassword, setShowCompletePassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showMaintenanceView, setShowMaintenanceView] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(15);
+
 
   const RESTAURANTS = [
     { id: "montanas", name: "Montana's", discount: 20 },
@@ -267,13 +164,6 @@ const RestaurantLoyaltyApp = () => {
     },
   ]
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
 
   // Add this useEffect at the top level of your App component
 useEffect(() => {
@@ -1227,21 +1117,6 @@ const getRestaurantName = (restaurantId) => {
   return "Unknown Restaurant";
 };
 
-const getCurrentPageItems = () => {
-  // If searching, return all filtered employees (across pages)
-  if (searchTerm) {
-    return filteredEmployees;
-  }
-  
-  // Otherwise, paginate normally
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  return filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
-};
-
-// Get current employees to display
-const currentEmployees = getCurrentPageItems();
-
 useEffect(() => {
   const filtered = employees.filter(emp => 
     ((emp.name && emp.name.toLowerCase().includes(searchTerm.toLowerCase())) || 
@@ -1476,45 +1351,29 @@ if (view === 'admin') {
           
           <div className="bg-white shadow-lg rounded-xl overflow-hidden">
             {/* Search bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-  <div className="relative w-full sm:w-64 mb-4 sm:mb-0">
-    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-      <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-      </svg>
-    </div>
-    <input
-      type="text"
-      placeholder="Search users..."
-      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-    />
-  </div>
-  <div className="flex items-center space-x-2">
-    <span className="text-sm text-gray-500">
-      {searchTerm ? (
-        `Found ${filteredEmployees.length} of ${employees.length} users`
-      ) : (
-        `Showing ${Math.min((currentPage - 1) * itemsPerPage + 1, filteredEmployees.length)}-${Math.min(currentPage * itemsPerPage, filteredEmployees.length)} of ${filteredEmployees.length} users`
-      )}
-    </span>
-    
-    <select
-      className="text-sm border border-gray-300 rounded-md p-1"
-      value={itemsPerPage}
-      onChange={(e) => {
-        setItemsPerPage(Number(e.target.value));
-        setCurrentPage(1); // Reset to first page when changing items per page
-      }}
-    >
-      <option value={10}>10 / page</option>
-      <option value={15}>15 / page</option>
-      <option value={20}>20 / page</option>
-      <option value={50}>50 / page</option>
-    </select>
-  </div>
-</div>
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative w-full sm:w-64 mb-4 sm:mb-0">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">
+                    Showing {filteredEmployees.length} of {employees.length} users
+                  </span>
+                </div>
+              </div>
+            </div>
 
             {/* Employee table */}
             <div className="overflow-x-auto">
@@ -2425,7 +2284,7 @@ if (view === 'manager') {
                         </tr>
                       ) : null}
                       
-                      {currentEmployees.map((employee) => (
+                      {filteredEmployees.map((employee) => (
                         isEditingEmployee && editEmployee && employee.id === editEmployee.id ? null : (
                           <tr key={employee.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -2465,14 +2324,13 @@ if (view === 'manager') {
                           </tr>
                         )
                       ))}
-
                       
                       {filteredEmployees.length === 0 && (
                         <tr>
-                          <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
+                          <td colSpan="4" className="px-6 py-10 text-center text-sm text-gray-500">
                             <div className="flex flex-col items-center justify-center">
                               <User size={24} className="text-gray-300 mb-2" />
-                              <p>No users found. Try a different search or add a new user.</p>
+                              <p>No employees found. Try a different search or invite new employees.</p>
                             </div>
                           </td>
                         </tr>
@@ -2521,13 +2379,6 @@ if (view === 'manager') {
                     </svg>
                   </div>
                 </button>
-
-                <Pagination 
-                  totalItems={filteredEmployees.length}
-                  itemsPerPage={itemsPerPage}
-                  currentPage={currentPage}
-                  onPageChange={handlePageChange}
-                />
 
                 {/* Dropdown menu */}
                 {showRestaurantDropdown && (
