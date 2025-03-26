@@ -21,7 +21,6 @@ import {
 import MaintenanceManagement from './MaintenanceManagement';
 
 
-// In the admin view section, add a button to access maintenance management
 import { Store } from 'lucide-react';
 
 import VerificationPopup from './VerificationPopup';
