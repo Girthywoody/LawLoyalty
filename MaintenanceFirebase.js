@@ -1,5 +1,3 @@
-// In MaintenanceFirebase.js
-// Change:
 import { 
     collection, 
     addDoc, 
@@ -16,6 +14,7 @@ import {
   } from 'firebase/firestore';
   
   import { db } from './firebase';
+export { doc, updateDoc, serverTimestamp };
 
   // Collection references
 const maintenanceRequestsCollection = collection(db, 'maintenanceRequests');
