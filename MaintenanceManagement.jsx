@@ -354,20 +354,90 @@ const checkForConflicts = (date, time) => {
   });
 };
 
-  const handleFileChange = (e) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
+const handleFileChange = (e) => {
+  if (e.target.files) {
+    const filesArray = Array.from(e.target.files);
+    
+    // Validate file types and sizes
+    const validFiles = filesArray.filter(file => {
+      // Check if it's an image file
+      const isImage = file.type.startsWith('image/');
       
-      // Preview URLs for display
-      const imagePreviewUrls = filesArray.map(file => URL.createObjectURL(file));
+      // Check size (10MB limit)
+      const isUnderSizeLimit = file.size <= 10 * 1024 * 1024; // 10MB in bytes
       
-      setNewRequest({
-        ...newRequest,
-        images: [...newRequest.images, ...filesArray],
-        imagePreviewUrls: [...newRequest.imagePreviewUrls, ...imagePreviewUrls]
-      });
+      // Show notification for invalid files
+      if (!isImage) {
+        showNotification('Only image files are allowed', 'error');
+      } else if (!isUnderSizeLimit) {
+        showNotification('Files must be under 10MB', 'error');
+      }
+      
+      return isImage && isUnderSizeLimit;
+    });
+    
+    if (validFiles.length === 0) return;
+    
+    // Preview URLs for display
+    const imagePreviewUrls = validFiles.map(file => URL.createObjectURL(file));
+    
+    setNewRequest({
+      ...newRequest,
+      images: [...newRequest.images, ...validFiles],
+      imagePreviewUrls: [...newRequest.imagePreviewUrls, ...imagePreviewUrls]
+    });
+  }
+};
+
+// Add these functions to your component
+const handleDragOver = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  e.dataTransfer.dropEffect = 'copy';
+};
+
+const handleDrop = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    handleFileSelection(Array.from(e.dataTransfer.files));
+  }
+};
+
+// Common function for both drag&drop and file input
+const handleFileSelection = (filesArray) => {
+  // Validate file types and sizes
+  const validFiles = filesArray.filter(file => {
+    // Check if it's an image file
+    const isImage = file.type.startsWith('image/');
+    
+    // Check size (10MB limit)
+    const isUnderSizeLimit = file.size <= 10 * 1024 * 1024; // 10MB in bytes
+    
+    // Show notification for invalid files
+    if (!isImage) {
+      showNotification('Only image files are allowed', 'error');
+    } else if (!isUnderSizeLimit) {
+      showNotification('Files must be under 10MB', 'error');
     }
-  };
+    
+    return isImage && isUnderSizeLimit;
+  });
+  
+  if (validFiles.length === 0) return;
+  
+  // Preview URLs for display
+  const imagePreviewUrls = validFiles.map(file => URL.createObjectURL(file));
+  
+  setNewRequest({
+    ...newRequest,
+    images: [...newRequest.images, ...validFiles],
+    imagePreviewUrls: [...newRequest.imagePreviewUrls, ...imagePreviewUrls]
+  });
+};
+
+
   
   const generateCalendarDays = () => {
     const year = currentMonth.getFullYear();
@@ -847,7 +917,11 @@ const formatTime = (date) => {
                         <label className="block text-sm font-medium text-gray-700">
                           Images
                         </label>
-                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors duration-200">
+                        <div 
+                          className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors duration-200"
+                          onDragOver={handleDragOver}
+                          onDrop={handleDrop}
+                        >
                           <div className="space-y-1 text-center">
                             <Camera size={28} className="mx-auto text-gray-400" />
                             <div className="flex text-sm text-gray-600">
@@ -874,7 +948,7 @@ const formatTime = (date) => {
                           </div>
                         </div>
                         
-                        {/* Image previews */}
+                        {/* Image previews with loading indicator */}
                         {newRequest.imagePreviewUrls.length > 0 && (
                           <div className="mt-4 grid grid-cols-3 gap-3">
                             {newRequest.imagePreviewUrls.map((url, index) => (
@@ -886,13 +960,16 @@ const formatTime = (date) => {
                                 />
                                 <button
                                   type="button"
-                                  className="absolute top-2 right-2 rounded-full bg-red-100 p-1.5 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                  className="absolute top-2 right-2 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                                   onClick={() => {
                                     const updatedImages = [...newRequest.images];
                                     updatedImages.splice(index, 1);
                                     
                                     const updatedPreviews = [...newRequest.imagePreviewUrls];
                                     updatedPreviews.splice(index, 1);
+                                    
+                                    // Revoke the object URL to free up memory
+                                    URL.revokeObjectURL(url);
                                     
                                     setNewRequest({
                                       ...newRequest, 
