@@ -383,60 +383,31 @@ export const getRestaurantName = (restaurantId) => {
   if (!restaurantId) return "No Restaurant Assigned";
   
   const RESTAURANTS = [
-    { id: "montanas", name: "Montana's"},
+    { id: "montanas-sudbury", name: "Montana's Sudbury"},
+    { id: "kelseys-sudbury", name: "Kelsey's Sudbury"},
+    { id: "kelseys-orillia", name: "Kelsey's Orillia"},
+    { id: "east-side-marios-orillia", name: "East Side Mario's Orillia"},
     { id: "coras", name: "Cora's Breakfast"},
     { id: "js-roadhouse", name: "J's Roadhouse"},
     { id: "swiss-chalet", name: "Swiss Chalet"},
     { id: "poke-bar", name: "Poke Bar"},
-    { id: "northern-climate", name: "Northern Climate"},
-    { id: "flooring-and-more-superstore", name: "Flooring and More Superstore"},
-    { id: "wellness-studio", name: "Wellness Studio"},
-    { id: "east-side-marios-orillia", name: "East Side Mario's Orillia"},
-    {
-      id: "lot-88",
-      name: "Lot 88",
-      discount: 20,
-      locations: [
-        { id: "lot88-sudbury", name: "Sudbury"},
-        { id: "lot88-timmins", name: "Timmins"},
-        { id: "lot88-orillia", name: "Orillia"},
-        { id: "lot88-north-bay", name: "North Bay"},
-        { id: "lot88-thunder-bay", name: "Thunder Bay"},
-        { id: "lot88-burlington", name: "Burlington"}
-      ]
-    }, 
-    {
-      id: "kelseys",
-      name: "Kelseys",
-      discount: 20,
-      locations: [
-        { id: "kelseys-sudbury", name: "Sudbury"},
-        { id: "kelseys-orillia", name: "Orillia"},
-      ]
-    }, 
-    {
-      id: "overtime-bar",
-      name: "Overtime Bar",
-      discount: 20,
-      locations: [
-        { id: "overtime-sudbury", name: "Sudbury"},
-        { id: "overtime-val-caron", name: "Val Caron"},
-        { id: "overtime-chelmsford", name: "Chelmsford"}
-      ]
-    },   {
-      id: "happy-life",
-      name: "Happy Life",
-      discount: 10,
-      locations: [
-        { id: "happy-life-kingsway", name: "Kingsway"},
-        { id: "happy-life-val-caron", name: "Val Caron "},
-        { id: "happy-life-chelmsford", name: "Chelmsford "},
-        { id: "happy-life-timmins", name: "Timmins "},
-        { id: "happy-life-lakeshore", name: "Lakeshore"},
-        { id: "happy-life-alqonquin", name: "Alqonquin"},
-        { id: "happy-life-espanola", name: "Espanola"}
-      ]
-    },
+    { id: "lot88-sudbury", name: "Lot88 Sudbury"},
+    { id: "lot88-timmins", name: "Lot88 Timmins"},
+    { id: "lot88-orillia", name: "Lot88 Orillia"},
+    { id: "lot88-north-bay", name: "Lot88 North Bay"},
+    { id: "lot88-thunder-bay", name: "Lot88 Thunder Bay"},
+    { id: "lot88-burlington", name: "Lot88 Burlington"},
+    { id: "overtime-sudbury", name: "Overtime Sudbury"},
+    { id: "overtime-val-caron", name: "Overtime Val Caron"},
+    { id: "overtime-chelmsford", name: "Overtime Chelmsford"},
+    { id: "happy-life-kingsway", name: "Happy Life Kingsway"},
+    { id: "happy-life-val-caron", name: "Happy Life Val Caron"},
+    { id: "happy-life-chelmsford", name: "Happy Life Chelmsford"},
+    { id: "happy-life-timmins", name: "Happy Life Timmins"},
+    { id: "happy-life-lakeshore", name: "Happy Life Lakeshore"},
+    { id: "happy-life-alqonquin", name: "Happy Life Alqonquin"},
+    { id: "happy-life-espanola", name: "Happy Life Espanola"},
+    { id: "jlaw-workers", name: "JLaw Workers"}
   ]
   
   // First check if it's a direct restaurant match
