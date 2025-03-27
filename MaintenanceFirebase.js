@@ -13,7 +13,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from './firebase';
 export { doc, updateDoc, serverTimestamp };
 
@@ -21,11 +21,17 @@ export { doc, updateDoc, serverTimestamp };
 const maintenanceRequestsCollection = collection(db, 'maintenanceRequests');
 const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
 
-// This should replace your existing createMaintenanceRequest in MaintenanceFirebase.js
+/**
+ * Creates a maintenance request with optional image uploads
+ * @param {Object} requestData - The request data object
+ * @param {Array} imageFiles - Array of image files to upload
+ * @returns {Promise<Object>} - Created maintenance request data
+ */
 export const createMaintenanceRequest = async (requestData, imageFiles = []) => {
   try {
     // Array to store image download URLs
     const imageUrls = [];
+    const imageRefs = [];
     
     // Only attempt to upload images if there are any
     if (imageFiles && imageFiles.length > 0) {
@@ -39,12 +45,21 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
           const storageRef = ref(storage, fileName);
           
           try {
+            // Upload the file with proper content type
+            const metadata = {
+              contentType: file.type
+            };
+            
             // Upload the file
-            const snapshot = await uploadBytes(storageRef, file);
+            const snapshot = await uploadBytes(storageRef, file, metadata);
             
             // Get the download URL
             const downloadURL = await getDownloadURL(snapshot.ref);
+            
+            // Store both the URL and reference path for potential deletion later
             imageUrls.push(downloadURL);
+            imageRefs.push(fileName);
+            
           } catch (uploadError) {
             console.error("Error uploading file:", uploadError);
             // Continue with next file instead of failing completely
@@ -56,10 +71,11 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
       }
     }
     
-    // Create request document with image URLs (even if empty)
+    // Create request document with image URLs and reference paths
     const docRef = await addDoc(maintenanceRequestsCollection, {
       ...requestData,
       images: imageUrls,
+      imageRefs: imageRefs, // Store references for deletion capability
       status: 'pending',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -70,6 +86,7 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
       id: docRef.id, 
       ...requestData, 
       images: imageUrls,
+      imageRefs: imageRefs,
       createdAt: new Date(),
       comments: []
     };
@@ -79,6 +96,119 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
   }
 };
 
+/**
+ * Deletes a maintenance request and its associated images
+ * @param {string} requestId - The request ID to delete
+ * @returns {Promise<Object>} - Success status
+ */
+export const deleteMaintenanceRequest = async (requestId) => {
+  try {
+    // First get the request to access the image references
+    const requestRef = doc(db, 'maintenanceRequests', requestId);
+    const requestDoc = await getDoc(requestRef);
+    
+    if (requestDoc.exists()) {
+      const requestData = requestDoc.data();
+      
+      // Delete all associated images from storage
+      if (requestData.imageRefs && requestData.imageRefs.length > 0) {
+        for (const imagePath of requestData.imageRefs) {
+          try {
+            const imageRef = ref(storage, imagePath);
+            await deleteObject(imageRef);
+          } catch (deleteError) {
+            console.error(`Error deleting image ${imagePath}:`, deleteError);
+            // Continue deleting other images
+          }
+        }
+      }
+      
+      // Delete the request document
+      await deleteDoc(requestRef);
+      
+      return { success: true, id: requestId };
+    } else {
+      throw new Error('Request not found');
+    }
+  } catch (error) {
+    console.error("Error deleting maintenance request:", error);
+    throw error;
+  }
+};
+
+/**
+ * Adds images to an existing maintenance request
+ * @param {string} requestId - The request ID
+ * @param {Array} imageFiles - Array of image files to upload
+ * @returns {Promise<Object>} - Updated image URLs
+ */
+export const addImagesToRequest = async (requestId, imageFiles = []) => {
+  try {
+    // Get current request data
+    const requestRef = doc(db, 'maintenanceRequests', requestId);
+    const requestDoc = await getDoc(requestRef);
+    
+    if (!requestDoc.exists()) {
+      throw new Error('Request not found');
+    }
+    
+    const requestData = requestDoc.data();
+    const currentImages = requestData.images || [];
+    const currentImageRefs = requestData.imageRefs || [];
+    
+    // Array to store new image download URLs
+    const newImageUrls = [];
+    const newImageRefs = [];
+    
+    // Only attempt to upload images if there are any
+    if (imageFiles && imageFiles.length > 0) {
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+        const timestamp = Date.now();
+        // Sanitize filename to avoid issues with special characters
+        const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+        const fileName = `maintenance/${requestId}/${timestamp}_${safeFileName}`;
+        const storageRef = ref(storage, fileName);
+        
+        try {
+          // Upload the file with proper content type
+          const metadata = {
+            contentType: file.type
+          };
+          
+          // Upload the file
+          const snapshot = await uploadBytes(storageRef, file, metadata);
+          
+          // Get the download URL
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          
+          // Store both the URL and reference path
+          newImageUrls.push(downloadURL);
+          newImageRefs.push(fileName);
+          
+        } catch (uploadError) {
+          console.error("Error uploading file:", uploadError);
+          // Continue with next file instead of failing completely
+        }
+      }
+    }
+    
+    // Update request with combined image URLs and refs
+    await updateDoc(requestRef, {
+      images: [...currentImages, ...newImageUrls],
+      imageRefs: [...currentImageRefs, ...newImageRefs],
+      updatedAt: serverTimestamp()
+    });
+    
+    return { 
+      images: [...currentImages, ...newImageUrls],
+      imageRefs: [...currentImageRefs, ...newImageRefs]
+    };
+  } catch (error) {
+    console.error("Error adding images to request:", error);
+    throw error;
+  }
+};
 
 export const scheduleMaintenanceEvent = async (requestId, eventData) => {
   try {
@@ -116,7 +246,6 @@ export const scheduleMaintenanceEvent = async (requestId, eventData) => {
 };
 
 // Get maintenance events
-// In subscribeToMaintenanceRequests
 export const subscribeToMaintenanceRequests = (callback) => {
   const q = query(maintenanceRequestsCollection, orderBy("createdAt", "desc"));
   return onSnapshot(q, (snapshot) => {
@@ -140,7 +269,6 @@ export const subscribeToMaintenanceRequests = (callback) => {
   });
 };
 
-// Similarly for subscribeToMaintenanceEvents
 export const subscribeToMaintenanceEvents = (callback) => {
   const q = query(maintenanceEventsCollection, orderBy("start", "asc"));
   return onSnapshot(q, (snapshot) => {

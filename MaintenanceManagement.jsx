@@ -34,6 +34,7 @@ import {
   serverTimestamp
 } from './MaintenanceFirebase';
 
+import ImageUploadComponent from './ImageUploadComponent';
 
 
 // Placeholder for your Firebase imports
@@ -58,6 +59,11 @@ const MaintenanceManagement = ({ currentUser }) => {
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(new Date());
   const [scheduleTime, setScheduleTime] = useState('09:00');
+  const [additionalImages, setAdditionalImages] = useState({
+    images: [],
+    imagePreviewUrls: []
+  });
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   // Add this with your other state variables
   const [isEditingUrgency, setIsEditingUrgency] = useState(false);  
   // Current Month for Calendar View
@@ -169,6 +175,49 @@ useEffect(() => {
     });
   };
 }, []);
+
+// Handle image change for adding to existing request
+const handleAdditionalImageChange = (imageData) => {
+  setAdditionalImages({
+    images: imageData.images,
+    imagePreviewUrls: imageData.imagePreviewUrls
+  });
+};
+
+// Function to handle adding images to an existing request
+const handleAddImagesToRequest = async (requestId) => {
+  if (additionalImages.images.length === 0) return;
+  
+  try {
+    setIsUploadingImage(true);
+    
+    await addImagesToRequest(requestId, additionalImages.images);
+    
+    // Clean up preview URLs
+    additionalImages.imagePreviewUrls.forEach(url => {
+      URL.revokeObjectURL(url);
+    });
+    
+    // Reset the additional images state
+    setAdditionalImages({
+      images: [],
+      imagePreviewUrls: []
+    });
+    
+    showNotification('Images added successfully', 'success');
+    
+    // Refresh the selected request to show new images
+    const updatedRequest = maintenanceRequests.find(req => req.id === requestId);
+    if (updatedRequest) {
+      setSelectedRequest(updatedRequest);
+    }
+  } catch (error) {
+    console.error("Error adding images:", error);
+    showNotification('Failed to upload images', 'error');
+  } finally {
+    setIsUploadingImage(false);
+  }
+};
 
 // This function should replace your existing handleAddRequest in MaintenanceManagement.jsx
 const handleAddRequest = async () => {
@@ -378,6 +427,14 @@ const checkForConflicts = (date, time) => {
       (selectedDateTime >= new Date(eventStart.getTime() - buffer) && 
        selectedDateTime <= new Date(eventEnd.getTime() + buffer))
     );
+  });
+};
+
+const handleNewRequestImageChange = (imageData) => {
+  setNewRequest({
+    ...newRequest,
+    images: imageData.images,
+    imagePreviewUrls: imageData.imagePreviewUrls
   });
 };
 
@@ -939,77 +996,35 @@ const formatTime = (date) => {
                         </select>
                       </div>
                       
-                      {/* Image Upload */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Images
-                        </label>
-                        <div 
-                          className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors duration-200"
-                          onDragOver={handleDragOver}
-                          onDrop={handleDrop}
-                        >
-                          <div className="space-y-1 text-center">
-                            <Camera size={28} className="mx-auto text-gray-400" />
-                            <div className="flex text-sm text-gray-600">
-                              <label
-                                htmlFor="image-upload"
-                                className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none"
-                              >
-                                <span>Upload images</span>
-                                <input 
-                                  id="image-upload" 
-                                  name="image-upload" 
-                                  type="file" 
-                                  className="sr-only" 
-                                  multiple
-                                  accept="image/*"
-                                  onChange={handleFileChange}
-                                />
-                              </label>
-                              <p className="pl-1">or drag and drop</p>
-                            </div>
-                            <p className="text-xs text-gray-500">
-                              PNG, JPG, GIF up to 10MB
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Image previews with loading indicator */}
-                        {newRequest.imagePreviewUrls.length > 0 && (
-                          <div className="mt-4 grid grid-cols-3 gap-3">
-                            {newRequest.imagePreviewUrls.map((url, index) => (
-                              <div key={index} className="relative group">
-                                <img 
-                                  src={url} 
-                                  alt={`Preview ${index}`}
-                                  className="h-24 w-full object-cover rounded-lg shadow-sm" 
-                                />
-                                <button
-                                  type="button"
-                                  className="absolute top-2 right-2 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                  onClick={() => {
-                                    const updatedImages = [...newRequest.images];
-                                    updatedImages.splice(index, 1);
-                                    
-                                    const updatedPreviews = [...newRequest.imagePreviewUrls];
-                                    updatedPreviews.splice(index, 1);
-                                    
-                                    // Revoke the object URL to free up memory
-                                    URL.revokeObjectURL(url);
-                                    
-                                    setNewRequest({
-                                      ...newRequest, 
-                                      images: updatedImages,
-                                      imagePreviewUrls: updatedPreviews
-                                    });
-                                  }}
-                                >
-                                  <X size={14} />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                        <label className="block text-sm font-medium text-gray-700">Images</label>
+                        <ImageUploadComponent
+                          images={newRequest.images}
+                          imagePreviewUrls={newRequest.imagePreviewUrls}
+                          onImagesChanged={handleNewRequestImageChange}
+                          maxSize={10}
+                          maxFiles={5}
+                        />
+                      </div>
+                      {/* Add more images */}
+                      <div className="mt-6">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Add More Images</h4>
+                        <ImageUploadComponent
+                          images={additionalImages.images}
+                          imagePreviewUrls={additionalImages.imagePreviewUrls}
+                          onImagesChanged={handleAdditionalImageChange}
+                          maxSize={10}
+                          maxFiles={3}
+                        />
+                        {additionalImages.images.length > 0 && (
+                          <button
+                            type="button"
+                            className="mt-3 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            onClick={() => handleAddImagesToRequest(selectedRequest.id)}
+                            disabled={isUploadingImage}
+                          >
+                            {isUploadingImage ? 'Uploading...' : 'Upload Images'}
+                          </button>
                         )}
                       </div>
                     </form>
