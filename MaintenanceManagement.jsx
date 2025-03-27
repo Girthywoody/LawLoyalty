@@ -160,38 +160,54 @@ const showNotification = (message, type = 'info') => {
     setFilteredRequests(filtered);
   }, [filterStatus, filterUrgency, maintenanceRequests, searchTerm]);
   
-  const handleAddRequest = async () => {
-    try {
-      const requestData = {
-        title: newRequest.title,
-        description: newRequest.description,
-        urgencyLevel: newRequest.urgencyLevel,
-        location: newRequest.location,
-        createdBy: currentUser?.name || 'Current User',
-      };
-      
-      // Create the request in Firebase
-      await createMaintenanceRequest(requestData, newRequest.images);
-      
-      // Reset form
-      setNewRequest({
-        title: '',
-        description: '',
-        urgencyLevel: 3,
-        images: [],
-        location: '',
-        status: 'pending',
-        imagePreviewUrls: []
-      });
-      
-      // Close modal
-      setShowAddRequestModal(false);
-      showNotification('Maintenance request created successfully!', 'success');
-    } catch (error) {
-      console.error("Error adding request:", error);
-      showNotification('Failed to create maintenance request', 'error');
-    }
+// Add this effect to clean up object URLs when component unmounts or when form is submitted
+useEffect(() => {
+  return () => {
+    // Clean up any object URLs when component unmounts
+    newRequest.imagePreviewUrls.forEach(url => {
+      URL.revokeObjectURL(url);
+    });
   };
+}, []);
+
+// Update handleAddRequest to clean up object URLs after submission
+const handleAddRequest = async () => {
+  try {
+    const requestData = {
+      title: newRequest.title,
+      description: newRequest.description,
+      urgencyLevel: newRequest.urgencyLevel,
+      location: newRequest.location,
+      createdBy: currentUser?.name || 'Current User',
+    };
+    
+    // Create the request in Firebase
+    await createMaintenanceRequest(requestData, newRequest.images);
+    
+    // Clean up object URLs
+    newRequest.imagePreviewUrls.forEach(url => {
+      URL.revokeObjectURL(url);
+    });
+    
+    // Reset form
+    setNewRequest({
+      title: '',
+      description: '',
+      urgencyLevel: 3,
+      images: [],
+      location: '',
+      status: 'pending',
+      imagePreviewUrls: []
+    });
+    
+    // Close modal
+    setShowAddRequestModal(false);
+    showNotification('Maintenance request created successfully!', 'success');
+  } catch (error) {
+    console.error("Error adding request:", error);
+    showNotification('Failed to create maintenance request', 'error');
+  }
+};
 
   const handleReschedule = (requestId) => {
     // Simply show the schedule picker with the current date/time
