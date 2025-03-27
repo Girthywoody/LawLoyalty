@@ -1,4 +1,3 @@
-// Create a new file called Pagination.jsx
 import React from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
