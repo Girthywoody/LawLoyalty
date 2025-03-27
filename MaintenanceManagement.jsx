@@ -170,8 +170,7 @@ useEffect(() => {
   };
 }, []);
 
-// In MaintenanceManagement.jsx, update the handleAddRequest function
-
+// This function should replace your existing handleAddRequest in MaintenanceManagement.jsx
 const handleAddRequest = async () => {
   try {
     // Validate required fields
@@ -192,9 +191,6 @@ const handleAddRequest = async () => {
       location: newRequest.location,
       createdBy: currentUser?.name || 'Current User',
     };
-    
-    // Show loading notification
-    showNotification('Creating maintenance request...', 'info');
     
     // Create the request in Firebase
     await createMaintenanceRequest(requestData, newRequest.images);
@@ -220,7 +216,7 @@ const handleAddRequest = async () => {
     showNotification('Maintenance request created successfully!', 'success');
   } catch (error) {
     console.error("Error adding request:", error);
-    showNotification(`Failed to create maintenance request: ${error.message}`, 'error');
+    showNotification('Failed to create maintenance request', 'error');
   }
 };
 

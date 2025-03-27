@@ -21,22 +21,21 @@ export { doc, updateDoc, serverTimestamp };
 const maintenanceRequestsCollection = collection(db, 'maintenanceRequests');
 const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
 
-// In MaintenanceFirebase.js, update the createMaintenanceRequest function
-
-// Updated createMaintenanceRequest to use fallback method if Storage fails
-export const createMaintenanceRequest = async (requestData, imageFiles = [], useStorageFallback = true) => {
+// This should replace your existing createMaintenanceRequest in MaintenanceFirebase.js
+export const createMaintenanceRequest = async (requestData, imageFiles = []) => {
   try {
     // Array to store image download URLs
-    let imageUrls = [];
-    let storageSucceeded = true;
+    const imageUrls = [];
     
-    // Upload each image to Firebase storage and get download URLs
-    if (imageFiles.length > 0) {
+    // Only attempt to upload images if there are any
+    if (imageFiles && imageFiles.length > 0) {
       try {
         for (let i = 0; i < imageFiles.length; i++) {
           const file = imageFiles[i];
           const timestamp = Date.now();
-          const fileName = `maintenance/${timestamp}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+          // Sanitize filename to avoid issues with special characters
+          const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+          const fileName = `maintenance/${timestamp}_${safeFileName}`;
           const storageRef = ref(storage, fileName);
           
           try {
@@ -47,41 +46,13 @@ export const createMaintenanceRequest = async (requestData, imageFiles = [], use
             const downloadURL = await getDownloadURL(snapshot.ref);
             imageUrls.push(downloadURL);
           } catch (uploadError) {
-            console.error("Error uploading file to Storage:", uploadError);
-            storageSucceeded = false;
-            break; // Break the loop and try fallback method
+            console.error("Error uploading file:", uploadError);
+            // Continue with next file instead of failing completely
           }
         }
       } catch (imageError) {
-        console.error("Error processing images for Storage:", imageError);
-        storageSucceeded = false;
-      }
-      
-      // If Storage upload failed and fallback is enabled, try using Firestore instead
-      if (!storageSucceeded && useStorageFallback) {
-        try {
-          console.log("Using Firestore fallback for image storage");
-          
-          // Create base64 versions of the images for Firestore
-          const base64Images = await Promise.all(
-            imageFiles.map(file => new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.readAsDataURL(file);
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = error => reject(error);
-            }))
-          );
-          
-          // Store base64 images in Firestore
-          const result = await storeImageInFirestore(base64Images);
-          
-          // Use placeholder URLs that will need to be resolved client-side
-          imageUrls = result.imageRefs;
-        } catch (fallbackError) {
-          console.error("Fallback image storage also failed:", fallbackError);
-          // Continue without images if both methods fail
-          imageUrls = [];
-        }
+        console.error("Error processing images:", imageError);
+        // Continue without images rather than failing the whole request
       }
     }
     
@@ -89,7 +60,6 @@ export const createMaintenanceRequest = async (requestData, imageFiles = [], use
     const docRef = await addDoc(maintenanceRequestsCollection, {
       ...requestData,
       images: imageUrls,
-      usesFirestoreImages: !storageSucceeded && imageUrls.length > 0,
       status: 'pending',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -100,7 +70,6 @@ export const createMaintenanceRequest = async (requestData, imageFiles = [], use
       id: docRef.id, 
       ...requestData, 
       images: imageUrls,
-      usesFirestoreImages: !storageSucceeded && imageUrls.length > 0,
       createdAt: new Date(),
       comments: []
     };
