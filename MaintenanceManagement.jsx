@@ -170,9 +170,21 @@ useEffect(() => {
   };
 }, []);
 
-// Update handleAddRequest to clean up object URLs after submission
+// In MaintenanceManagement.jsx, update the handleAddRequest function
+
 const handleAddRequest = async () => {
   try {
+    // Validate required fields
+    if (!newRequest.title.trim()) {
+      showNotification('Please enter a title for the request', 'error');
+      return;
+    }
+    
+    if (!newRequest.location.trim()) {
+      showNotification('Please specify the location of the issue', 'error');
+      return;
+    }
+    
     const requestData = {
       title: newRequest.title,
       description: newRequest.description,
@@ -180,6 +192,9 @@ const handleAddRequest = async () => {
       location: newRequest.location,
       createdBy: currentUser?.name || 'Current User',
     };
+    
+    // Show loading notification
+    showNotification('Creating maintenance request...', 'info');
     
     // Create the request in Firebase
     await createMaintenanceRequest(requestData, newRequest.images);
@@ -205,7 +220,7 @@ const handleAddRequest = async () => {
     showNotification('Maintenance request created successfully!', 'success');
   } catch (error) {
     console.error("Error adding request:", error);
-    showNotification('Failed to create maintenance request', 'error');
+    showNotification(`Failed to create maintenance request: ${error.message}`, 'error');
   }
 };
 

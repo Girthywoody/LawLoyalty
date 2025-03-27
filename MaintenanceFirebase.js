@@ -21,31 +21,75 @@ export { doc, updateDoc, serverTimestamp };
 const maintenanceRequestsCollection = collection(db, 'maintenanceRequests');
 const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
 
-// Updated createMaintenanceRequest function to handle image uploads
-export const createMaintenanceRequest = async (requestData, imageFiles = []) => {
+// In MaintenanceFirebase.js, update the createMaintenanceRequest function
+
+// Updated createMaintenanceRequest to use fallback method if Storage fails
+export const createMaintenanceRequest = async (requestData, imageFiles = [], useStorageFallback = true) => {
   try {
     // Array to store image download URLs
-    const imageUrls = [];
+    let imageUrls = [];
+    let storageSucceeded = true;
     
     // Upload each image to Firebase storage and get download URLs
-    for (let i = 0; i < imageFiles.length; i++) {
-      const file = imageFiles[i];
-      const timestamp = Date.now();
-      const fileName = `maintenance/${timestamp}_${file.name}`;
-      const storageRef = ref(storage, fileName);
+    if (imageFiles.length > 0) {
+      try {
+        for (let i = 0; i < imageFiles.length; i++) {
+          const file = imageFiles[i];
+          const timestamp = Date.now();
+          const fileName = `maintenance/${timestamp}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+          const storageRef = ref(storage, fileName);
+          
+          try {
+            // Upload the file
+            const snapshot = await uploadBytes(storageRef, file);
+            
+            // Get the download URL
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            imageUrls.push(downloadURL);
+          } catch (uploadError) {
+            console.error("Error uploading file to Storage:", uploadError);
+            storageSucceeded = false;
+            break; // Break the loop and try fallback method
+          }
+        }
+      } catch (imageError) {
+        console.error("Error processing images for Storage:", imageError);
+        storageSucceeded = false;
+      }
       
-      // Upload the file
-      const snapshot = await uploadBytes(storageRef, file);
-      
-      // Get the download URL
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      imageUrls.push(downloadURL);
+      // If Storage upload failed and fallback is enabled, try using Firestore instead
+      if (!storageSucceeded && useStorageFallback) {
+        try {
+          console.log("Using Firestore fallback for image storage");
+          
+          // Create base64 versions of the images for Firestore
+          const base64Images = await Promise.all(
+            imageFiles.map(file => new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.readAsDataURL(file);
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = error => reject(error);
+            }))
+          );
+          
+          // Store base64 images in Firestore
+          const result = await storeImageInFirestore(base64Images);
+          
+          // Use placeholder URLs that will need to be resolved client-side
+          imageUrls = result.imageRefs;
+        } catch (fallbackError) {
+          console.error("Fallback image storage also failed:", fallbackError);
+          // Continue without images if both methods fail
+          imageUrls = [];
+        }
+      }
     }
     
-    // Create request document with image URLs
+    // Create request document with image URLs (even if empty)
     const docRef = await addDoc(maintenanceRequestsCollection, {
       ...requestData,
       images: imageUrls,
+      usesFirestoreImages: !storageSucceeded && imageUrls.length > 0,
       status: 'pending',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -56,6 +100,7 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
       id: docRef.id, 
       ...requestData, 
       images: imageUrls,
+      usesFirestoreImages: !storageSucceeded && imageUrls.length > 0,
       createdAt: new Date(),
       comments: []
     };
@@ -64,6 +109,7 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
     throw error;
   }
 };
+
 
 export const scheduleMaintenanceEvent = async (requestId, eventData) => {
   try {
