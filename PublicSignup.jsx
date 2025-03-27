@@ -51,6 +51,7 @@ const PublicSignup = () => {
           { id: "flooring-and-more-superstore", name: "Flooring and More Superstore"},
           { id: "wellness-studio", name: "Wellness Studio"},
           { id: "east-side-marios-orillia", name: "East Side Mario's Orillia"},
+          { id: "jlaw-workers", name: "JLaw Worker's"},
           {
             id: "lot-88",
             name: "Lot 88",
