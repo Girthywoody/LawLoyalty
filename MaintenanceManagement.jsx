@@ -1006,27 +1006,6 @@ const formatTime = (date) => {
                           maxFiles={5}
                         />
                       </div>
-                      {/* Add more images */}
-                      <div className="mt-6">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Add More Images</h4>
-                        <ImageUploadComponent
-                          images={additionalImages.images}
-                          imagePreviewUrls={additionalImages.imagePreviewUrls}
-                          onImagesChanged={handleAdditionalImageChange}
-                          maxSize={10}
-                          maxFiles={3}
-                        />
-                        {additionalImages.images.length > 0 && (
-                          <button
-                            type="button"
-                            className="mt-3 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            onClick={() => handleAddImagesToRequest(selectedRequest.id)}
-                            disabled={isUploadingImage}
-                          >
-                            {isUploadingImage ? 'Uploading...' : 'Upload Images'}
-                          </button>
-                        )}
-                      </div>
                     </form>
                   </div>
                 </div>
@@ -1275,6 +1254,26 @@ const formatTime = (date) => {
                                     <MessageCircle size={16} className="mr-2" />
                                     Post
                                   </button>
+                                </div>
+                                <div className="mt-6">
+                                  <h4 className="text-sm font-medium text-gray-700 mb-2">Add More Images</h4>
+                                  <ImageUploadComponent
+                                    images={additionalImages.images}
+                                    imagePreviewUrls={additionalImages.imagePreviewUrls}
+                                    onImagesChanged={handleAdditionalImageChange}
+                                    maxSize={10}
+                                    maxFiles={3}
+                                  />
+                                  {additionalImages.images.length > 0 && (
+                                    <button
+                                      type="button"
+                                      className="mt-3 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                      onClick={() => handleAddImagesToRequest(selectedRequest.id)}
+                                      disabled={isUploadingImage}
+                                    >
+                                      {isUploadingImage ? 'Uploading...' : 'Upload Images'}
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>
