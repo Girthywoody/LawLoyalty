@@ -40,7 +40,7 @@ import ImageUploadComponent from './ImageUploadComponent';
 // Placeholder for your Firebase imports
 // import { collection, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDocs, onSnapshot, doc, serverTimestamp } from 'firebase/firestore';
 // import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-// import { db, storage } from './firebase';
+import { db } from './firebase';
 
 const MaintenanceManagement = ({ currentUser }) => {
   // State variables
@@ -59,6 +59,7 @@ const MaintenanceManagement = ({ currentUser }) => {
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(new Date());
   const [scheduleTime, setScheduleTime] = useState('09:00');
+  const [expandedImage, setExpandedImage] = useState(null);
   const [additionalImages, setAdditionalImages] = useState({
     images: [],
     imagePreviewUrls: []
@@ -79,6 +80,14 @@ const MaintenanceManagement = ({ currentUser }) => {
     status: 'pending',
     imagePreviewUrls: []
   });
+
+  const handleImageClick = (imageUrl) => {
+    setExpandedImage(imageUrl);
+  };
+
+  const handleCloseExpandedImage = () => {
+    setExpandedImage(null);
+  };
   
   // Comment state
   const [newComment, setNewComment] = useState('');
@@ -1200,21 +1209,32 @@ const formatTime = (date) => {
                             
                             {/* Images */}
                             {selectedRequest.images && selectedRequest.images.length > 0 && (
-                              <div className="mt-4">
-                                <h4 className="text-sm font-medium text-gray-700 mb-2">Images</h4>
-                                <div className="grid grid-cols-2 gap-3">
-                                  {selectedRequest.images.map((image, index) => (
+                            <div className="mt-4">
+                              <h4 className="text-sm font-medium text-gray-700 mb-2">Images</h4>
+                              <div className="grid grid-cols-2 gap-3">
+                                {selectedRequest.images.map((image, index) => (
+                                  <div 
+                                    key={index} 
+                                    className="relative cursor-pointer rounded-lg overflow-hidden hover:opacity-90 transition-opacity duration-200"
+                                    onClick={() => handleImageClick(image)}
+                                  >
                                     <img 
-                                      key={index}
                                       src={image}
                                       alt={`Issue ${index + 1}`}
                                       className="h-48 w-full object-cover rounded-lg shadow-sm"
                                     />
-                                  ))}
-                                </div>
+                                    <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 flex items-center justify-center transition-all duration-200">
+                                      <div className="opacity-0 hover:opacity-100 text-white">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            )}
-                            
+                            </div>
+                          )}
                             {/* Comments */}
                             <div className="mt-6">
                             <h4 className="text-sm font-medium text-gray-300 mb-3">Comments</h4>
@@ -1458,7 +1478,27 @@ const formatTime = (date) => {
           </div>
         </div>
       )}
-      
+      {expandedImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
+          onClick={handleCloseExpandedImage}
+        >
+          <div className="relative max-w-6xl max-h-full">
+            <button
+              onClick={handleCloseExpandedImage}
+              className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-70 transition-all duration-200"
+            >
+              <X size={24} />
+            </button>
+            <img 
+              src={expandedImage} 
+              alt="Expanded view" 
+              className="max-h-[90vh] max-w-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
