@@ -1428,25 +1428,39 @@ if (view === 'admin') {
                           <option value="Manager">Manager</option>
                         </select>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                          value={editEmployee.restaurantId || ''}
-                          onChange={(e) => {
-                            const restaurantId = e.target.value;
-                            setEditEmployee({
-                              ...editEmployee, 
-                              restaurantId: restaurantId,
-                              restaurantName: restaurantId ? getRestaurantName(restaurantId) : null
-                            });
-                          }}
-                        >
-                          <option value="">None</option>
-                          {RESTAURANTS.map(r => (
-                            <option key={r.id} value={r.id}>{r.name}</option>
-                          ))}
-                        </select>
-                      </td>
+{/* This code should replace the current location dropdown in the employee editing form */}
+<td className="px-6 py-4 whitespace-nowrap">
+  <select
+    className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+    value={editEmployee.restaurantId || ''}
+    onChange={(e) => {
+      const restaurantId = e.target.value;
+      setEditEmployee({
+        ...editEmployee, 
+        restaurantId: restaurantId,
+        restaurantName: restaurantId ? getRestaurantName(restaurantId) : null
+      });
+    }}
+  >
+    <option value="">None</option>
+    {/* Display all restaurants */}
+    {RESTAURANTS.map(restaurant => (
+      <>
+        {/* Main restaurant option */}
+        <option key={restaurant.id} value={restaurant.id}>
+          {restaurant.name}
+        </option>
+        
+        {/* Display location options if they exist */}
+        {restaurant.locations && restaurant.locations.map(location => (
+          <option key={location.id} value={location.id}>
+            {restaurant.name} - {location.name}
+          </option>
+        ))}
+      </>
+    ))}
+  </select>
+</td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={saveEmployeeEditToFirebase}
