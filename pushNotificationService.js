@@ -40,6 +40,26 @@ export const requestForToken = async (userId) => {
   }
 };
 
+// Add this function to pushNotificationService.js
+export const sendNotification = async (title, body, userId) => {
+  try {
+    // Create a notification in the notifications collection
+    await addDoc(collection(db, 'notifications'), {
+      title: title,
+      body: body,
+      userId: userId,
+      createdAt: new Date(),
+      read: false,
+      type: 'maintenance'
+    });
+    console.log('Notification stored in database');
+    return true;
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    return false;
+  }
+};
+
 
 
 // Listen for FCM messages when app is in foreground

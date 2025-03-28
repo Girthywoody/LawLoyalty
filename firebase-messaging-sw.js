@@ -14,15 +14,37 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background messages
+// This is critical for handling background notifications
 messaging.onBackgroundMessage((payload) => {
-  console.log('Background message received:', payload);
+  console.log('[SW] Background message received:', payload);
   
-  const notificationTitle = payload.notification.title;
+  // Customize notification here
+  const notificationTitle = payload.notification.title || 'New Notification';
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: '../logo.jpg' // Replace with your app's icon
+    body: payload.notification.body || '',
+    icon: '/logo.jpg', 
+    tag: payload.notification.tag || 'maintenance-notification',
+    data: payload.data
   };
   
   return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+self.addEventListener('notificationclick', function(event) {
+  console.log('[SW] Notification click received');
+  
+  event.notification.close();
+  
+  // This looks to see if the current is already open and focuses if it is
+  event.waitUntil(clients.matchAll({
+    type: "window"
+  }).then(function(clientList) {
+    for (var i = 0; i < clientList.length; i++) {
+      var client = clientList[i];
+      if (client.url.includes('/') && 'focus' in client)
+        return client.focus();
+    }
+    if (clients.openWindow)
+      return clients.openWindow('/');
+  }));
 });

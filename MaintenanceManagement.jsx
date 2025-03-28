@@ -37,12 +37,10 @@ import {
 
 import ImageUploadComponent from './ImageUploadComponent';
 import { requestForToken, onMessageListener } from './pushNotificationService';
+import { Bell } from 'lucide-react';  
+import { collection, query, where, getDocs, getDoc } from 'firebase/firestore';
+import { sendNotification } from './pushNotificationService';
 
-
-
-// Placeholder for your Firebase imports
-// import { collection, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDocs, onSnapshot, doc, serverTimestamp } from 'firebase/firestore';
-// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const MaintenanceManagement = ({ currentUser }) => {
   // State variables
@@ -291,6 +289,28 @@ const handleAddRequest = async () => {
     
     // Create the request in Firebase
     await createMaintenanceRequest(requestData, newRequest.images);
+
+    try {
+      // Notify admins and managers about the new request
+      const adminSnapshot = await getDocs(
+        query(collection(db, 'employees'), where('jobTitle', 'in', ['Admin', 'Manager']))
+      );
+      
+      const adminUids = adminSnapshot.docs
+        .map(doc => doc.data().uid)
+        .filter(uid => uid);
+      
+      // Send notification to each admin/manager
+      for (const uid of adminUids) {
+        await sendNotification(
+          'New Maintenance Request', 
+          `New request: ${newRequest.title}`, 
+          uid
+        );
+      }
+    } catch (error) {
+      console.error('Error sending request notification:', error);
+    }
     
     // Clean up object URLs
     newRequest.imagePreviewUrls.forEach(url => {
@@ -442,9 +462,22 @@ const handleAddRequest = async () => {
       };
       
       const newCommentObj = await addCommentToRequest(requestId, commentData);
+      try {
+        // Get the request creator's user ID
+        const requestCreatorUid = selectedRequest.createdByUid;
+        
+        // Don't notify if the comment author is the same as the request creator
+        if (requestCreatorUid && requestCreatorUid !== currentUser?.uid) {
+          await sendNotification(
+            'New Comment on Your Request',
+            `${currentUser?.name} commented on your request: ${selectedRequest.title}`,
+            requestCreatorUid
+          );
+        }
+      } catch (error) {
+        console.error('Error sending comment notification:', error);
+      }
       
-      // Update the selected request locally so we don't have to reload to see the new comment
-// Update the selected request locally so we don't have to reload to see the new comment
     setSelectedRequest({
       ...selectedRequest,
       comments: [...(selectedRequest.comments || []), newCommentObj]
@@ -713,6 +746,23 @@ const formatTime = (date) => {
                 </button>
               </div>
             </div>
+            {/* Add this near the other buttons in the header section */}
+          <button
+            onClick={() => {
+              requestForToken(currentUser?.uid).then(token => {
+                if (token) {
+                  sendNotification('Test Notification', 'This is a test notification from the maintenance system', currentUser?.uid);
+                  showNotification('Test notification sent! Check your device.', 'success');
+                } else {
+                  showNotification('Notification permission denied or token unavailable', 'error');
+                }
+              });
+            }}
+            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          >
+            <Bell size={16} className="mr-2" />
+            Test Notification
+          </button>
           </div>
 
 {/* Main Content Area */}
