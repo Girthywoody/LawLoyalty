@@ -7,11 +7,12 @@ const firebaseMessaging = getMessaging();
 // Function to get FCM token
 export const requestForToken = async (userId) => {
   try {
-    // Request permission first (required for Safari and iOS)
+    console.log('Requesting permission...');
     const permission = await Notification.requestPermission();
+    console.log('Permission result:', permission);
     
     if (permission === 'granted') {
-      // Get token
+      console.log('Permission granted, getting token...');
       const token = await getToken(firebaseMessaging, {
         vapidKey: 'BNoGljytf8dipq_SHHXwKnY7E0yRXV7SkbBqhpLvZHXnWWD-WaO0MtjKdJM8ZOc3oJtXEhF_46LgngzLsGpIe_c' // Replace with your actual VAPID key from Firebase console
       });
@@ -38,6 +39,8 @@ export const requestForToken = async (userId) => {
     return null;
   }
 };
+
+
 
 // Listen for FCM messages when app is in foreground
 export const onMessageListener = () => {
