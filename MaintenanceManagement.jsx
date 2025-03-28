@@ -39,7 +39,7 @@ import ImageUploadComponent from './ImageUploadComponent';
 import { requestForToken, onMessageListener } from './pushNotificationService';
 import { Bell } from 'lucide-react';  
 import { sendNotification } from './pushNotificationService';
-import { getDoc, getDocs, query, where, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore';
 
 const MaintenanceManagement = ({ currentUser, isMaintenance = false }) => {  // State variables
   const [notification, setNotification] = useState(null);
@@ -133,12 +133,17 @@ useEffect(() => {
     try {
       // Only request if the user is logged in
       if (currentUser?.id) {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          const token = await requestForToken(currentUser.id);
-          if (token) {
-            console.log('FCM token acquired and stored');
+        // Check if Notification API is available in the browser
+        if ('Notification' in window) {
+          const permission = await window.Notification.requestPermission();
+          if (permission === 'granted') {
+            const token = await requestForToken(currentUser.id);
+            if (token) {
+              console.log('FCM token acquired and stored');
+            }
           }
+        } else {
+          console.log('Notification API not supported in this browser');
         }
       }
     } catch (error) {
