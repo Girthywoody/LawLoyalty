@@ -16,7 +16,10 @@ import {
   MapPin,
   Mail,
   Wrench,
-  ChevronLeft
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
 } from 'lucide-react';
 import MaintenanceManagement from './MaintenanceManagement';
 import { subscribeToUserCooldown } from './RestaurantAnalytics';
