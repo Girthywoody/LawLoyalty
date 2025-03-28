@@ -92,23 +92,7 @@ const MaintenanceManagement = ({ currentUser }) => {
   // Comment state
   const [newComment, setNewComment] = useState('');
   
-  useEffect(() => {
-    setIsLoading(true);
-    
-    // Subscribe to maintenance requests
-    const unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
-      setMaintenanceRequests(requests);
-      setFilteredRequests(requests);
-      setIsLoading(false);
-    });
-    
-    // Subscribe to maintenance events
-    const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
-      setMaintenanceEvents(events);
-    });
-
-
-// Notification component
+  // Notification component
   const Notification = ({ message, type }) => {
     const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
                     type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
@@ -133,6 +117,24 @@ const showNotification = (message, type = 'info') => {
     setNotification(null);
   }, 3000);
 };
+  
+  useEffect(() => {
+    setIsLoading(true);
+    
+    // Subscribe to maintenance requests
+    const unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
+      setMaintenanceRequests(requests);
+      setFilteredRequests(requests);
+      setIsLoading(false);
+    });
+    
+    // Subscribe to maintenance events
+    const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
+      setMaintenanceEvents(events);
+    });
+
+
+
     
     // Cleanup on unmount
     return () => {
@@ -330,6 +332,12 @@ const handleAddRequest = async () => {
           : req
       );
       setMaintenanceRequests(updatedRequests);
+
+      showNotification('Maintenance scheduled for immediate attention!', 'success');
+
+
+      showNotification('Maintenance scheduled successfully!', 'success');
+      setShowSchedulePicker(false);
       
       showNotification('Maintenance scheduled successfully!', 'success');
       setShowSchedulePicker(false);
@@ -405,13 +413,14 @@ const handleAddRequest = async () => {
       const newCommentObj = await addCommentToRequest(requestId, commentData);
       
       // Update the selected request locally so we don't have to reload to see the new comment
-      setSelectedRequest({
-        ...selectedRequest,
-        comments: [...(selectedRequest.comments || []), newCommentObj]
-      });
-      
-      setNewComment('');
-      showNotification('Comment added successfully!', 'success');
+// Update the selected request locally so we don't have to reload to see the new comment
+    setSelectedRequest({
+      ...selectedRequest,
+      comments: [...(selectedRequest.comments || []), newCommentObj]
+    });
+
+    setNewComment('');
+    showNotification('Comment added successfully!', 'success');
     } catch (error) {
       console.error("Error adding comment:", error);
       showNotification('Failed to add comment', 'error');
@@ -1087,7 +1096,7 @@ const formatTime = (date) => {
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         // Update urgency in Firestore
-                                        const requestRef = doc('maintenanceRequests', selectedRequest.id);
+                                        const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
                                         updateDoc(requestRef, { 
                                           urgencyLevel: selectedRequest.urgencyLevel,
                                           updatedAt: serverTimestamp() 
@@ -1136,30 +1145,6 @@ const formatTime = (date) => {
                               </div>
                             </div>
 
-                            {isEditingUrgency && (
-                              <div className="mb-4">
-                                <select
-                                  className="block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-                                  value={selectedRequest.urgencyLevel}
-                                  onChange={(e) => {
-                                    const newUrgencyLevel = parseInt(e.target.value);
-                                    setSelectedRequest({...selectedRequest, urgencyLevel: newUrgencyLevel});
-                                    // Update urgency in Firestore
-                                    const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
-                                    updateDoc(requestRef, { 
-                                      urgencyLevel: newUrgencyLevel,
-                                      updatedAt: serverTimestamp() 
-                                    });
-                                  }}
-                                >
-                                  <option value="1">1 - Very Low</option>
-                                  <option value="2">2 - Low</option>
-                                  <option value="3">3 - Medium</option>
-                                  <option value="4">4 - High</option>
-                                  <option value="5">5 - Critical</option>
-                                </select>
-                              </div>
-                            )}
                             
                             {/* Location & Created Info */}
                             <div className="flex justify-between text-sm text-gray-500 mb-4">
