@@ -31,7 +31,6 @@ import {
   completeMaintenanceRequest,
   doc,
   updateDoc,
-  serverTimestamp,
   db
 } from './MaintenanceFirebase';
 
