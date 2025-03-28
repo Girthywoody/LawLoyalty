@@ -29,19 +29,21 @@ import {
   scheduleMaintenanceEvent, 
   addCommentToRequest, 
   completeMaintenanceRequest,
-  deleteMaintenanceRequest,
   doc,
   updateDoc,
+  serverTimestamp,
   db
 } from './MaintenanceFirebase';
 
 import ImageUploadComponent from './ImageUploadComponent';
-import { requestForToken, onMessageListener } from './pushNotificationService';
-import { Bell } from 'lucide-react';  
-import { sendNotification } from './pushNotificationService';
-import { collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore';
 
-const MaintenanceManagement = ({ currentUser, isMaintenance = false }) => {  // State variables
+
+// Placeholder for your Firebase imports
+// import { collection, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDocs, onSnapshot, doc, serverTimestamp } from 'firebase/firestore';
+// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+const MaintenanceManagement = ({ currentUser }) => {
+  // State variables
   const [notification, setNotification] = useState(null);
   const [activeView, setActiveView] = useState('requests'); // 'requests' or 'calendar'
   const [maintenanceRequests, setMaintenanceRequests] = useState([]);
@@ -58,12 +60,6 @@ const MaintenanceManagement = ({ currentUser, isMaintenance = false }) => {  // 
   const [scheduleDate, setScheduleDate] = useState(new Date());
   const [scheduleTime, setScheduleTime] = useState('09:00');
   const [expandedImage, setExpandedImage] = useState(null);
-  const [notificationVisible, setNotificationVisible] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
-  const [notificationType, setNotificationType] = useState('info');
-  const [pushNotification, setPushNotification] = useState({title: '', body: ''});
-  
-
   const [additionalImages, setAdditionalImages] = useState({
     images: [],
     imagePreviewUrls: []
@@ -73,7 +69,6 @@ const MaintenanceManagement = ({ currentUser, isMaintenance = false }) => {  // 
   const [isEditingUrgency, setIsEditingUrgency] = useState(false);  
   // Current Month for Calendar View
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
   
   // Form state for new request
   const [newRequest, setNewRequest] = useState({
@@ -97,131 +92,56 @@ const MaintenanceManagement = ({ currentUser, isMaintenance = false }) => {  // 
   // Comment state
   const [newComment, setNewComment] = useState('');
   
-// Notification component
-const Notification = ({ message, type }) => {
-  const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
-                  type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
-                  'bg-blue-100 border-blue-400 text-blue-700';
-  
-  const icon = type === 'success' ? <Check size={20} className="text-green-500" /> :
-              type === 'error' ? <X size={20} className="text-red-500" /> :
-              null;
-  
-  return (
-    <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg border ${bgColor} shadow-lg flex items-center z-50 max-w-xs`}>
-      {icon && <span className="mr-2 flex-shrink-0">{icon}</span>}
-      <span className="text-sm">{message}</span>
-    </div>
-  );
-};
+  // Notification component
+  const Notification = ({ message, type }) => {
+    const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
+                    type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
+                    'bg-blue-100 border-blue-400 text-blue-700';
+    
+    const icon = type === 'success' ? <Check size={20} className="text-green-500" /> :
+                type === 'error' ? <X size={20} className="text-red-500" /> :
+                null;
+    
+    return (
+      <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg border ${bgColor} shadow-lg flex items-center z-50`}>
+        {icon && <span className="mr-2">{icon}</span>}
+        <span>{message}</span>
+      </div>
+    );
+  };
 
-// Improved show notification function
+// Show notification
 const showNotification = (message, type = 'info') => {
-  console.log('Showing notification:', message, type);
-  setNotificationMessage(message);
-  setNotificationType(type);
-  setNotificationVisible(true);
-  
-  // Auto-hide after 3 seconds
+  setNotification({ message, type });
   setTimeout(() => {
-    setNotificationVisible(false);
+    setNotification(null);
   }, 3000);
 };
-
-useEffect(() => {
-  const requestNotificationPermission = async () => {
-    try {
-      // Only request if the user is logged in
-      if (currentUser?.id) {
-        // Check if Notification API is available in the browser
-        if ('Notification' in window) {
-          const permission = await window.Notification.requestPermission();
-          if (permission === 'granted') {
-            const token = await requestForToken(currentUser.id);
-            if (token) {
-              console.log('FCM token acquired and stored');
-            }
-          }
-        } else {
-          console.log('Notification API not supported in this browser');
-        }
-      }
-    } catch (error) {
-      console.error('Error requesting notification permission:', error);
-    }
-  };
   
-  requestNotificationPermission();
-}, [currentUser?.id]);
-
-  
-// Modify the useEffect that fetches maintenance requests to filter for General Managers:
-useEffect(() => {
-  setIsLoading(true);
-  
-  // Subscribe to maintenance requests
-  let unsubRequestsSnapshot;
-  
-  if (currentUser?.jobTitle === 'General Manager' && !isMaintenance) {
-    // For General Managers, show requests they created
-    const requestsRef = collection(db, 'maintenanceRequests');
-    const q = query(requestsRef, where("createdByUid", "==", currentUser.id), orderBy("createdAt", "desc"));
+  useEffect(() => {
+    setIsLoading(true);
     
-    unsubRequestsSnapshot = onSnapshot(q, (snapshot) => {
-      const requests = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date()
-      }));
+    // Subscribe to maintenance requests
+    const unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
       setMaintenanceRequests(requests);
       setFilteredRequests(requests);
       setIsLoading(false);
     });
-  } else if (isMaintenance || currentUser?.jobTitle === 'Admin') {
-    // For Maintenance or Admin roles, show all requests
-    unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
-      setMaintenanceRequests([]);
-      setFilteredRequests([]);
-      setIsLoading(false);
+    
+    // Subscribe to maintenance events
+    const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
+      setMaintenanceEvents(events);
     });
-  }
-  
-  // Subscribe to maintenance events
-  const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
-    setMaintenanceEvents(events);
-  });
-  
-  // Cleanup on unmount
-  return () => {
-    unsubRequestsSnapshot && unsubRequestsSnapshot();
-    unsubEventsSnapshot && unsubEventsSnapshot();
-  };
-}, [currentUser?.id, currentUser?.jobTitle, isMaintenance]);
 
 
-  useEffect(() => {
-    // Request notification permission
-    if ('Notification' in window) {
-      requestForToken(currentUser?.uid);
-    }
+
     
-    // Listen for messages when app is in foreground
-    const unsubscribe = onMessageListener().then(payload => {
-      setPushNotification({
-        title: payload.notification.title,
-        body: payload.notification.body
-      });
-      
-      // Also show an in-app notification
-      showNotification(payload.notification.body, 'info');
-    }).catch(err => console.log('Failed to receive foreground notification:', err));
-    
+    // Cleanup on unmount
     return () => {
-      // Clean up listener if component unmounts
-      if (unsubscribe) unsubscribe();
+      unsubRequestsSnapshot && unsubRequestsSnapshot();
+      unsubEventsSnapshot && unsubEventsSnapshot();
     };
-  }, [currentUser?.uid]);
+  }, []);
   
   // Apply filters
   useEffect(() => {
@@ -278,7 +198,6 @@ const handleAdditionalImageChange = (imageData) => {
 // Function to handle adding images to an existing request
 const handleAddImagesToRequest = async (requestId) => {
   if (additionalImages.images.length === 0) return;
-  showNotification('Images added successfully', 'success');
   
   try {
     setIsUploadingImage(true);
@@ -311,6 +230,7 @@ const handleAddImagesToRequest = async (requestId) => {
   }
 };
 
+// This function should replace your existing handleAddRequest in MaintenanceManagement.jsx
 const handleAddRequest = async () => {
   try {
     // Validate required fields
@@ -330,10 +250,6 @@ const handleAddRequest = async () => {
       urgencyLevel: newRequest.urgencyLevel,
       location: newRequest.location,
       createdBy: currentUser?.name || 'Current User',
-      createdByUid: currentUser?.id || null, // Add this line to store the user ID
-      status: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
     
     // Create the request in Firebase
@@ -358,8 +274,6 @@ const handleAddRequest = async () => {
     // Close modal
     setShowAddRequestModal(false);
     showNotification('Maintenance request created successfully!', 'success');
-    
-    // The notification will be handled by the Cloud Function
   } catch (error) {
     console.error("Error adding request:", error);
     showNotification('Failed to create maintenance request', 'error');
@@ -418,7 +332,13 @@ const handleAddRequest = async () => {
           : req
       );
       setMaintenanceRequests(updatedRequests);
-  
+
+      showNotification('Maintenance scheduled for immediate attention!', 'success');
+
+
+      showNotification('Maintenance scheduled successfully!', 'success');
+      setShowSchedulePicker(false);
+      
       showNotification('Maintenance scheduled successfully!', 'success');
       setShowSchedulePicker(false);
     } catch (error) {
@@ -488,23 +408,19 @@ const handleAddRequest = async () => {
       const commentData = {
         text: newComment,
         createdBy: currentUser?.name || 'Current User',
-        createdByUid: currentUser?.id || null, // Add this line
-        createdAt: new Date(),
-        id: `comment_${Date.now()}` // Add an ID for the comment
       };
       
       const newCommentObj = await addCommentToRequest(requestId, commentData);
       
-      // Update the selected request locally
-      setSelectedRequest({
-        ...selectedRequest,
-        comments: [...(selectedRequest.comments || []), newCommentObj]
-      });
-  
-      setNewComment('');
-      showNotification('Comment added successfully!', 'success');
-      
-      // The notification will be handled by the Cloud Function
+      // Update the selected request locally so we don't have to reload to see the new comment
+// Update the selected request locally so we don't have to reload to see the new comment
+    setSelectedRequest({
+      ...selectedRequest,
+      comments: [...(selectedRequest.comments || []), newCommentObj]
+    });
+
+    setNewComment('');
+    showNotification('Comment added successfully!', 'success');
     } catch (error) {
       console.error("Error adding comment:", error);
       showNotification('Failed to add comment', 'error');
@@ -591,7 +507,6 @@ const handleDrop = (e) => {
   }
 };
 
-
 // Common function for both drag&drop and file input
 const handleFileSelection = (filesArray) => {
   // Validate file types and sizes
@@ -624,82 +539,6 @@ const handleFileSelection = (filesArray) => {
   });
 };
 
-// const testNotification = async () => {
-//   try {
-//     // Request notification permission first
-//     const permission = await Notification.requestPermission();
-    
-//     if (permission === 'granted') {
-//       // Show a local notification (this doesn't use FCM)
-//       new Notification('Test Notification', {
-//         body: 'This is a simple browser notification test',
-//         icon: '/logo.jpg'
-//       });
-      
-//       showNotification('Browser notification sent!', 'success');
-      
-//       // Store the notification in Firestore for tracking
-//       const token = await requestForToken(currentUser?.uid);
-//       if (token) {
-//         // This uses doc and setDoc which you already have access to
-//         await setDoc(doc(db, 'notifications', Date.now().toString()), {
-//           title: 'Test Notification',
-//           body: 'This is a test notification from maintenance system',
-//           userId: currentUser?.uid,
-//           token: token,
-//           createdAt: new Date(),
-//           read: false,
-//           type: 'test'
-//         });
-        
-//         showNotification('Notification saved to database', 'success');
-//       }
-//     } else {
-//       showNotification('Notification permission denied', 'error');
-//     }
-//   } catch (error) {
-//     console.error('Notification test error:', error);
-//     showNotification('Error testing notifications: ' + error.message, 'error');
-//   }
-// };
-
-// const TestNotificationButton = () => (
-//   <button
-//     onClick={async () => {
-//       try {
-//         // First ensure we have a token
-//         const token = await requestForToken(currentUser?.id);
-//         if (!token) {
-//           showNotification('Failed to get notification token', 'error');
-//           return;
-//         }
-        
-//         // Create a test notification document in Firestore
-//         // This will trigger our Cloud Function
-//         await addDoc(collection(db, 'maintenanceRequests'), {
-//           title: 'Test Notification Request',
-//           description: 'This is a test request to verify notifications',
-//           location: 'Test Location',
-//           urgencyLevel: 3,
-//           createdBy: currentUser?.name || 'Test User',
-//           createdByUid: currentUser?.id,
-//           status: 'pending',
-//           createdAt: serverTimestamp(),
-//           updatedAt: serverTimestamp(),
-//           isTest: true // Flag to identify test requests
-//         });
-        
-//         showNotification('Test request created! You should receive a notification shortly.', 'success');
-//       } catch (error) {
-//         console.error('Error sending test notification:', error);
-//         showNotification('Error sending test notification: ' + error.message, 'error');
-//       }
-//     }}
-//     className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700"
-//   >
-//     Test FCM Notification
-//   </button>
-// );
 
   
   const generateCalendarDays = () => {
@@ -808,61 +647,43 @@ const formatTime = (date) => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white text-gray-900">
-      {notificationVisible && <Notification message={notificationMessage} type={notificationType} />}      
-  
-      {/* Navigation Tabs - Only show for Maintenance and Admin roles */}
-      {(isMaintenance || currentUser?.jobTitle === 'Admin') && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex">
-              <button
-                onClick={() => setActiveView('requests')}
-                className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
-                  activeView === 'requests' 
-                    ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center">
-                  <AlertTriangle size={16} className="mr-2" />
-                  Maintenance Requests
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveView('calendar')}
-                className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
-                  activeView === 'calendar' 
-                    ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center">
-                  <Calendar size={16} className="mr-2" />
-                  Maintenance Calendar
-                </div>
-              </button>
+      {notification && <Notification message={notification.message} type={notification.type} />}
+      
+
+      {/* Navigation Tabs */}
+          <div className="bg-white border-b border-gray-200">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex">
+                <button
+                  onClick={() => setActiveView('requests')}
+                  className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
+                    activeView === 'requests' 
+                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <AlertTriangle size={16} className="mr-2" />
+                    Maintenance Requests
+                  </div>
+                </button>
+                <button
+                  onClick={() => setActiveView('calendar')}
+                  className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
+                    activeView === 'calendar' 
+                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <Calendar size={16} className="mr-2" />
+                    Maintenance Calendar
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-  
-      {/* General Manager header */}
-      {currentUser?.jobTitle === 'General Manager' && !isMaintenance && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto py-3 px-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">My Maintenance Requests</h2>
-              <button
-                onClick={() => setView('manager')}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <ChevronLeft size={16} className="mr-1" />
-                Back to Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 {/* Main Content Area */}
       <main className="flex-grow w-full mx-auto py-4 px-2 sm:py-6 sm:px-4 max-w-7xl">
         {/* Requests View */}
@@ -1196,15 +1017,9 @@ const formatTime = (date) => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Images</label>
                         <ImageUploadComponent
-                          images={newRequest.images || []}
-                          imagePreviewUrls={newRequest.imagePreviewUrls || []}
-                          onImagesChanged={(imageData) => {
-                            setNewRequest({
-                              ...newRequest,
-                              images: imageData.images || [],
-                              imagePreviewUrls: imageData.imagePreviewUrls || []
-                            });
-                          }}
+                          images={newRequest.images}
+                          imagePreviewUrls={newRequest.imagePreviewUrls}
+                          onImagesChanged={handleNewRequestImageChange}
                           maxSize={10}
                           maxFiles={5}
                         />
@@ -1251,24 +1066,7 @@ const formatTime = (date) => {
               <div className="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
                   <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
-                  {notificationVisible && (
-                    <div className={`fixed top-4 right-4 left-4 sm:left-auto px-4 py-3 rounded-lg border shadow-lg flex items-center z-50 
-                      ${notificationType === 'success' ? 'bg-green-100 border-green-500 text-green-800' : 
-                        notificationType === 'error' ? 'bg-red-100 border-red-500 text-red-800' : 
-                        'bg-blue-100 border-blue-500 text-blue-800'}`}
-                    >
-                      <span className="mr-2">
-                        {notificationType === 'success' ? (
-                          <Check size={20} className="text-green-600" />
-                        ) : notificationType === 'error' ? (
-                          <X size={20} className="text-red-600" />
-                        ) : (
-                          <AlertTriangle size={20} className="text-blue-600" />
-                        )}
-                      </span>
-                      <span>{notificationMessage}</span>
-                    </div>
-                  )}                  
+                    <AlertTriangle size={20} className="text-white" />
                   </div>
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                     <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
@@ -1619,71 +1417,45 @@ const formatTime = (date) => {
               <div className="bg-gray-50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
                 {selectedRequest.status === 'pending' && (
                   <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    {(isMaintenance || currentUser?.jobTitle === 'Admin') && (
-                      <>
-                        <button
-                          type="button"
-                          className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                          onClick={() => handleImmediateSchedule(selectedRequest.id)}
-                        >
-                          <Clock size={16} className="mr-2" />
-                          Go there now
-                        </button>
-                        
-                        <button
-                          type="button"
-                          className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                          onClick={() => setShowSchedulePicker(true)}
-                        >
-                          <Calendar size={16} className="mr-2" />
-                          Schedule Maintenance
-                        </button>
-                      </>
-                    )}
+                    <button
+                      type="button"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                      onClick={() => handleImmediateSchedule(selectedRequest.id)}
+                    >
+                      <Clock size={16} className="mr-2" />
+                      Go there now
+                    </button>
                     
-                    {!isMaintenance && currentUser?.jobTitle === 'General Manager' && selectedRequest.createdByUid === currentUser.id && (
-                      <button
-                        type="button"
-                        className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                        onClick={() => {
-                          // Confirm delete
-                          if (window.confirm("Are you sure you want to delete this request?")) {
-                            deleteMaintenanceRequest(selectedRequest.id);
-                            setShowDetailModal(false);
-                            showNotification("Request deleted successfully", "success");
-                          }
-                        }}
-                      >
-                        <Trash2 size={16} className="mr-2" />
-                        Delete Request
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                      onClick={() => setShowSchedulePicker(true)}
+                    >
+                      <Calendar size={16} className="mr-2" />
+                      Schedule Maintenance
+                    </button>
                   </div>
                 )}
                 
                 {selectedRequest.status === 'scheduled' && (
                   <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    {(isMaintenance || currentUser?.jobTitle === 'Admin') && (
-                      <>
-                        <button
-                          type="button"
-                          className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                          onClick={() => handleMarkAsCompleted(selectedRequest.id)}
-                        >
-                          <Check size={16} className="mr-2" />
-                          Mark as Completed
-                        </button>
-                        
-                        <button
-                          type="button"
-                          className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                          onClick={() => handleReschedule(selectedRequest.id)}
-                        >
-                          <Calendar size={16} className="mr-2" />
-                          Reschedule
-                        </button>
-                      </>
-                    )}
+                    <button
+                      type="button"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                      onClick={() => handleMarkAsCompleted(selectedRequest.id)}
+                    >
+                      <Check size={16} className="mr-2" />
+                      Mark as Completed
+                    </button>
+                    
+                    <button
+                      type="button"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                      onClick={() => handleReschedule(selectedRequest.id)}
+                    >
+                      <Calendar size={16} className="mr-2" />
+                      Reschedule
+                    </button>
                   </div>
                 )}
               </div>

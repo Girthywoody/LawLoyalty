@@ -2,7 +2,6 @@
 import { deleteUser as firebaseDeleteUser } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 import { getStorage } from 'firebase/storage';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 
@@ -55,8 +54,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
-const messaging = getMessaging(app);
-
 
 
 
@@ -558,9 +555,6 @@ export const updateEmployee = async (id, updatedData) => {
     throw error;
   }
 };
-
-export { messaging };
-
 
 
 // Watch for real-time changes to employees collection
