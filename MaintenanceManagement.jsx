@@ -31,7 +31,8 @@ import {
   completeMaintenanceRequest,
   doc,
   updateDoc,
-  serverTimestamp
+  serverTimestamp,
+  db
 } from './MaintenanceFirebase';
 
 import ImageUploadComponent from './ImageUploadComponent';
@@ -40,7 +41,6 @@ import ImageUploadComponent from './ImageUploadComponent';
 // Placeholder for your Firebase imports
 // import { collection, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDocs, onSnapshot, doc, serverTimestamp } from 'firebase/firestore';
 // import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db } from './firebase';
 
 const MaintenanceManagement = ({ currentUser }) => {
   // State variables
@@ -1087,7 +1087,7 @@ const formatTime = (date) => {
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         // Update urgency in Firestore
-                                        const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
+                                        const requestRef = doc('maintenanceRequests', selectedRequest.id);
                                         updateDoc(requestRef, { 
                                           urgencyLevel: selectedRequest.urgencyLevel,
                                           updatedAt: serverTimestamp() 

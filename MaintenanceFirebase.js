@@ -14,8 +14,10 @@ import {
 } from 'firebase/firestore';
 
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+
+// In MaintenanceFirebase.js
 import { db, storage } from './firebase';
-export { doc, updateDoc, serverTimestamp };
+export { doc, updateDoc, serverTimestamp, db }; // Add db to the exports
 
 // Collection references
 const maintenanceRequestsCollection = collection(db, 'maintenanceRequests');
