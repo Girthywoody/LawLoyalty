@@ -2218,6 +2218,12 @@ if (view === 'manager') {
       )}
 
       {/* Main content */}
+      
+      {showMaintenanceView ? (
+  <main className="flex-grow">
+    <MaintenanceManagement currentUser={currentUser} />
+  </main>
+) : (
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
         {/* Conditionally render either Manage view or Discount view */}
         {managerView === 'manage' ? (
@@ -2711,6 +2717,7 @@ if (view === 'manager') {
           </div>
         )}
       </main>
+)}
       
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-4 mt-8">
