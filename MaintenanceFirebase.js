@@ -39,7 +39,7 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
     if (imageFiles && imageFiles.length > 0) {
       try {
         for (let i = 0; i < imageFiles.length; i++) {
-          const file = imageFiles[i];
+          const file = imageFiles[i]; 
           const timestamp = Date.now();
           // Sanitize filename to avoid issues with special characters
           const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
@@ -289,6 +289,26 @@ export const subscribeToMaintenanceEvents = (callback) => {
     });
     callback(events);
   });
+};
+
+// In MaintenanceFirebase.js
+export const getTokensForUsers = async (userIds) => {
+  try {
+    const tokens = [];
+    
+    // Query Firestore for each user's FCM token
+    for (const userId of userIds) {
+      const tokenDoc = await getDoc(doc(db, 'fcmTokens', userId));
+      if (tokenDoc.exists()) {
+        tokens.push(tokenDoc.data().token);
+      }
+    }
+    
+    return tokens;
+  } catch (error) {
+    console.error('Error getting tokens:', error);
+    return [];
+  }
 };
 
 // Add comment to a request

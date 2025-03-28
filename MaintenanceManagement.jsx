@@ -36,6 +36,8 @@ import {
 } from './MaintenanceFirebase';
 
 import ImageUploadComponent from './ImageUploadComponent';
+import { requestForToken, onMessageListener } from './pushNotificationService';
+
 
 
 // Placeholder for your Firebase imports
@@ -60,6 +62,11 @@ const MaintenanceManagement = ({ currentUser }) => {
   const [scheduleDate, setScheduleDate] = useState(new Date());
   const [scheduleTime, setScheduleTime] = useState('09:00');
   const [expandedImage, setExpandedImage] = useState(null);
+  const [notificationVisible, setNotificationVisible] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationType, setNotificationType] = useState('info');
+  const [pushNotification, setPushNotification] = useState({title: '', body: ''});
+
   const [additionalImages, setAdditionalImages] = useState({
     images: [],
     imagePreviewUrls: []
@@ -110,11 +117,16 @@ const Notification = ({ message, type }) => {
   );
 };
 
-// Show notification
+// Improved show notification function
 const showNotification = (message, type = 'info') => {
-  setNotification({ message, type });
+  console.log('Showing notification:', message, type);
+  setNotificationMessage(message);
+  setNotificationType(type);
+  setNotificationVisible(true);
+  
+  // Auto-hide after 3 seconds
   setTimeout(() => {
-    setNotification(null);
+    setNotificationVisible(false);
   }, 3000);
 };
   
@@ -142,6 +154,30 @@ const showNotification = (message, type = 'info') => {
       unsubEventsSnapshot && unsubEventsSnapshot();
     };
   }, []);
+
+
+  useEffect(() => {
+    // Request notification permission
+    if ('Notification' in window) {
+      requestForToken(currentUser?.uid);
+    }
+    
+    // Listen for messages when app is in foreground
+    const unsubscribe = onMessageListener().then(payload => {
+      setPushNotification({
+        title: payload.notification.title,
+        body: payload.notification.body
+      });
+      
+      // Also show an in-app notification
+      showNotification(payload.notification.body, 'info');
+    }).catch(err => console.log('Failed to receive foreground notification:', err));
+    
+    return () => {
+      // Clean up listener if component unmounts
+      if (unsubscribe) unsubscribe();
+    };
+  }, [currentUser?.uid]);
   
   // Apply filters
   useEffect(() => {
@@ -502,6 +538,7 @@ const handleDrop = (e) => {
   }
 };
 
+
 // Common function for both drag&drop and file input
 const handleFileSelection = (filesArray) => {
   // Validate file types and sizes
@@ -642,8 +679,7 @@ const formatTime = (date) => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white text-gray-900">
-      {notification && <Notification message={notification.message} type={notification.type} />}
-      
+      {notificationVisible && <Notification message={notificationMessage} type={notificationType} />}      
 
       {/* Navigation Tabs */}
           <div className="bg-white border-b border-gray-200">
@@ -1061,7 +1097,24 @@ const formatTime = (date) => {
               <div className="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
                   <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
-                    <AlertTriangle size={20} className="text-white" />
+                  {notificationVisible && (
+                    <div className={`fixed top-4 right-4 left-4 sm:left-auto px-4 py-3 rounded-lg border shadow-lg flex items-center z-50 
+                      ${notificationType === 'success' ? 'bg-green-100 border-green-500 text-green-800' : 
+                        notificationType === 'error' ? 'bg-red-100 border-red-500 text-red-800' : 
+                        'bg-blue-100 border-blue-500 text-blue-800'}`}
+                    >
+                      <span className="mr-2">
+                        {notificationType === 'success' ? (
+                          <Check size={20} className="text-green-600" />
+                        ) : notificationType === 'error' ? (
+                          <X size={20} className="text-red-600" />
+                        ) : (
+                          <AlertTriangle size={20} className="text-blue-600" />
+                        )}
+                      </span>
+                      <span>{notificationMessage}</span>
+                    </div>
+                  )}                  
                   </div>
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                     <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
@@ -1089,24 +1142,24 @@ const formatTime = (date) => {
                                     </select>
                                     <button 
                                       onClick={(e) => {
-                                          e.stopPropagation();
-                                          // Update urgency in Firestore
-                                          const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
-                                          updateDoc(requestRef, { 
-                                            urgencyLevel: selectedRequest.urgencyLevel,
-                                            updatedAt: serverTimestamp() 
-                                          }).then(() => {
-                                            showNotification('Urgency updated successfully', 'success');
-                                            setIsEditingUrgency(false);
-                                          }).catch((error) => {
-                                            console.error("Error updating urgency:", error);
-                                            showNotification('Failed to update urgency', 'error');
-                                          });
-                                        }}
-                                        className="p-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-200"
-                                      >
-                                        <Check size={16} className="text-green-600" />
-                                      </button>
+                                        e.stopPropagation();
+                                        // Update urgency in Firestore
+                                        const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
+                                        updateDoc(requestRef, { 
+                                          urgencyLevel: selectedRequest.urgencyLevel,
+                                          updatedAt: serverTimestamp() 
+                                        }).then(() => {
+                                          showNotification('Urgency updated successfully', 'success');
+                                          setIsEditingUrgency(false);
+                                        }).catch((error) => {
+                                          console.error("Error updating urgency:", error);
+                                          showNotification('Failed to update urgency', 'error');
+                                        });
+                                      }}
+                                      className="p-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-200"
+                                    >
+                                      <Check size={16} className="text-green-600" />
+                                    </button>
                                     <button 
                                       onClick={(e) => {
                                         e.stopPropagation();
