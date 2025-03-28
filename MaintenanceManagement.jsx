@@ -810,41 +810,60 @@ const formatTime = (date) => {
   return (
     <div className="flex flex-col min-h-screen bg-white text-gray-900">
       {notificationVisible && <Notification message={notificationMessage} type={notificationType} />}      
-
-      {/* Navigation Tabs */}
-          <div className="bg-white border-b border-gray-200">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex">
-                <button
-                  onClick={() => setActiveView('requests')}
-                  className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
-                    activeView === 'requests' 
-                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <AlertTriangle size={16} className="mr-2" />
-                    Maintenance Requests
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveView('calendar')}
-                  className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
-                    activeView === 'calendar' 
-                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <Calendar size={16} className="mr-2" />
-                    Maintenance Calendar
-                  </div>
-                </button>
-              </div>
+  
+      {/* Navigation Tabs - Only show for Maintenance and Admin roles */}
+      {(isMaintenance || currentUser?.jobTitle === 'Admin') && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex">
+              <button
+                onClick={() => setActiveView('requests')}
+                className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
+                  activeView === 'requests' 
+                    ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center">
+                  <AlertTriangle size={16} className="mr-2" />
+                  Maintenance Requests
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveView('calendar')}
+                className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
+                  activeView === 'calendar' 
+                    ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center">
+                  <Calendar size={16} className="mr-2" />
+                  Maintenance Calendar
+                </div>
+              </button>
             </div>
           </div>
-
+        </div>
+      )}
+  
+      {/* General Manager header */}
+      {currentUser?.jobTitle === 'General Manager' && !isMaintenance && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto py-3 px-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">My Maintenance Requests</h2>
+              <button
+                onClick={() => setView('manager')}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <ChevronLeft size={16} className="mr-1" />
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 {/* Main Content Area */}
       <main className="flex-grow w-full mx-auto py-4 px-2 sm:py-6 sm:px-4 max-w-7xl">
         {/* Requests View */}
