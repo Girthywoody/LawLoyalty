@@ -163,7 +163,7 @@ useEffect(() => {
   let unsubRequestsSnapshot;
   
   if (currentUser?.jobTitle === 'General Manager' && !isMaintenance) {
-    // For General Managers, only show their own requests
+    // For General Managers, show requests they created
     const requestsRef = collection(db, 'maintenanceRequests');
     const q = query(requestsRef, where("createdByUid", "==", currentUser.id), orderBy("createdAt", "desc"));
     
@@ -172,23 +172,17 @@ useEffect(() => {
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
-        scheduledDate: doc.data().scheduledDate?.toDate ? doc.data().scheduledDate.toDate() : 
-                    doc.data().scheduledDate instanceof Date ? doc.data().scheduledDate : 
-                    new Date(),
-        completedDate: doc.data().completedDate?.toDate ? doc.data().completedDate.toDate() : 
-                    doc.data().completedDate instanceof Date ? doc.data().completedDate : 
-                    null
+        updatedAt: doc.data().updatedAt?.toDate() || new Date()
       }));
       setMaintenanceRequests(requests);
       setFilteredRequests(requests);
       setIsLoading(false);
     });
-  } else {
+  } else if (isMaintenance || currentUser?.jobTitle === 'Admin') {
     // For Maintenance or Admin roles, show all requests
     unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
-      setMaintenanceRequests(requests);
-      setFilteredRequests(requests);
+      setMaintenanceRequests([]);
+      setFilteredRequests([]);
       setIsLoading(false);
     });
   }
@@ -1202,9 +1196,15 @@ const formatTime = (date) => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Images</label>
                         <ImageUploadComponent
-                          images={newRequest.images}
-                          imagePreviewUrls={newRequest.imagePreviewUrls}
-                          onImagesChanged={handleNewRequestImageChange}
+                          images={newRequest.images || []}
+                          imagePreviewUrls={newRequest.imagePreviewUrls || []}
+                          onImagesChanged={(imageData) => {
+                            setNewRequest({
+                              ...newRequest,
+                              images: imageData.images || [],
+                              imagePreviewUrls: imageData.imagePreviewUrls || []
+                            });
+                          }}
                           maxSize={10}
                           maxFiles={5}
                         />

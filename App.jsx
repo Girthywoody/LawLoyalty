@@ -324,8 +324,6 @@ useEffect(() => {
 }, []);
 
 
-// Modify your handleLogout function to clear stored data
-// Add these lines after setCurrentUser(null)
 localStorage.removeItem('currentUser');
 localStorage.removeItem('currentView');
 
