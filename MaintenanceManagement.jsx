@@ -598,83 +598,82 @@ const handleFileSelection = (filesArray) => {
   });
 };
 
-// Replace your testNotification function with this:
-const testNotification = async () => {
-  try {
-    // Request notification permission first
-    const permission = await Notification.requestPermission();
+// const testNotification = async () => {
+//   try {
+//     // Request notification permission first
+//     const permission = await Notification.requestPermission();
     
-    if (permission === 'granted') {
-      // Show a local notification (this doesn't use FCM)
-      new Notification('Test Notification', {
-        body: 'This is a simple browser notification test',
-        icon: '/logo.jpg'
-      });
+//     if (permission === 'granted') {
+//       // Show a local notification (this doesn't use FCM)
+//       new Notification('Test Notification', {
+//         body: 'This is a simple browser notification test',
+//         icon: '/logo.jpg'
+//       });
       
-      showNotification('Browser notification sent!', 'success');
+//       showNotification('Browser notification sent!', 'success');
       
-      // Store the notification in Firestore for tracking
-      const token = await requestForToken(currentUser?.uid);
-      if (token) {
-        // This uses doc and setDoc which you already have access to
-        await setDoc(doc(db, 'notifications', Date.now().toString()), {
-          title: 'Test Notification',
-          body: 'This is a test notification from maintenance system',
-          userId: currentUser?.uid,
-          token: token,
-          createdAt: new Date(),
-          read: false,
-          type: 'test'
-        });
+//       // Store the notification in Firestore for tracking
+//       const token = await requestForToken(currentUser?.uid);
+//       if (token) {
+//         // This uses doc and setDoc which you already have access to
+//         await setDoc(doc(db, 'notifications', Date.now().toString()), {
+//           title: 'Test Notification',
+//           body: 'This is a test notification from maintenance system',
+//           userId: currentUser?.uid,
+//           token: token,
+//           createdAt: new Date(),
+//           read: false,
+//           type: 'test'
+//         });
         
-        showNotification('Notification saved to database', 'success');
-      }
-    } else {
-      showNotification('Notification permission denied', 'error');
-    }
-  } catch (error) {
-    console.error('Notification test error:', error);
-    showNotification('Error testing notifications: ' + error.message, 'error');
-  }
-};
+//         showNotification('Notification saved to database', 'success');
+//       }
+//     } else {
+//       showNotification('Notification permission denied', 'error');
+//     }
+//   } catch (error) {
+//     console.error('Notification test error:', error);
+//     showNotification('Error testing notifications: ' + error.message, 'error');
+//   }
+// };
 
-const TestNotificationButton = () => (
-  <button
-    onClick={async () => {
-      try {
-        // First ensure we have a token
-        const token = await requestForToken(currentUser?.id);
-        if (!token) {
-          showNotification('Failed to get notification token', 'error');
-          return;
-        }
+// const TestNotificationButton = () => (
+//   <button
+//     onClick={async () => {
+//       try {
+//         // First ensure we have a token
+//         const token = await requestForToken(currentUser?.id);
+//         if (!token) {
+//           showNotification('Failed to get notification token', 'error');
+//           return;
+//         }
         
-        // Create a test notification document in Firestore
-        // This will trigger our Cloud Function
-        await addDoc(collection(db, 'maintenanceRequests'), {
-          title: 'Test Notification Request',
-          description: 'This is a test request to verify notifications',
-          location: 'Test Location',
-          urgencyLevel: 3,
-          createdBy: currentUser?.name || 'Test User',
-          createdByUid: currentUser?.id,
-          status: 'pending',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          isTest: true // Flag to identify test requests
-        });
+//         // Create a test notification document in Firestore
+//         // This will trigger our Cloud Function
+//         await addDoc(collection(db, 'maintenanceRequests'), {
+//           title: 'Test Notification Request',
+//           description: 'This is a test request to verify notifications',
+//           location: 'Test Location',
+//           urgencyLevel: 3,
+//           createdBy: currentUser?.name || 'Test User',
+//           createdByUid: currentUser?.id,
+//           status: 'pending',
+//           createdAt: serverTimestamp(),
+//           updatedAt: serverTimestamp(),
+//           isTest: true // Flag to identify test requests
+//         });
         
-        showNotification('Test request created! You should receive a notification shortly.', 'success');
-      } catch (error) {
-        console.error('Error sending test notification:', error);
-        showNotification('Error sending test notification: ' + error.message, 'error');
-      }
-    }}
-    className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700"
-  >
-    Test FCM Notification
-  </button>
-);
+//         showNotification('Test request created! You should receive a notification shortly.', 'success');
+//       } catch (error) {
+//         console.error('Error sending test notification:', error);
+//         showNotification('Error sending test notification: ' + error.message, 'error');
+//       }
+//     }}
+//     className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700"
+//   >
+//     Test FCM Notification
+//   </button>
+// );
 
   
   const generateCalendarDays = () => {
@@ -817,29 +816,6 @@ const formatTime = (date) => {
                 </button>
               </div>
             </div>
-            {/* Add this near the other buttons in the header section */}
-          <button
-            onClick={() => {
-              requestForToken(currentUser?.uid).then(token => {
-                if (token) {
-                  sendNotification('Test Notification', 'This is a test notification from the maintenance system', currentUser?.uid);
-                  showNotification('Test notification sent! Check your device.', 'success');
-                } else {
-                  showNotification('Notification permission denied or token unavailable', 'error');
-                }
-              });
-            }}
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-          >
-            <Bell size={16} className="mr-2" />
-            Test Notification
-          </button>
-          <button
-  onClick={testNotification}
-  className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700"
->
-  Test Browser Notification
-</button>
           </div>
 
 {/* Main Content Area */}
