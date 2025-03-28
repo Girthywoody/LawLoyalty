@@ -604,14 +604,14 @@ const handleFileSelection = (filesArray) => {
   });
 };
 
-// Add this function to your component
+// Replace your testNotification function with this:
 const testNotification = async () => {
   try {
     // Request notification permission first
     const permission = await Notification.requestPermission();
     
     if (permission === 'granted') {
-      // Show a local notification (this is not FCM, just to test browser support)
+      // Show a local notification (this doesn't use FCM)
       new Notification('Test Notification', {
         body: 'This is a simple browser notification test',
         icon: '/logo.jpg'
@@ -619,12 +619,21 @@ const testNotification = async () => {
       
       showNotification('Browser notification sent!', 'success');
       
-      // Now try FCM
+      // Store the notification in Firestore for tracking
       const token = await requestForToken(currentUser?.uid);
       if (token) {
-        showNotification('FCM token received: ' + token.slice(0, 10) + '...', 'success');
-      } else {
-        showNotification('Failed to get FCM token', 'error');
+        // This uses doc and setDoc which you already have access to
+        await setDoc(doc(db, 'notifications', Date.now().toString()), {
+          title: 'Test Notification',
+          body: 'This is a test notification from maintenance system',
+          userId: currentUser?.uid,
+          token: token,
+          createdAt: new Date(),
+          read: false,
+          type: 'test'
+        });
+        
+        showNotification('Notification saved to database', 'success');
       }
     } else {
       showNotification('Notification permission denied', 'error');

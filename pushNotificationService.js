@@ -1,6 +1,8 @@
+
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-import { db } from './firebase'; // Import your Firebase config
-import { doc, setDoc } from 'firebase/firestore';
+import { db } from './firebase'; 
+import { doc, setDoc, addDoc, collection } from 'firebase/firestore'; // Add these imports
+
 
 const firebaseMessaging = getMessaging();
 
@@ -61,7 +63,6 @@ export const requestForToken = async (userId) => {
   }
 };
 
-// Add this function to pushNotificationService.js
 export const sendNotification = async (title, body, userId) => {
   try {
     // Create a notification in the notifications collection
