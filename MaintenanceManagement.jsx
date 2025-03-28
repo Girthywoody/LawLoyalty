@@ -29,6 +29,7 @@ import {
   scheduleMaintenanceEvent, 
   addCommentToRequest, 
   completeMaintenanceRequest,
+  deleteMaintenanceRequest,
   doc,
   updateDoc,
   db
@@ -40,8 +41,7 @@ import { Bell } from 'lucide-react';
 import { sendNotification } from './pushNotificationService';
 import { getDoc, getDocs, query, where, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-const MaintenanceManagement = ({ currentUser }) => {
-  // State variables
+const MaintenanceManagement = ({ currentUser, isMaintenance = false }) => {  // State variables
   const [notification, setNotification] = useState(null);
   const [activeView, setActiveView] = useState('requests'); // 'requests' or 'calendar'
   const [maintenanceRequests, setMaintenanceRequests] = useState([]);
@@ -62,6 +62,7 @@ const MaintenanceManagement = ({ currentUser }) => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('info');
   const [pushNotification, setPushNotification] = useState({title: '', body: ''});
+  
 
   const [additionalImages, setAdditionalImages] = useState({
     images: [],
@@ -72,6 +73,7 @@ const MaintenanceManagement = ({ currentUser }) => {
   const [isEditingUrgency, setIsEditingUrgency] = useState(false);  
   // Current Month for Calendar View
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  
   
   // Form state for new request
   const [newRequest, setNewRequest] = useState({
@@ -148,30 +150,55 @@ useEffect(() => {
 }, [currentUser?.id]);
 
   
-  useEffect(() => {
-    setIsLoading(true);
+// Modify the useEffect that fetches maintenance requests to filter for General Managers:
+useEffect(() => {
+  setIsLoading(true);
+  
+  // Subscribe to maintenance requests
+  let unsubRequestsSnapshot;
+  
+  if (currentUser?.jobTitle === 'General Manager' && !isMaintenance) {
+    // For General Managers, only show their own requests
+    const requestsRef = collection(db, 'maintenanceRequests');
+    const q = query(requestsRef, where("createdByUid", "==", currentUser.id), orderBy("createdAt", "desc"));
     
-    // Subscribe to maintenance requests
-    const unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
+    unsubRequestsSnapshot = onSnapshot(q, (snapshot) => {
+      const requests = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date(),
+        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+        scheduledDate: doc.data().scheduledDate?.toDate ? doc.data().scheduledDate.toDate() : 
+                    doc.data().scheduledDate instanceof Date ? doc.data().scheduledDate : 
+                    new Date(),
+        completedDate: doc.data().completedDate?.toDate ? doc.data().completedDate.toDate() : 
+                    doc.data().completedDate instanceof Date ? doc.data().completedDate : 
+                    null
+      }));
       setMaintenanceRequests(requests);
       setFilteredRequests(requests);
       setIsLoading(false);
     });
-    
-    // Subscribe to maintenance events
-    const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
-      setMaintenanceEvents(events);
+  } else {
+    // For Maintenance or Admin roles, show all requests
+    unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
+      setMaintenanceRequests(requests);
+      setFilteredRequests(requests);
+      setIsLoading(false);
     });
-
-
-
-    
-    // Cleanup on unmount
-    return () => {
-      unsubRequestsSnapshot && unsubRequestsSnapshot();
-      unsubEventsSnapshot && unsubEventsSnapshot();
-    };
-  }, []);
+  }
+  
+  // Subscribe to maintenance events
+  const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
+    setMaintenanceEvents(events);
+  });
+  
+  // Cleanup on unmount
+  return () => {
+    unsubRequestsSnapshot && unsubRequestsSnapshot();
+    unsubEventsSnapshot && unsubEventsSnapshot();
+  };
+}, [currentUser?.id, currentUser?.jobTitle, isMaintenance]);
 
 
   useEffect(() => {
@@ -1568,45 +1595,71 @@ const formatTime = (date) => {
               <div className="bg-gray-50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
                 {selectedRequest.status === 'pending' && (
                   <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                      onClick={() => handleImmediateSchedule(selectedRequest.id)}
-                    >
-                      <Clock size={16} className="mr-2" />
-                      Go there now
-                    </button>
+                    {(isMaintenance || currentUser?.jobTitle === 'Admin') && (
+                      <>
+                        <button
+                          type="button"
+                          className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                          onClick={() => handleImmediateSchedule(selectedRequest.id)}
+                        >
+                          <Clock size={16} className="mr-2" />
+                          Go there now
+                        </button>
+                        
+                        <button
+                          type="button"
+                          className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                          onClick={() => setShowSchedulePicker(true)}
+                        >
+                          <Calendar size={16} className="mr-2" />
+                          Schedule Maintenance
+                        </button>
+                      </>
+                    )}
                     
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                      onClick={() => setShowSchedulePicker(true)}
-                    >
-                      <Calendar size={16} className="mr-2" />
-                      Schedule Maintenance
-                    </button>
+                    {!isMaintenance && currentUser?.jobTitle === 'General Manager' && selectedRequest.createdByUid === currentUser.id && (
+                      <button
+                        type="button"
+                        className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                        onClick={() => {
+                          // Confirm delete
+                          if (window.confirm("Are you sure you want to delete this request?")) {
+                            deleteMaintenanceRequest(selectedRequest.id);
+                            setShowDetailModal(false);
+                            showNotification("Request deleted successfully", "success");
+                          }
+                        }}
+                      >
+                        <Trash2 size={16} className="mr-2" />
+                        Delete Request
+                      </button>
+                    )}
                   </div>
                 )}
                 
                 {selectedRequest.status === 'scheduled' && (
                   <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                      onClick={() => handleMarkAsCompleted(selectedRequest.id)}
-                    >
-                      <Check size={16} className="mr-2" />
-                      Mark as Completed
-                    </button>
-                    
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                      onClick={() => handleReschedule(selectedRequest.id)}
-                    >
-                      <Calendar size={16} className="mr-2" />
-                      Reschedule
-                    </button>
+                    {(isMaintenance || currentUser?.jobTitle === 'Admin') && (
+                      <>
+                        <button
+                          type="button"
+                          className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                          onClick={() => handleMarkAsCompleted(selectedRequest.id)}
+                        >
+                          <Check size={16} className="mr-2" />
+                          Mark as Completed
+                        </button>
+                        
+                        <button
+                          type="button"
+                          className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                          onClick={() => handleReschedule(selectedRequest.id)}
+                        >
+                          <Calendar size={16} className="mr-2" />
+                          Reschedule
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
