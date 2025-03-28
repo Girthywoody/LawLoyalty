@@ -40,7 +40,8 @@ import { requestForToken, onMessageListener } from './pushNotificationService';
 import { Bell } from 'lucide-react';  
 import { collection, query, where, getDocs, getDoc } from 'firebase/firestore';
 import { sendNotification } from './pushNotificationService';
-
+import { getDoc, getDocs, query, where, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { requestForToken } from './pushNotificationService';
 
 const MaintenanceManagement = ({ currentUser }) => {
   // State variables
@@ -127,6 +128,28 @@ const showNotification = (message, type = 'info') => {
     setNotificationVisible(false);
   }, 3000);
 };
+
+useEffect(() => {
+  const requestNotificationPermission = async () => {
+    try {
+      // Only request if the user is logged in
+      if (currentUser?.id) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          const token = await requestForToken(currentUser.id);
+          if (token) {
+            console.log('FCM token acquired and stored');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+    }
+  };
+  
+  requestNotificationPermission();
+}, [currentUser?.id]);
+
   
   useEffect(() => {
     setIsLoading(true);
@@ -265,7 +288,6 @@ const handleAddImagesToRequest = async (requestId) => {
   }
 };
 
-// This function should replace your existing handleAddRequest in MaintenanceManagement.jsx
 const handleAddRequest = async () => {
   try {
     // Validate required fields
@@ -285,32 +307,14 @@ const handleAddRequest = async () => {
       urgencyLevel: newRequest.urgencyLevel,
       location: newRequest.location,
       createdBy: currentUser?.name || 'Current User',
+      createdByUid: currentUser?.id || null, // Add this line to store the user ID
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
     
     // Create the request in Firebase
     await createMaintenanceRequest(requestData, newRequest.images);
-
-    try {
-      // Notify admins and managers about the new request
-      const adminSnapshot = await getDocs(
-        query(collection(db, 'employees'), where('jobTitle', 'in', ['Admin', 'Manager']))
-      );
-      
-      const adminUids = adminSnapshot.docs
-        .map(doc => doc.data().uid)
-        .filter(uid => uid);
-      
-      // Send notification to each admin/manager
-      for (const uid of adminUids) {
-        await sendNotification(
-          'New Maintenance Request', 
-          `New request: ${newRequest.title}`, 
-          uid
-        );
-      }
-    } catch (error) {
-      console.error('Error sending request notification:', error);
-    }
     
     // Clean up object URLs
     newRequest.imagePreviewUrls.forEach(url => {
@@ -331,6 +335,8 @@ const handleAddRequest = async () => {
     // Close modal
     setShowAddRequestModal(false);
     showNotification('Maintenance request created successfully!', 'success');
+    
+    // The notification will be handled by the Cloud Function
   } catch (error) {
     console.error("Error adding request:", error);
     showNotification('Failed to create maintenance request', 'error');
@@ -459,32 +465,23 @@ const handleAddRequest = async () => {
       const commentData = {
         text: newComment,
         createdBy: currentUser?.name || 'Current User',
+        createdByUid: currentUser?.id || null, // Add this line
+        createdAt: new Date(),
+        id: `comment_${Date.now()}` // Add an ID for the comment
       };
       
       const newCommentObj = await addCommentToRequest(requestId, commentData);
-      try {
-        // Get the request creator's user ID
-        const requestCreatorUid = selectedRequest.createdByUid;
-        
-        // Don't notify if the comment author is the same as the request creator
-        if (requestCreatorUid && requestCreatorUid !== currentUser?.uid) {
-          await sendNotification(
-            'New Comment on Your Request',
-            `${currentUser?.name} commented on your request: ${selectedRequest.title}`,
-            requestCreatorUid
-          );
-        }
-      } catch (error) {
-        console.error('Error sending comment notification:', error);
-      }
       
-    setSelectedRequest({
-      ...selectedRequest,
-      comments: [...(selectedRequest.comments || []), newCommentObj]
-    });
-
-    setNewComment('');
-    showNotification('Comment added successfully!', 'success');
+      // Update the selected request locally
+      setSelectedRequest({
+        ...selectedRequest,
+        comments: [...(selectedRequest.comments || []), newCommentObj]
+      });
+  
+      setNewComment('');
+      showNotification('Comment added successfully!', 'success');
+      
+      // The notification will be handled by the Cloud Function
     } catch (error) {
       console.error("Error adding comment:", error);
       showNotification('Failed to add comment', 'error');
@@ -643,6 +640,44 @@ const testNotification = async () => {
     showNotification('Error testing notifications: ' + error.message, 'error');
   }
 };
+
+const TestNotificationButton = () => (
+  <button
+    onClick={async () => {
+      try {
+        // First ensure we have a token
+        const token = await requestForToken(currentUser?.id);
+        if (!token) {
+          showNotification('Failed to get notification token', 'error');
+          return;
+        }
+        
+        // Create a test notification document in Firestore
+        // This will trigger our Cloud Function
+        await addDoc(collection(db, 'maintenanceRequests'), {
+          title: 'Test Notification Request',
+          description: 'This is a test request to verify notifications',
+          location: 'Test Location',
+          urgencyLevel: 3,
+          createdBy: currentUser?.name || 'Test User',
+          createdByUid: currentUser?.id,
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          isTest: true // Flag to identify test requests
+        });
+        
+        showNotification('Test request created! You should receive a notification shortly.', 'success');
+      } catch (error) {
+        console.error('Error sending test notification:', error);
+        showNotification('Error sending test notification: ' + error.message, 'error');
+      }
+    }}
+    className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700"
+  >
+    Test FCM Notification
+  </button>
+);
 
   
   const generateCalendarDays = () => {

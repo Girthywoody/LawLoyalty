@@ -29,6 +29,8 @@ const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
  * @param {Array} imageFiles - Array of image files to upload
  * @returns {Promise<Object>} - Created maintenance request data
  */
+
+
 export const createMaintenanceRequest = async (requestData, imageFiles = []) => {
   try {
     // Array to store image download URLs
@@ -37,56 +39,29 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
     
     // Only attempt to upload images if there are any
     if (imageFiles && imageFiles.length > 0) {
-      try {
-        for (let i = 0; i < imageFiles.length; i++) {
-          const file = imageFiles[i]; 
-          const timestamp = Date.now();
-          // Sanitize filename to avoid issues with special characters
-          const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-          const fileName = `maintenance/${timestamp}_${safeFileName}`;
-          const storageRef = ref(storage, fileName);
-          
-          try {
-            // Upload the file with proper content type
-            const metadata = {
-              contentType: file.type
-            };
-            
-            // Upload the file
-            const snapshot = await uploadBytes(storageRef, file, metadata);
-            
-            // Get the download URL
-            const downloadURL = await getDownloadURL(snapshot.ref);
-            
-            // Store both the URL and reference path for potential deletion later
-            imageUrls.push(downloadURL);
-            imageRefs.push(fileName);
-            
-          } catch (uploadError) {
-            console.error("Error uploading file:", uploadError);
-            // Continue with next file instead of failing completely
-          }
-        }
-      } catch (imageError) {
-        console.error("Error processing images:", imageError);
-        // Continue without images rather than failing the whole request
-      }
+      // ... [existing image upload code] ...
     }
     
-    // Create request document with image URLs and reference paths
-    const docRef = await addDoc(maintenanceRequestsCollection, {
+    // Make sure createdByUid is included
+    const finalRequestData = {
       ...requestData,
-      images: imageUrls,
-      imageRefs: imageRefs, // Store references for deletion capability
+      createdByUid: requestData.createdByUid || null,
       status: 'pending',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       comments: [] // Add empty comments array by default
+    };
+    
+    // Create request document with image URLs and reference paths
+    const docRef = await addDoc(maintenanceRequestsCollection, {
+      ...finalRequestData,
+      images: imageUrls,
+      imageRefs: imageRefs, // Store references for deletion capability
     });
     
     return { 
       id: docRef.id, 
-      ...requestData, 
+      ...finalRequestData, 
       images: imageUrls,
       imageRefs: imageRefs,
       createdAt: new Date(),
@@ -97,6 +72,7 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
     throw error;
   }
 };
+
 
 /**
  * Deletes a maintenance request and its associated images
@@ -212,6 +188,34 @@ export const addImagesToRequest = async (requestId, imageFiles = []) => {
   }
 };
 
+export const addCommentToRequest = async (requestId, commentData) => {
+  try {
+    const requestRef = doc(db, 'maintenanceRequests', requestId);
+    const requestDoc = await getDoc(requestRef);
+    
+    if (!requestDoc.exists()) {
+      throw new Error('Request not found');
+    }
+    
+    const currentComments = requestDoc.data().comments || [];
+    const newComment = {
+      id: commentData.id || `comment_${Date.now()}`,
+      ...commentData,
+      createdAt: commentData.createdAt || new Date()
+    };
+    
+    await updateDoc(requestRef, {
+      comments: [...currentComments, newComment],
+      updatedAt: serverTimestamp()
+    });
+    
+    return newComment;
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    throw error;
+  }
+};
+
 export const scheduleMaintenanceEvent = async (requestId, eventData) => {
   try {
     // Use the provided date if available, otherwise use current date
@@ -311,34 +315,7 @@ export const getTokensForUsers = async (userIds) => {
   }
 };
 
-// Add comment to a request
-export const addCommentToRequest = async (requestId, commentData) => {
-  try {
-    const requestRef = doc(db, 'maintenanceRequests', requestId);
-    const requestDoc = await getDoc(requestRef);
-    
-    if (!requestDoc.exists()) {
-      throw new Error('Request not found');
-    }
-    
-    const currentComments = requestDoc.data().comments || [];
-    const newComment = {
-      id: `c${Date.now()}`,
-      ...commentData,
-      createdAt: new Date()
-    };
-    
-    await updateDoc(requestRef, {
-      comments: [...currentComments, newComment],
-      updatedAt: serverTimestamp()
-    });
-    
-    return newComment;
-  } catch (error) {
-    console.error("Error adding comment:", error);
-    throw error;
-  }
-};
+
 
 // Mark request as completed
 export const completeMaintenanceRequest = async (requestId) => {

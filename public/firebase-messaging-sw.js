@@ -1,6 +1,8 @@
+// public/firebase-messaging-sw.js
 importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js');
 
+// Initialize the Firebase app in the service worker
 firebase.initializeApp({
   apiKey: "AIzaSyCC9Bzela9Mhs2raQ0cQCSWJdm-GjnJvGg",
   authDomain: "law-loyalty.firebaseapp.com",
@@ -11,39 +13,67 @@ firebase.initializeApp({
   measurementId: "G-XTKBQK7L33"
 });
 
+// Retrieve an instance of Firebase Messaging
 const messaging = firebase.messaging();
 
-// This is critical for handling background notifications
+// Handle background messages
 messaging.onBackgroundMessage((payload) => {
-  console.log('[SW] Background message received:', payload);
+  console.log('[firebase-messaging-sw.js] Received background message:', payload);
   
-  // Customize notification here
   const notificationTitle = payload.notification.title || 'New Notification';
   const notificationOptions = {
     body: payload.notification.body || '',
-    icon: '/logo.jpg', 
-    tag: payload.notification.tag || 'maintenance-notification',
-    data: payload.data
+    icon: '/logo.jpg',
+    badge: '/favicon.ico',
+    data: payload.data || {},
+    tag: payload.data?.requestId || 'general',
+    renotify: true,
+    requireInteraction: true
   };
   
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
+// Handle notification click
 self.addEventListener('notificationclick', function(event) {
-  console.log('[SW] Notification click received');
+  console.log('[firebase-messaging-sw.js] Notification click received');
+  
+  const clickAction = event.notification.data?.click_action || 'OPEN_APP';
+  const requestId = event.notification.data?.requestId || '';
   
   event.notification.close();
   
-  // This looks to see if the current is already open and focuses if it is
-  event.waitUntil(clients.matchAll({
-    type: "window"
-  }).then(function(clientList) {
-    for (var i = 0; i < clientList.length; i++) {
-      var client = clientList[i];
-      if (client.url.includes('/') && 'focus' in client)
-        return client.focus();
-    }
-    if (clients.openWindow)
-      return clients.openWindow('/');
-  }));
+  // This looks to see if the current window is already open and focuses if it is
+  const urlToOpen = new URL('/', self.location.origin).href;
+  
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    })
+    .then(windowClients => {
+      // Check if there is already a window/tab open with the target URL
+      for (var i = 0; i < windowClients.length; i++) {
+        var client = windowClients[i];
+        
+        // If so, focus it and pass the request ID if available
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          if (requestId) {
+            // Try to navigate to the specific request detail view
+            return client.postMessage({
+              type: 'NOTIFICATION_CLICK',
+              requestId: requestId,
+              action: clickAction
+            }).then(() => client.focus());
+          }
+          return client.focus();
+        }
+      }
+      
+      // If no window/tab is open, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
 });
