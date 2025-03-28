@@ -38,7 +38,6 @@ import {
 import ImageUploadComponent from './ImageUploadComponent';
 import { requestForToken, onMessageListener } from './pushNotificationService';
 import { Bell } from 'lucide-react';  
-import { collection, query, where, getDocs, getDoc } from 'firebase/firestore';
 import { sendNotification } from './pushNotificationService';
 import { getDoc, getDocs, query, where, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { requestForToken } from './pushNotificationService';
