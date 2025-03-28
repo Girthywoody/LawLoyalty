@@ -604,6 +604,36 @@ const handleFileSelection = (filesArray) => {
   });
 };
 
+// Add this function to your component
+const testNotification = async () => {
+  try {
+    // Request notification permission first
+    const permission = await Notification.requestPermission();
+    
+    if (permission === 'granted') {
+      // Show a local notification (this is not FCM, just to test browser support)
+      new Notification('Test Notification', {
+        body: 'This is a simple browser notification test',
+        icon: '/logo.jpg'
+      });
+      
+      showNotification('Browser notification sent!', 'success');
+      
+      // Now try FCM
+      const token = await requestForToken(currentUser?.uid);
+      if (token) {
+        showNotification('FCM token received: ' + token.slice(0, 10) + '...', 'success');
+      } else {
+        showNotification('Failed to get FCM token', 'error');
+      }
+    } else {
+      showNotification('Notification permission denied', 'error');
+    }
+  } catch (error) {
+    console.error('Notification test error:', error);
+    showNotification('Error testing notifications: ' + error.message, 'error');
+  }
+};
 
   
   const generateCalendarDays = () => {
@@ -763,6 +793,12 @@ const formatTime = (date) => {
             <Bell size={16} className="mr-2" />
             Test Notification
           </button>
+          <button
+  onClick={testNotification}
+  className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700"
+>
+  Test Browser Notification
+</button>
           </div>
 
 {/* Main Content Area */}
