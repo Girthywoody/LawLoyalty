@@ -92,23 +92,23 @@ const MaintenanceManagement = ({ currentUser }) => {
   // Comment state
   const [newComment, setNewComment] = useState('');
   
-  // Notification component
-  const Notification = ({ message, type }) => {
-    const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
-                    type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
-                    'bg-blue-100 border-blue-400 text-blue-700';
-    
-    const icon = type === 'success' ? <Check size={20} className="text-green-500" /> :
-                type === 'error' ? <X size={20} className="text-red-500" /> :
-                null;
-    
-    return (
-      <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg border ${bgColor} shadow-lg flex items-center z-50`}>
-        {icon && <span className="mr-2">{icon}</span>}
-        <span>{message}</span>
-      </div>
-    );
-  };
+// Notification component
+const Notification = ({ message, type }) => {
+  const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 
+                  type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
+                  'bg-blue-100 border-blue-400 text-blue-700';
+  
+  const icon = type === 'success' ? <Check size={20} className="text-green-500" /> :
+              type === 'error' ? <X size={20} className="text-red-500" /> :
+              null;
+  
+  return (
+    <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg border ${bgColor} shadow-lg flex items-center z-50 max-w-xs`}>
+      {icon && <span className="mr-2 flex-shrink-0">{icon}</span>}
+      <span className="text-sm">{message}</span>
+    </div>
+  );
+};
 
 // Show notification
 const showNotification = (message, type = 'info') => {
@@ -198,6 +198,7 @@ const handleAdditionalImageChange = (imageData) => {
 // Function to handle adding images to an existing request
 const handleAddImagesToRequest = async (requestId) => {
   if (additionalImages.images.length === 0) return;
+  showNotification('Images added successfully', 'success');
   
   try {
     setIsUploadingImage(true);
@@ -332,13 +333,7 @@ const handleAddRequest = async () => {
           : req
       );
       setMaintenanceRequests(updatedRequests);
-
-      showNotification('Maintenance scheduled for immediate attention!', 'success');
-
-
-      showNotification('Maintenance scheduled successfully!', 'success');
-      setShowSchedulePicker(false);
-      
+  
       showNotification('Maintenance scheduled successfully!', 'success');
       setShowSchedulePicker(false);
     } catch (error) {
@@ -1094,24 +1089,24 @@ const formatTime = (date) => {
                                     </select>
                                     <button 
                                       onClick={(e) => {
-                                        e.stopPropagation();
-                                        // Update urgency in Firestore
-                                        const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
-                                        updateDoc(requestRef, { 
-                                          urgencyLevel: selectedRequest.urgencyLevel,
-                                          updatedAt: serverTimestamp() 
-                                        }).then(() => {
-                                          showNotification('Urgency updated successfully', 'success');
-                                          setIsEditingUrgency(false);
-                                        }).catch((error) => {
-                                          console.error("Error updating urgency:", error);
-                                          showNotification('Failed to update urgency', 'error');
-                                        });
-                                      }}
-                                      className="p-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-200"
-                                    >
-                                      <Check size={16} className="text-green-600" />
-                                    </button>
+                                          e.stopPropagation();
+                                          // Update urgency in Firestore
+                                          const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
+                                          updateDoc(requestRef, { 
+                                            urgencyLevel: selectedRequest.urgencyLevel,
+                                            updatedAt: serverTimestamp() 
+                                          }).then(() => {
+                                            showNotification('Urgency updated successfully', 'success');
+                                            setIsEditingUrgency(false);
+                                          }).catch((error) => {
+                                            console.error("Error updating urgency:", error);
+                                            showNotification('Failed to update urgency', 'error');
+                                          });
+                                        }}
+                                        className="p-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-200"
+                                      >
+                                        <Check size={16} className="text-green-600" />
+                                      </button>
                                     <button 
                                       onClick={(e) => {
                                         e.stopPropagation();
