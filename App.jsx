@@ -1766,23 +1766,18 @@ if (view === 'employee') {
                 </div>
                 
                 {/* Live clock and date verification */}
-                <div className="bg-indigo-600 px-5 py-4 mt-2">
-                  <div className="flex flex-col items-center">
-                    <p className="text-indigo-100 text-xs mb-2">Current Date & Time (Live)</p>
-                    <div className="bg-indigo-700 rounded-lg px-4 py-2 w-full text-center">
-                      <p className="text-white text-sm mb-1">
-                        {new Date().toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                      <p className="text-2xl font-mono font-bold text-white tracking-wider">
-                        {formatTime(currentTime)}
-                      </p>
-                    </div>
-                  </div>
+                <div className="bg-indigo-700 rounded-lg px-4 py-2 w-full text-center">
+                  <p className="text-white text-sm mb-1">
+                    {new Date().toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                  <p className="text-4xl font-mono font-bold text-white tracking-wider">
+                    {formatTime(currentTime)}
+                  </p>
                 </div>
                 
                 {/* Verification instruction */}
@@ -1982,53 +1977,6 @@ if (view === 'manager') {
                         </th>
                       </tr>
                     </thead>
-                      {/* {isEditingEmployee && editEmployee ? (
-                        <tr className="bg-indigo-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="text"
-                              className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                              value={editEmployee.name}
-                              onChange={(e) => setEditEmployee({...editEmployee, name: e.target.value})}
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="email"
-                              className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                              value={editEmployee.email}
-                              onChange={(e) => setEditEmployee({...editEmployee, email: e.target.value})}
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <select
-                              className="w-full px-2 py-1 border border-indigo-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                              value={editEmployee.jobTitle}
-                              onChange={(e) => setEditEmployee({...editEmployee, jobTitle: e.target.value})}
-                            >
-                              <option value="Employee">Employee</option>
-                              <option value="Manager">Manager</option>
-                            </select>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={saveEmployeeEditToFirebase}
-                              className="text-green-600 hover:text-green-900 mr-3 bg-green-50 hover:bg-green-100 p-2 rounded-md transition-colors"
-                              aria-label="Save changes"
-                            >
-                              <CheckCircle size={16} />
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              className="text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-md transition-colors"
-                              aria-label="Cancel editing"
-                            >
-                              <XCircle size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      ) : null} */}
-                      
                       <tbody className="bg-white divide-y divide-gray-100">
                       {filteredEmployees.map((employee) => (
                         <tr key={employee.id} className={`hover:bg-gray-50 ${isEditingEmployee && editEmployee && employee.id === editEmployee.id ? 'bg-indigo-50' : ''}`}>
@@ -2156,17 +2104,17 @@ if (view === 'manager') {
                         </tr>
                       ))}
   
-  {filteredEmployees.length === 0 && (
-    <tr>
-      <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
-        <div className="flex flex-col items-center justify-center">
-          <User size={24} className="text-gray-300 mb-2" />
-          <p>No employees found. Try a different search or add a new employee.</p>
-        </div>
-      </td>
-    </tr>
-  )}
-</tbody>
+                      {filteredEmployees.length === 0 && (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
+                            <div className="flex flex-col items-center justify-center">
+                              <User size={24} className="text-gray-300 mb-2" />
+                              <p>No employees found. Try a different search or add a new employee.</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
                   </table>
                 </div>
               </div>
@@ -2217,64 +2165,64 @@ if (view === 'manager') {
                     <div className="max-h-60 overflow-auto">
                       {RESTAURANTS.map((restaurant) => (
                         <div key={restaurant.id} className="px-1 py-1">
-{!restaurant.locations ? (
-  <button
-    type="button"
-    className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-    onClick={() => {
-      setSelectedRestaurant(restaurant);
-      setSelectedLocation(restaurant.name);
-      setShowRestaurantDropdown(false);
-      // Update activeRestaurant if in manager view
-      if (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Manager') {
-        setActiveRestaurant(restaurant);
-      }
-    }}
-  >
-    <Store size={16} className="text-indigo-600 flex-shrink-0" />
-    <div>
-      <div className="font-medium text-gray-900">{restaurant.name}</div>
-    </div>
-  </button>
-) : (
-  // For restaurants with multiple locations
-  <>
-    <button
-      type="button"
-      className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-      onClick={() => {
-        setSelectedRestaurant(restaurant);
-        setSelectedLocation(restaurant.name);
-        setShowRestaurantDropdown(false);
-      }}
-    >
-      <Store size={16} className="text-indigo-600 flex-shrink-0" />
-      <div>
-        <div className="font-medium text-gray-900">{restaurant.name}</div>
-      </div>
-    </button>
-    <div className="ml-4 mt-1 space-y-1 mb-2">
-    {restaurant.locations.map((location) => (
-    <button
-      key={location.id}
-      type="button"
-      className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
-      onClick={() => {
-        // Set both the location name and the parent restaurant
-        setSelectedLocation(location.name);
-        setSelectedRestaurant(restaurant); // Make sure we update the parent restaurant too
-        setShowRestaurantDropdown(false);
-      }}
-    >
-      <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
-      <div>
-        <div className="font-medium text-gray-900">{location.name}</div>
-      </div>
-    </button>
-  ))}
-    </div>
-  </>
-)}
+                          {!restaurant.locations ? (
+                            <button
+                              type="button"
+                              className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+                              onClick={() => {
+                                setSelectedRestaurant(restaurant);
+                                setSelectedLocation(restaurant.name);
+                                setShowRestaurantDropdown(false);
+                                // Update activeRestaurant if in manager view
+                                if (currentUser.jobTitle === 'General Manager' || currentUser.jobTitle === 'Manager') {
+                                  setActiveRestaurant(restaurant);
+                                }
+                              }}
+                            >
+                              <Store size={16} className="text-indigo-600 flex-shrink-0" />
+                              <div>
+                                <div className="font-medium text-gray-900">{restaurant.name}</div>
+                              </div>
+                            </button>
+                          ) : (
+                            // For restaurants with multiple locations
+                            <>
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+                                onClick={() => {
+                                  setSelectedRestaurant(restaurant);
+                                  setSelectedLocation(restaurant.name);
+                                  setShowRestaurantDropdown(false);
+                                }}
+                              >
+                                <Store size={16} className="text-indigo-600 flex-shrink-0" />
+                                <div>
+                                  <div className="font-medium text-gray-900">{restaurant.name}</div>
+                                </div>
+                              </button>
+                              <div className="ml-4 mt-1 space-y-1 mb-2">
+                              {restaurant.locations.map((location) => (
+                              <button
+                                key={location.id}
+                                type="button"
+                                className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-md flex items-center gap-2 transition-colors duration-150"
+                                onClick={() => {
+                                  // Set both the location name and the parent restaurant
+                                  setSelectedLocation(location.name);
+                                  setSelectedRestaurant(restaurant); // Make sure we update the parent restaurant too
+                                  setShowRestaurantDropdown(false);
+                                }}
+                              >
+                                <MapPin size={14} className="text-indigo-400 flex-shrink-0" />
+                                <div>
+                                  <div className="font-medium text-gray-900">{location.name}</div>
+                                </div>
+                              </button>
+                            ))}
+                              </div>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2334,23 +2282,18 @@ if (view === 'manager') {
                   </div>
                   
                   {/* Live clock and date verification */}
-                  <div className="bg-indigo-600 px-5 py-4 mt-2">
-                    <div className="flex flex-col items-center">
-                      <p className="text-indigo-100 text-xs mb-2">Current Date & Time (Live)</p>
-                      <div className="bg-indigo-700 rounded-lg px-4 py-2 w-full text-center">
-                        <p className="text-white text-sm mb-1">
-                          {new Date().toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
-                        <p className="text-2xl font-mono font-bold text-white tracking-wider">
-                          {formatTime(currentTime)}
-                        </p>
-                      </div>
-                    </div>
+                  <div className="bg-indigo-700 rounded-lg px-4 py-2 w-full text-center">
+                    <p className="text-white text-sm mb-1">
+                      {new Date().toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                    <p className="text-4xl font-mono font-bold text-white tracking-wider">
+                      {formatTime(currentTime)}
+                    </p>
                   </div>
                   
                   {/* Verification instruction */}
