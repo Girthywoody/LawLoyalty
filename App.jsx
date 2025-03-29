@@ -1085,6 +1085,8 @@ const saveEmployeeEditToFirebase = async () => {
     setShowForgotPassword(true);
   };
 
+  //test
+
   // User profile badge
   const UserProfileBadge = ({ user }) => (
     <div className="flex items-center">
@@ -1923,6 +1925,7 @@ if (view === 'manager') {
               currentUser={currentUser} 
               activeRestaurant={activeRestaurant}
             />
+            
             
 
             {/* Employee management section - filtered by restaurant */}
