@@ -42,7 +42,6 @@ const PublicSignup = () => {
       try {
         // Using predefined restaurants from App.jsx for consistency
         const RESTAURANTS = [
-          { id: "montanas", name: "Montana's"},
           { id: "coras", name: "Cora's Breakfast"},
           { id: "js-roadhouse", name: "J's Roadhouse"},
           { id: "swiss-chalet", name: "Swiss Chalet"},
@@ -63,6 +62,15 @@ const PublicSignup = () => {
               { id: "lot88-north-bay", name: "North Bay"},
               { id: "lot88-thunder-bay", name: "Thunder Bay"},
               { id: "lot88-burlington", name: "Burlington"}
+            ]
+          }, 
+          {
+            id: "montanas",
+            name: "Montanas",
+            discount: 20,
+            locations: [
+              { id: "montanas-sudbury", name: "Sudbury"},
+              { id: "montanas-orillia", name: "Orillia"},
             ]
           }, 
           {

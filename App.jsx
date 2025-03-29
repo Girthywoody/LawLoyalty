@@ -110,7 +110,6 @@ const RestaurantLoyaltyApp = () => {
 
 
   const RESTAURANTS = [
-    { id: "montanas", name: "Montana's", discount: 20 },
     { id: "coras", name: "Cora's Breakfast", discount: 10 },
     { id: "js-roadhouse", name: "J's Roadhouse", discount: 20 },
     { id: "swiss-chalet", name: "Swiss Chalet", discount: 20 },
@@ -139,7 +138,15 @@ const RestaurantLoyaltyApp = () => {
         { id: "kelseys-orillia", name: "Orillia", discount: 20 }
       ]
     }, 
-
+    {
+      id: "montanas",
+      name: "Montanas",
+      discount: 20,
+      locations: [
+        { id: "montanas-sudbury", name: "Sudbury", discount: 20 },
+        { id: "montanas-orillia", name: "Orillia", discount: 20 }
+      ]
+    }, 
     {
       id: "overtime-bar",
       name: "Overtime Bar",
