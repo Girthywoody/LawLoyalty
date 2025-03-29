@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
+        "build:prod": "NODE_ENV=production vite build",
         "preview": "vite preview"
     },
     "dependencies": {
@@ -17,6 +18,8 @@
     },
     "devDependencies": {
         "@vitejs/plugin-react": "^4.0.0",
+        "javascript-obfuscator": "^4.1.0",
+        "rollup-plugin-javascript-obfuscator": "^1.0.4",
         "vite": "^5.0.0"
     }
 }
