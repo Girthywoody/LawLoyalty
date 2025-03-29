@@ -51,7 +51,7 @@ import {
   auth
 } from './firebase';
 
-import { collection, query, where, getDocs } from 'firebase/firestore'; // Add these imports
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import EmployeeRestaurantSelector from './EmployeeRestaurantSelector';
 import GeneralManagerManagement from './GeneralManagerManagement';
 import RestaurantSelector from './RestaurantSelector';
@@ -97,7 +97,7 @@ const RestaurantLoyaltyApp = () => {
   const [selectedManagerRestaurant, setSelectedManagerRestaurant] = useState(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [activeRestaurant, setActiveRestaurant] = useState(null);
-  const [managerView, setManagerView] = useState('manage'); // New state for manager view toggle
+  const [managerView, setManagerView] = useState('manage');
   const [showVerification, setShowVerification] = useState(false);
   const [pendingRestaurant, setPendingRestaurant] = useState(null);
   const [cooldownInfo, setCooldownInfo] = useState(null);
@@ -173,14 +173,10 @@ const RestaurantLoyaltyApp = () => {
   ]
 
 
-  // Add this useEffect at the top level of your App component
 useEffect(() => {
-  // This listens to Firebase auth state changes
   const unsubscribe = auth.onAuthStateChanged(async (user) => {
     if (user) {
-      // User is signed in
       try {
-        // First check approval status before proceeding
         const employeesRef = collection(db, 'employees');
         const q = query(employeesRef, where("uid", "==", user.uid));
         const querySnapshot = await getDocs(q);
@@ -188,22 +184,18 @@ useEffect(() => {
         if (!querySnapshot.empty) {
           const employeeData = querySnapshot.docs[0].data();
           
-          // Check if user is approved before allowing login
           if (employeeData.status === 'pending') {
-            // User is not approved yet, sign them out
             await logoutUser();
             setLoginError('Your account is pending approval from your manager. Please contact your manager for assistance.');
             return;
           }
           
           if (employeeData.status === 'rejected') {
-            // User is rejected, sign them out
             await logoutUser();
             setLoginError('Your application has been declined. Please contact your restaurant manager for more information.');
             return;
           }
           
-          // User is approved, update the current user state with full employee data
           const userData = {
             id: user.uid,
             name: employeeData.name || user.displayName || user.email,
@@ -213,27 +205,21 @@ useEffect(() => {
             restaurantName: employeeData.restaurantName || null
           };
           
-          // Add managed restaurants for general managers
           if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
             userData.managedRestaurants = employeeData.managedRestaurants;
           }
           
-          // Set the current user
           setCurrentUser(userData);
           
-          // Determine which view to show
           const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
                         (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
                         'manager' : 'employee');
           
-          // Set the view
           setView(userView);
           
-          // Save to localStorage for persistence
           localStorage.setItem('currentUser', JSON.stringify(userData));
           localStorage.setItem('currentView', userView);
         } else {
-          // No employee record found, sign them out
           await logoutUser();
           localStorage.removeItem('currentUser');
           localStorage.removeItem('currentView');
@@ -245,7 +231,6 @@ useEffect(() => {
         localStorage.removeItem('currentView');
       }
     } else {
-      // User is signed out
       setCurrentUser(null);
       setView('login');
       localStorage.removeItem('currentUser');
@@ -253,39 +238,30 @@ useEffect(() => {
     }
   });
   
-  // Clean up the listener when component unmounts
   return () => unsubscribe();
 }, []);
-// Add this check in the auth.onAuthStateChanged listener in App.jsx
 
 
 
-// Add a more sophisticated restaurant filtering function
 const filteredRestaurants = () => {
-  // If current user is an employee, they can see all restaurants
   if (currentUser && currentUser.jobTitle === 'Employee') {
     return RESTAURANTS;
   }
   
-  // For managers, they might only see their restaurant and others in their group
   if (currentUser && (currentUser.jobTitle === 'Manager' || currentUser.jobTitle === 'General Manager')) {
-    // If they have managedRestaurants property, filter by those
     if (currentUser.managedRestaurants && currentUser.managedRestaurants.length > 0) {
       return RESTAURANTS.filter(r => currentUser.managedRestaurants.includes(r.id));
     }
     
-    // If they have a restaurant assigned, just show that one
     if (currentUser.restaurantId) {
       return RESTAURANTS.filter(r => r.id === currentUser.restaurantId);
     }
   }
   
-  // Default: return all restaurants
   return RESTAURANTS;
 };
   
     const [email, setEmail] = useState(''); // Instead of username
-  // Clock update effect
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -295,9 +271,7 @@ const filteredRestaurants = () => {
   }, []);
 
 
-  // Add this useEffect at the top level of your App component
 useEffect(() => {
-  // Check for stored user data on component mount
   const storedUser = localStorage.getItem('currentUser');
   const storedView = localStorage.getItem('currentView');
   
@@ -309,7 +283,6 @@ useEffect(() => {
       if (storedView) {
         setView(storedView);
       } else {
-        // Set appropriate view based on user role
         if (parsedUser.jobTitle === 'Admin') {
           setView('admin');
         } else if (parsedUser.jobTitle === 'Manager' || parsedUser.jobTitle === 'General Manager') {
@@ -326,8 +299,6 @@ useEffect(() => {
 }, []);
 
 
-// Modify your handleLogout function to clear stored data
-// Add these lines after setCurrentUser(null)
 localStorage.removeItem('currentUser');
 localStorage.removeItem('currentView');
 
@@ -338,7 +309,6 @@ useEffect(() => {
     let unsubscribe;
     
     if (currentUser && currentUser.jobTitle === 'Manager' && currentUser.restaurantId) {
-      // Regular manager - only see employees from their restaurant
       unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
         const filteredData = employeesData.filter(emp => 
           emp.jobTitle === 'Employee' || 
@@ -350,9 +320,7 @@ useEffect(() => {
         setIsLoading(false);
       }, currentUser.restaurantId);
     } else if (currentUser && currentUser.jobTitle === 'General Manager' && activeRestaurant) {
-      // General manager - see employees for the currently selected restaurant
-      console.log("Loading employees for restaurant:", activeRestaurant.id);
-      unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
+        unsubscribe = subscribeToRestaurantEmployees((employeesData) => {
         const filteredData = employeesData.filter(emp => 
           emp.jobTitle === 'Employee' || 
           emp.jobTitle === 'Manager' ||
@@ -364,7 +332,6 @@ useEffect(() => {
         setIsLoading(false);
       }, activeRestaurant.id);
     } else if (currentUser && currentUser.jobTitle === 'Admin') {
-      // Admin - see all employees
       unsubscribe = subscribeToEmployees((employeesData) => {
         setEmployees(employeesData);
         setFilteredEmployees(employeesData);
@@ -387,19 +354,16 @@ useEffect(() => {
   const handleCompleteSignup = async (e) => {
     e.preventDefault();
     
-    // Don't proceed if already loading
     if (isLoading) return;
     
     setLoginError('');
     setIsLoading(true);
     
     try {
-      // Validate passwords match
       if (completeSignupPassword !== completeSignupConfirmPassword) {
         throw new Error('Passwords do not match');
       }
       
-      // Complete the registration process
       await completeRegistration(completeSignupName, completeSignupPassword, inviteCode);
       
       showNotification('Account created successfully! Please sign in.', 'success');
@@ -416,7 +380,6 @@ useEffect(() => {
     let unsubCooldown = null;
     
     if (currentUser) {
-      // Subscribe to cooldown updates in real-time
       unsubCooldown = subscribeToUserCooldown(currentUser.id, (cooldownInfo) => {
         setCooldownInfo(cooldownInfo);
         setCooldownChecked(true);
@@ -426,7 +389,6 @@ useEffect(() => {
       setCooldownChecked(false);
     }
     
-    // Cleanup subscription on unmount or when user changes
     return () => {
       if (unsubCooldown) {
         unsubCooldown();
@@ -438,7 +400,6 @@ useEffect(() => {
     if (!pendingRestaurant) return;
     
     try {
-      // Record the visit
       await recordRestaurantVisit(
         currentUser.id,
         currentUser.restaurantName || "Not Specified",
