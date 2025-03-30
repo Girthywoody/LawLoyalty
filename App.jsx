@@ -1322,21 +1322,20 @@ if (view === 'admin') {
             </div>
             <UserProfileBadge user={currentUser} />
           </div>
-          
           <UserManagementTable 
-  employees={employees}
-  filteredEmployees={filteredEmployees}
-  searchTerm={searchTerm}
-  startEditEmployee={startEditEmployee}
-  saveEmployeeEditToFirebase={saveEmployeeEditToFirebase}
-  cancelEdit={cancelEdit}
-  removeEmployeeFromFirebase={removeEmployeeFromFirebase}
-  editEmployee={editEmployee}
-  isEditingEmployee={isEditingEmployee}
-  getRestaurantName={getRestaurantName}
-  RESTAURANTS={RESTAURANTS}
-  onSearchChange={(value) => setSearchTerm(value)}
-/>
+            employees={employees}
+            filteredEmployees={filteredEmployees}
+            searchTerm={searchTerm}
+            startEditEmployee={startEditEmployee}
+            saveEmployeeEditToFirebase={saveEmployeeEditToFirebase}
+            cancelEdit={cancelEdit}
+            removeEmployeeFromFirebase={removeEmployeeFromFirebase}
+            editEmployee={editEmployee}
+            isEditingEmployee={isEditingEmployee}
+            getRestaurantName={getRestaurantName}
+            RESTAURANTS={RESTAURANTS}
+            onSearchChange={(value) => setSearchTerm(value)}
+          />
         </div>
       </main>
 
