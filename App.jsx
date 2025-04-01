@@ -20,18 +20,13 @@ import {
 } from 'lucide-react';
 import MaintenanceManagement from './MaintenanceManagement';
 import { subscribeToUserCooldown } from './RestaurantAnalytics';
-
-
+import MaintenanceIntegration from './MaintenanceIntegration';
 import { Store } from 'lucide-react';
-
 import VerificationPopup from './VerificationPopup';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import { recordRestaurantVisit, checkCooldownPeriod } from './RestaurantAnalytics';
-
 import ForgotPasswordModal from './ForgotPasswordModal';
-
 import { createUser, sendEmployeeInvite } from './firebase';
-
 import { 
   createManagerWithRestaurant,
   subscribeToRestaurantEmployees,
@@ -1785,6 +1780,14 @@ if (view === 'employee') {
 
 // MANAGER VIEW
 if (view === 'manager') {
+  if (view === 'manager' && showMaintenanceView && currentUser && currentUser.jobTitle === 'General Manager') {
+    return (
+      <MaintenanceIntegration 
+        currentUser={currentUser} 
+        onBack={() => setShowMaintenanceView(false)} 
+      />
+    );
+  }
   // Get the current discount based on selected location or active restaurant
   const currentDiscount = selectedLocation ? 
     getDiscount(selectedLocation) : 
@@ -1859,6 +1862,20 @@ if (view === 'manager') {
             setActiveRestaurant(restaurant);
           }}
         />
+      )}
+      {currentUser && currentUser.jobTitle === 'General Manager' && (
+        <button
+          onClick={() => setShowMaintenanceView(true)}
+          className={`px-6 py-4 font-medium text-sm transition-colors ${
+            showMaintenanceView ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' : 
+            'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className="flex items-center">
+            <Wrench size={16} className="mr-2" />
+            Maintenance
+          </div>
+        </button>
       )}
 
       {/* Main content */}
