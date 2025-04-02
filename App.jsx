@@ -291,32 +291,41 @@ const filteredRestaurants = () => {
   }, []);
 
 
-useEffect(() => {
-  const storedUser = localStorage.getItem('currentUser');
-  const storedView = localStorage.getItem('currentView');
-  
-  if (storedUser) {
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      setCurrentUser(parsedUser);
-      
-      if (storedView) {
-        setView(storedView);
-      } else {
-        if (parsedUser.jobTitle === 'Admin') {
-          setView('admin');
-        } else if (parsedUser.jobTitle === 'Manager' || parsedUser.jobTitle === 'General Manager') {
-          setView('manager');
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    const storedView = localStorage.getItem('currentView');
+    
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setCurrentUser(parsedUser);
+        
+        if (storedView) {
+          setView(storedView);
+          
+          // Set appropriate default state for maintenance users
+          if (storedView === 'maintenance') {
+            // Default to showing maintenance management interface for maintenance staff
+            setShowMaintenanceView(true);
+          }
         } else {
-          setView('employee');
+          if (parsedUser.jobTitle === 'Admin') {
+            setView('admin');
+          } else if (parsedUser.jobTitle === 'Manager' || parsedUser.jobTitle === 'General Manager') {
+            setView('manager');
+          } else if (parsedUser.jobTitle === 'Maintenance') {
+            setView('maintenance');
+            // Default to showing maintenance management interface
+            setShowMaintenanceView(true);
+          } else {
+            setView('employee');
+          }
         }
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
       }
-    } catch (error) {
-      console.error("Error parsing stored user:", error);
-
     }
-  }
-}, []);
+  }, []);
 
 
 localStorage.removeItem('currentUser');
