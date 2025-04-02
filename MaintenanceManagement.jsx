@@ -39,6 +39,8 @@ import {
 } from './MaintenanceFirebase';
 
 import ImageUploadComponent from './ImageUploadComponent';
+import EnhancedMaintenanceCalendar from './EnhancedMaintenanceCalendar';
+
 
 
 // Placeholder for your Firebase imports
@@ -937,82 +939,13 @@ const formatTime = (date) => {
           <div className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Maintenance Calendar</h2>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => {
-                    const prevMonth = new Date(currentMonth);
-                    prevMonth.setMonth(prevMonth.getMonth() - 1);
-                    setCurrentMonth(prevMonth);
-                  }}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <span className="text-base sm:text-xl font-semibold text-gray-700 hidden sm:inline">
-                  {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                </span>
-                <span className="text-base font-semibold text-gray-700 sm:hidden">
-                  {currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' })}
-                </span>
-                <button
-                  onClick={() => {
-                    const nextMonth = new Date(currentMonth);
-                    nextMonth.setMonth(nextMonth.getMonth() + 1);
-                    setCurrentMonth(nextMonth);
-                  }}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
             </div>
 
-            {/* Calendar Grid - Mobile Optimized */}
-            <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-              <div className="grid grid-cols-7 gap-px bg-gray-200">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-                  <div key={day} className="bg-gray-100 py-2 text-center text-sm font-medium text-gray-600">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              
-              <div className="grid grid-cols-7 gap-px bg-gray-200">
-                {generateCalendarDays().map((dayObj, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`bg-white h-24 sm:h-32 p-1 sm:p-2 overflow-hidden transition-colors duration-300 ${
-                      !dayObj.day ? 'bg-gray-50' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    {dayObj.day && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <span className={`text-xs sm:text-sm font-medium ${
-                            dayObj.date?.toDateString() === new Date().toDateString() 
-                              ? 'bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center' 
-                              : 'text-gray-700'
-                          }`}>
-                            {dayObj.day}
-                          </span>
-                        </div>
-                        
-                        <div className="mt-1 space-y-1 max-h-16 sm:max-h-24 overflow-y-auto">
-                          {dayObj.events?.map((event) => (
-                            <div 
-                              key={event.id} 
-                              className="px-1 py-0.5 text-xs rounded bg-blue-50 text-blue-700 truncate"
-                            >
-                              {event.title}
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Enhanced Maintenance Calendar */}
+            <EnhancedMaintenanceCalendar 
+              maintenanceEvents={maintenanceEvents} 
+              currentUser={currentUser}
+            />
           </div>
         )}
       </main>
