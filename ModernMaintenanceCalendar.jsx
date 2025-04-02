@@ -323,19 +323,18 @@ const ModernMaintenanceCalendar = ({ maintenanceEvents = [], currentUser }) => {
     return { top, height };
   };
   
-  // Render the event card for day and week views
   const renderEventCard = (event, index, position, isWeekView = false) => {
     const startTime = new Date(event.start);
     const endTime = new Date(event.end);
     const isHovered = hoveredEvent === event.id;
     
-    // Color schemes based on urgency level
+    // Solid color backgrounds based on urgency level
     const urgencyColors = {
-      1: 'from-gray-400 to-gray-300 text-gray-800 shadow-gray-200', // Very Low
-      2: 'from-blue-300 to-blue-200 text-blue-800 shadow-blue-100', // Low
-      3: 'from-yellow-300 to-yellow-200 text-yellow-800 shadow-yellow-100', // Medium
-      4: 'from-orange-300 to-orange-200 text-orange-800 shadow-orange-100', // High
-      5: 'from-red-300 to-red-200 text-red-800 shadow-red-100', // Critical
+      1: 'bg-gray-400 text-white shadow-gray-200', // Very Low
+      2: 'bg-blue-500 text-white shadow-blue-200', // Low
+      3: 'bg-yellow-500 text-white shadow-yellow-200', // Medium
+      4: 'bg-orange-500 text-white shadow-orange-200', // High
+      5: 'bg-red-500 text-white shadow-red-200', // Critical
     };
     
     const colorClass = urgencyColors[event.urgencyLevel || 3];
@@ -345,12 +344,11 @@ const ModernMaintenanceCalendar = ({ maintenanceEvents = [], currentUser }) => {
         key={`${event.id}-${index}`}
         className={`absolute left-1 right-1 rounded-lg border overflow-hidden shadow-lg transition-all duration-200 ${
           isHovered ? 'transform scale-[1.02] z-30' : 'z-10'
-        } bg-gradient-to-br ${colorClass}`}
+        } ${colorClass}`}
         style={{ 
           top: `${position.top}%`, 
           height: `${position.height}%`,
           minHeight: '28px',
-          backdropFilter: 'blur(8px)',
         }}
         onClick={() => setExpandedEvent(event)}
         onMouseEnter={() => setHoveredEvent(event.id)}
@@ -366,7 +364,6 @@ const ModernMaintenanceCalendar = ({ maintenanceEvents = [], currentUser }) => {
             </div>
             
             <div className="inline-flex items-center">
-              <Timer size={10} className="mr-1 flex-shrink-0" />
               <span>{calculateDuration(startTime, endTime)}</span>
             </div>
           </div>
@@ -388,6 +385,7 @@ const ModernMaintenanceCalendar = ({ maintenanceEvents = [], currentUser }) => {
       </div>
     );
   };
+  
   
   // Render the day view
   const renderDayView = () => {
@@ -637,11 +635,11 @@ const ModernMaintenanceCalendar = ({ maintenanceEvents = [], currentUser }) => {
                     <div className="space-y-1">
                       {dayEvents.slice(0, 3).map((event, eventIndex) => {
                         const urgencyColors = {
-                          1: 'bg-gray-200 text-gray-800', // Very Low
-                          2: 'bg-blue-200 text-blue-800', // Low
-                          3: 'bg-yellow-200 text-yellow-800', // Medium
-                          4: 'bg-orange-200 text-orange-800', // High
-                          5: 'bg-red-200 text-red-800', // Critical
+                          1: 'bg-gray-400 text-white', // Very Low
+                          2: 'bg-blue-500 text-white', // Low
+                          3: 'bg-yellow-500 text-white', // Medium
+                          4: 'bg-orange-500 text-white', // High
+                          5: 'bg-red-500 text-white', // Critical
                         };
                         
                         const colorClass = urgencyColors[event.urgencyLevel || 3];
@@ -1099,23 +1097,23 @@ const ModernMaintenanceCalendar = ({ maintenanceEvents = [], currentUser }) => {
             <h3 className="text-sm font-medium text-gray-700 mb-3">Priority Legend</h3>
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center">
-                <div className="w-8 h-5 rounded bg-gradient-to-r from-gray-400 to-gray-300 mr-2 shadow-sm"></div>
+                <div className="w-8 h-5 rounded bg-gray-400 mr-2 shadow-sm"></div>
                 <span className="text-xs text-gray-600">Very Low</span>
               </div>
               <div className="flex items-center">
-                <div className="w-8 h-5 rounded bg-gradient-to-r from-blue-300 to-blue-200 mr-2 shadow-sm"></div>
+                <div className="w-8 h-5 rounded bg-blue-500 mr-2 shadow-sm"></div>
                 <span className="text-xs text-gray-600">Low</span>
               </div>
               <div className="flex items-center">
-                <div className="w-8 h-5 rounded bg-gradient-to-r from-yellow-300 to-yellow-200 mr-2 shadow-sm"></div>
+                <div className="w-8 h-5 rounded bg-yellow-500 mr-2 shadow-sm"></div>
                 <span className="text-xs text-gray-600">Medium</span>
               </div>
               <div className="flex items-center">
-                <div className="w-8 h-5 rounded bg-gradient-to-r from-orange-300 to-orange-200 mr-2 shadow-sm"></div>
+                <div className="w-8 h-5 rounded bg-orange-500 mr-2 shadow-sm"></div>
                 <span className="text-xs text-gray-600">High</span>
               </div>
               <div className="flex items-center">
-                <div className="w-8 h-5 rounded bg-gradient-to-r from-red-300 to-red-200 mr-2 shadow-sm"></div>
+                <div className="w-8 h-5 rounded bg-red-500 mr-2 shadow-sm"></div>
                 <span className="text-xs text-gray-600">Critical</span>
               </div>
             </div>

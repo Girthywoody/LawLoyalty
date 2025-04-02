@@ -66,6 +66,7 @@ const MaintenanceIntegration = ({ currentUser, onBack }) => {
         <MaintenanceManagement 
           currentUser={currentUser}
           isMaintenance={isMaintenance}
+          restrictCalendar={currentUser.jobTitle === 'General Manager'}
         />
       </main>
       

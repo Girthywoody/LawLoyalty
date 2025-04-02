@@ -47,7 +47,7 @@ import ModernMaintenanceCalendar from './ModernMaintenanceCalendar';
 // import { collection, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDocs, onSnapshot, doc, serverTimestamp } from 'firebase/firestore';
 // import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-const MaintenanceManagement = ({ currentUser, isMaintenance }) => {
+const MaintenanceManagement = ({ currentUser, isMaintenance, restrictCalendar = false }) => {
   const [notification, setNotification] = useState(null);
   const [activeView, setActiveView] = useState('requests'); // 'requests' or 'calendar'
   const [maintenanceRequests, setMaintenanceRequests] = useState([]);
@@ -66,6 +66,7 @@ const MaintenanceManagement = ({ currentUser, isMaintenance }) => {
   const [expandedImage, setExpandedImage] = useState(null);
   const [lastLoginTime, setLastLoginTime] = useState(null);
   const [newRequests, setNewRequests] = useState([]); 
+  
   const [additionalImages, setAdditionalImages] = useState({
     images: [],
     imagePreviewUrls: []
@@ -196,6 +197,13 @@ useEffect(() => {
     unsubEventsSnapshot && unsubEventsSnapshot();
   };
 }, [currentUser, isMaintenance, lastLoginTime]);
+
+
+useEffect(() => {
+  if (restrictCalendar && activeView === 'calendar') {
+    setActiveView('requests');
+  }
+}, [restrictCalendar, activeView]);
   
 
 useEffect(() => {
@@ -504,14 +512,15 @@ const handleAddRequest = async () => {
         throw new Error("Request not found");
       }
       
-      // Create event data with a concrete JavaScript Date
+      // Create event data with the exact current time
       const now = new Date();
       const eventData = {
         title: request.title,
         technician: currentUser?.name || 'Current User',
         location: request.location,
         description: request.description,
-        // Don't include start/end here - scheduleMaintenanceEvent will add them
+        start: now, // Exact start time
+        // Don't set end time yet - will be set when marked complete
       };
       
       // Schedule in Firebase
@@ -520,14 +529,20 @@ const handleAddRequest = async () => {
       // Update the selected request with the returned data
       setSelectedRequest({
         ...selectedRequest, 
-        status: 'in progress', // Changed from 'scheduled' to 'in progress'
-        scheduledDate: result.start
+        status: 'in progress',
+        scheduledDate: now,
+        maintenanceStartTime: now // Add this to track when maintenance started
       });
       
       // Also update the request in the maintenanceRequests array
       const updatedRequests = maintenanceRequests.map(req => 
         req.id === requestId 
-          ? {...req, status: 'in progress', scheduledDate: result.start} // Changed from 'scheduled' to 'in progress'
+          ? {
+              ...req, 
+              status: 'in progress', 
+              scheduledDate: now,
+              maintenanceStartTime: now
+            }
           : req
       );
       setMaintenanceRequests(updatedRequests);
@@ -544,9 +559,51 @@ const handleAddRequest = async () => {
   
   const handleMarkAsCompleted = async (requestId) => {
     try {
-      await completeMaintenanceRequest(requestId);
+      // Get the current time as the completion time
+      const completionTime = new Date();
+      
+      // Find the request to get the start time
+      const request = maintenanceRequests.find(req => req.id === requestId);
+      
+      if (!request) {
+        throw new Error("Request not found");
+      }
+      
+      // Calculate the duration
+      const startTime = request.maintenanceStartTime || request.scheduledDate || new Date(completionTime.getTime() - 3600000); // Default to 1 hour before if no start time
+      const duration = completionTime.getTime() - startTime.getTime();
+      
+      // Update the event with the end time (if it exists)
+      const matchingEvent = maintenanceEvents.find(event => event.requestId === requestId);
+      if (matchingEvent) {
+        const eventRef = doc(db, 'maintenanceEvents', matchingEvent.id);
+        await updateDoc(eventRef, {
+          end: completionTime,
+          durationMs: duration,
+          updatedAt: serverTimestamp()
+        });
+      }
+      
+      // Mark the request as completed with the completion time
+      await completeMaintenanceRequest(requestId, completionTime, duration);
+      
       showNotification('Maintenance marked as completed!', 'success');
       setShowDetailModal(false);
+      
+      // Update local state to reflect the completion
+      const updatedRequests = maintenanceRequests.map(req => 
+        req.id === requestId 
+          ? {
+              ...req, 
+              status: 'completed',
+              completedDate: completionTime,
+              maintenanceEndTime: completionTime,
+              maintenanceDuration: duration
+            }
+          : req
+      );
+      setMaintenanceRequests(updatedRequests);
+      
     } catch (error) {
       console.error("Error completing maintenance:", error);
       showNotification('Failed to complete maintenance', 'error');
@@ -565,7 +622,6 @@ const handleAddRequest = async () => {
       const newCommentObj = await addCommentToRequest(requestId, commentData);
       
       // Update the selected request locally so we don't have to reload to see the new comment
-// Update the selected request locally so we don't have to reload to see the new comment
     setSelectedRequest({
       ...selectedRequest,
       comments: [...(selectedRequest.comments || []), newCommentObj]
@@ -808,40 +864,42 @@ const formatTime = (date) => {
       
 
       {/* Navigation Tabs */}
-          <div className="bg-white border-b border-gray-200">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex">
-                <button
-                  onClick={() => setActiveView('requests')}
-                  className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
-                    activeView === 'requests' 
-                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <AlertTriangle size={16} className="mr-2" />
-                    Maintenance Requests
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveView('calendar')}
-                  className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
-                    activeView === 'calendar' 
-                      ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <Calendar size={16} className="mr-2" />
-                    Maintenance Calendar
-                  </div>
-                </button>
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex">
+            <button
+              onClick={() => setActiveView('requests')}
+              className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
+                activeView === 'requests' 
+                  ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center">
+                <AlertTriangle size={16} className="mr-2" />
+                Maintenance Requests
               </div>
-            </div>
+            </button>
+            {!restrictCalendar && (
+              <button
+                onClick={() => setActiveView('calendar')}
+                className={`px-6 py-4 font-medium text-sm transition-all duration-300 ${
+                  activeView === 'calendar' 
+                    ? 'text-gray-900 border-b-2 border-indigo-500 bg-gray-50' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center">
+                  <Calendar size={16} className="mr-2" />
+                  Maintenance Calendar
+                </div>
+              </button>
+            )}
           </div>
+        </div>
+      </div>
 
-{/* Main Content Area */}
+      {/* Main Content Area */}
       <main className="flex-grow w-full mx-auto py-4 px-2 sm:py-6 sm:px-4 max-w-7xl">
         {/* Requests View */}
         {activeView === 'requests' && (

@@ -278,37 +278,66 @@ export const addImagesToRequest = async (requestId, imageFiles = []) => {
   }
 };
 
+// Update the scheduleMaintenanceEvent function to better handle start/end times
 export const scheduleMaintenanceEvent = async (requestId, eventData) => {
   try {
     // Use the provided date if available, otherwise use current date
     const startDate = eventData.start || new Date();
-    const endDate = eventData.end || new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours from start
+    const endDate = eventData.end || null; // Don't set end date until completed
     
     // Create the event with the provided dates
     const eventRef = await addDoc(maintenanceEventsCollection, {
       ...eventData,
       requestId,
-      start: startDate, // Use provided date or current date
+      start: startDate, // Use exact provided date
       end: endDate,
       createdAt: serverTimestamp()
     });
     
-    // Update the request status to in progress instead of scheduled
+    // Update the request status to in progress
     const requestRef = doc(db, 'maintenanceRequests', requestId);
     await updateDoc(requestRef, { 
-      status: 'in progress',  // Changed from 'scheduled' to 'in progress'
-      scheduledDate: startDate, // Use provided date
+      status: 'in progress',
+      scheduledDate: startDate,
+      maintenanceStartTime: startDate, // Add this to track when maintenance started
       updatedAt: serverTimestamp() 
     });
     
     return { 
       id: eventRef.id, 
       ...eventData,
+      requestId,
       start: startDate,
       end: endDate
     };
   } catch (error) {
     console.error("Error scheduling maintenance:", error);
+    throw error;
+  }
+};
+
+// Update the completeMaintenanceRequest function to include completion time and duration
+export const completeMaintenanceRequest = async (requestId, completionTime = null, duration = null) => {
+  try {
+    const endTime = completionTime || new Date();
+    
+    const requestRef = doc(db, 'maintenanceRequests', requestId);
+    await updateDoc(requestRef, {
+      status: 'completed',
+      completedDate: endTime,
+      maintenanceEndTime: endTime,
+      maintenanceDuration: duration,
+      updatedAt: serverTimestamp()
+    });
+    
+    return { 
+      success: true, 
+      id: requestId,
+      completedDate: endTime,
+      duration: duration
+    };
+  } catch (error) {
+    console.error("Error completing request:", error);
     throw error;
   }
 };
@@ -382,23 +411,6 @@ export const addCommentToRequest = async (requestId, commentData) => {
     return newComment;
   } catch (error) {
     console.error("Error adding comment:", error);
-    throw error;
-  }
-};
-
-// Mark request as completed
-export const completeMaintenanceRequest = async (requestId) => {
-  try {
-    const requestRef = doc(db, 'maintenanceRequests', requestId);
-    await updateDoc(requestRef, {
-      status: 'completed',
-      completedDate: new Date(),
-      updatedAt: serverTimestamp()
-    });
-    
-    return { success: true, id: requestId };
-  } catch (error) {
-    console.error("Error completing request:", error);
     throw error;
   }
 };
