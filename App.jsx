@@ -73,7 +73,7 @@ const RestaurantLoyaltyApp = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-  const [jobTitles, setJobTitles] = useState(['Employee', 'Manager']);
+  const [jobTitles, setJobTitles] = useState(['Employee', 'Manager', 'General Manager', 'Admin', 'Maintenance']);
   const [employees, setEmployees] = useState([]);
   const [inviteSuccess, setInviteSuccess] = useState(false);
   const [showRestaurantDropdown, setShowRestaurantDropdown] = useState(false);
@@ -207,17 +207,46 @@ useEffect(() => {
             userData.managedRestaurants = employeeData.managedRestaurants;
           }
 
+
+          if (employeeData.jobTitle === 'Maintenance') {
+            userData.canManageMaintenance = true;
+          }
+
+          setCurrentUser(userData);
+
+          const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
+                employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
+                'manager' :
+                employeeData.jobTitle === 'Maintenance' ? 'maintenance' : 'employee';
+
+          // Set the view
+          setView(userView);
+
+          const userData = {
+            id: user.uid,
+            name: employeeData.name || user.displayName || email,
+            email: normalizedEmail,
+            jobTitle: employeeData.jobTitle || 'Employee',
+            restaurantId: employeeData.restaurantId || null,
+            restaurantName: employeeData.restaurantName || null
+          };
+          
+          // Add managed restaurants for general managers
+          if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
+            userData.managedRestaurants = employeeData.managedRestaurants;
+          }
+          
+          // Flag maintenance staff for special privileges
+          if (employeeData.jobTitle === 'Maintenance' || employeeData.jobTitle === 'Admin') {
+            userData.canManageMaintenance = true;
+          }
           
           setCurrentUser(userData);
           
-          const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
-                        (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
-                        'manager' : 'employee');
-          
-          setView(userView);
-          
+          // Save to localStorage
           localStorage.setItem('currentUser', JSON.stringify(userData));
           localStorage.setItem('currentView', userView);
+          
         } else {
           await logoutUser();
           localStorage.removeItem('currentUser');
@@ -1090,6 +1119,184 @@ if (view === 'register') {
   );
 }
 
+if (view === 'maintenance') {
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {notification && <Notification message={notification.message} type={notification.type} />}
+      
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <div className="flex items-center">
+            <Wrench size={24} className="text-indigo-600 mr-2" />
+            <h1 className="text-xl font-semibold text-indigo-700">Maintenance Portal</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            {/* Maintenance Management Button */}
+            <button 
+              onClick={() => setShowMaintenanceView(!showMaintenanceView)}
+              className={`flex items-center p-2 rounded-lg ${showMaintenanceView ? 'bg-gray-100 text-gray-700' : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'} transition-colors`}
+            >
+              {showMaintenanceView ? (
+                <>
+                  <Store size={18} className="mr-1" />
+                  <span className="hidden md:inline">View Discount</span>
+                </>
+              ) : (
+                <>
+                  <Wrench size={18} className="mr-1" />
+                  <span className="hidden md:inline">Maintenance</span>
+                </>
+              )}
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+              aria-label="Logout"
+            >
+              <LogOut size={18} className="mr-1" />
+              <span className="hidden md:inline">Logout</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {showVerification && (
+        <VerificationPopup
+          restaurantName={pendingRestaurant?.name}
+          onConfirm={handleConfirmRestaurant}
+          onCancel={handleCancelVerification}
+        />
+      )}
+
+      {/* Main content */}
+      {showMaintenanceView ? (
+        <main className="flex-grow">
+          <MaintenanceManagement currentUser={currentUser} isMaintenance={true} />
+        </main>
+      ) : (
+        <main className="flex-grow max-w-5xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+            {/* User info card */}
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+              <UserProfileBadge user={currentUser} />
+            </div>
+
+            {/* Location selector */}
+            <div className="p-6 border-b border-gray-200">
+              <EmployeeRestaurantSelector 
+                restaurants={filteredRestaurants()} 
+                currentUser={currentUser} 
+                selectedRestaurant={selectedRestaurant} 
+                onSelectRestaurant={handleSelectRestaurant} 
+                cooldownInfo={cooldownInfo} 
+              />
+            </div>
+
+            {/* Discount display - same as employee view */}
+            {selectedLocation ? (
+              <div className="p-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Your Discount</h3>
+                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg overflow-hidden">
+                  {/* Discount card content - same as employee view */}
+                  {/* Header section */}
+                  <div className="px-5 py-4 border-b border-indigo-400 border-opacity-30">
+                    <h4 className="text-white text-xl font-bold">Employee Verification</h4>
+                    <p className="text-indigo-100 text-sm">Show this screen to receive your discount</p>
+                  </div>
+                  
+                  {/* Employee information section */}
+                  <div className="px-5 py-4 space-y-4">
+                    {/* Employee name with ID verification note */}
+                    <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
+                      <p className="text-indigo-100 text-xs mb-1">Employee Name (Must Match ID)</p>
+                      <div className="flex items-center">
+                        <User size={18} className="text-white mr-2" />
+                        <p className="text-xl font-bold text-white">{currentUser?.name}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Employee's workplace */}
+                    <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
+                      <p className="text-indigo-100 text-xs mb-1">Employee Works At</p>
+                      <div className="flex items-center">
+                        <Building size={18} className="text-white mr-2" />
+                        <p className="text-white font-medium">{currentUser?.restaurantName || "Maintenance Team"}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Current dining location */}
+                    <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
+                      <p className="text-indigo-100 text-xs mb-1">Dining At</p>
+                      <div className="flex items-center">
+                        <MapPin size={18} className="text-white mr-2" />
+                        <p className="text-white font-medium">{selectedLocation}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Discount details */}
+                    <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
+                      <p className="text-indigo-100 text-xs mb-1">Discount Amount</p>
+                      <div className="flex items-center">
+                        <Percent size={18} className="text-white mr-2" />
+                        <p className="text-3xl font-bold text-white">{currentDiscount}%</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Live clock and date verification */}
+                  <div className="bg-indigo-700 rounded-lg px-4 py-2 w-full text-center">
+                    <p className="text-white text-sm mb-1">
+                      {new Date().toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                    <p className="text-4xl font-mono font-bold text-white tracking-wider">
+                      {formatTime(currentTime)}
+                    </p>
+                  </div>
+                  
+                  {/* Verification instruction */}
+                  <div className="bg-indigo-800 px-5 py-4">
+                    <div className="flex items-start">
+                      <CheckCircle size={20} className="text-indigo-200 mr-2 flex-shrink-0 mt-0.5" />
+                      <p className="text-indigo-100 text-sm">
+                        Staff: Please verify employee name with their ID. The live clock confirms this is being viewed in real-time.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto flex items-center justify-center rounded-full bg-indigo-100">
+                  <Building size={24} className="text-indigo-600" />
+                </div>
+                <h3 className="mt-4 text-lg font-medium text-gray-900">Select a Location</h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  Choose a location from the dropdown above to view your available discount.
+                </p>
+              </div>
+            )}
+          </div>
+        </main>
+      )}
+      
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-xs text-center text-gray-500">
+            &copy; {new Date().getFullYear()} Josh Law • All rights reserved
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 // ADMIN VIEW
 if (view === 'admin') {
   if (showMaintenanceView) {
@@ -1883,6 +2090,7 @@ if (view === 'manager') {
                               >
                                 <option value="Employee">Employee</option>
                                 <option value="Manager">Manager</option>
+                                <option value="Maintenance">Maintenance</option>
                               </select>
                             ) : (
                               <span className={`px-2 py-1 text-xs rounded-full ${
