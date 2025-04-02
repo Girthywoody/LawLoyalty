@@ -559,10 +559,15 @@ useEffect(() => {
       // Determine which view to show
       const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
                       (employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
-                      'manager' : 'employee');
+                      'manager' : employeeData.jobTitle === 'Maintenance' ? 'maintenance' : 'employee');
       
       // Set the view
       setView(userView);
+      
+      // Set maintenance view to true if the user is a maintenance user
+      if (employeeData.jobTitle === 'Maintenance') {
+        setShowMaintenanceView(true);
+      }
       
       // Save to localStorage
       localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -1306,7 +1311,6 @@ if (view === 'maintenance') {
 
 // ADMIN VIEW
 if (view === 'admin') {
-  // Check if we're in maintenance view first
   if (showMaintenanceView) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
@@ -1315,20 +1319,17 @@ if (view === 'admin') {
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
           <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <div className="flex items-center">
-              <Shield size={24} className="text-indigo-600 mr-2" />
-              <h1 className="text-xl font-semibold text-indigo-700">Manager Dashboard</h1>
+              <Wrench size={24} className="text-indigo-600 mr-2" />
+              <h1 className="text-xl font-semibold text-indigo-700">Maintenance Management</h1>
             </div>
             <div className="flex items-center space-x-4">
-              {/* Move maintenance button here - beside logout */}
-              {currentUser && currentUser.jobTitle === 'General Manager' && (
-                <button 
-                  onClick={() => setShowMaintenanceView(true)}
-                  className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
-                >
-                  <Wrench size={18} className="mr-1" />
-                  <span className="hidden md:inline">Maintenance</span>
-                </button>
-              )}
+              <button 
+                onClick={() => setShowMaintenanceView(false)}
+                className="flex items-center p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              >
+                <ChevronLeft size={18} className="mr-1" />
+                <span className="hidden md:inline">Back to Admin</span>
+              </button>
               <button 
                 onClick={handleLogout}
                 className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
@@ -1393,14 +1394,14 @@ if (view === 'admin') {
         </div>
       </header>
 
-    {currentUser && currentUser.jobTitle === 'Admin' && (
-      <GeneralManagerManagement currentUser={currentUser} />
-    )}
+      {currentUser && currentUser.jobTitle === 'Admin' && (
+        <GeneralManagerManagement currentUser={currentUser} />
+      )}
 
-    <PendingEmployeeApprovals 
-          currentUser={currentUser} 
-          activeRestaurant={activeRestaurant}
-        />
+      <PendingEmployeeApprovals 
+        currentUser={currentUser} 
+        activeRestaurant={activeRestaurant}
+      />
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
@@ -1877,7 +1878,6 @@ if (view === 'employee') {
 
 // MANAGER VIEW
 if (view === 'manager') {
-  // Check maintenance view first before any other rendering
   if (showMaintenanceView && currentUser) {
     return (
       <MaintenanceIntegration 
