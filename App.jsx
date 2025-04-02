@@ -168,7 +168,6 @@ const RestaurantLoyaltyApp = () => {
     },
   ]
 
-
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -225,7 +224,7 @@ const RestaurantLoyaltyApp = () => {
             setView(userView);
             
             // Set appropriate default state for maintenance users
-            if (userView === 'maintenance') {
+            if (employeeData.jobTitle === 'Maintenance') {
               // Default to showing maintenance management interface for maintenance staff
               setShowMaintenanceView(true);
             }
@@ -297,8 +296,8 @@ const filteredRestaurants = () => {
         if (storedView) {
           setView(storedView);
           
-          // Set appropriate default state for maintenance users
-          if (storedView === 'maintenance') {
+          // Set appropriate default state for maintenance users immediately
+          if (storedView === 'maintenance' || parsedUser.jobTitle === 'Maintenance') {
             // Default to showing maintenance management interface for maintenance staff
             setShowMaintenanceView(true);
           }
@@ -1181,7 +1180,7 @@ if (view === 'maintenance') {
       {/* Main content */}
       {showMaintenanceView ? (
         <main className="flex-grow">
-          <MaintenanceManagement currentUser={currentUser} isMaintenance={currentUser.jobTitle === 'Maintenance' || currentUser.jobTitle === 'Admin'} />
+          <MaintenanceManagement currentUser={currentUser} isMaintenance={true} />
         </main>
       ) : (
         <main className="flex-grow max-w-5xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -1307,6 +1306,7 @@ if (view === 'maintenance') {
 
 // ADMIN VIEW
 if (view === 'admin') {
+  // Check if we're in maintenance view first
   if (showMaintenanceView) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
@@ -1343,7 +1343,10 @@ if (view === 'admin') {
         
         {/* Main content */}
         <main className="flex-grow">
-        <MaintenanceManagement currentUser={currentUser} isMaintenance={currentUser.jobTitle === 'Maintenance' || currentUser.jobTitle === 'Admin'} />
+          <MaintenanceManagement 
+            currentUser={currentUser} 
+            isMaintenance={currentUser.jobTitle === 'Maintenance' || currentUser.jobTitle === 'Admin'} 
+          />
         </main>
         
         {/* Footer */}
@@ -1390,12 +1393,11 @@ if (view === 'admin') {
         </div>
       </header>
 
-
     {currentUser && currentUser.jobTitle === 'Admin' && (
       <GeneralManagerManagement currentUser={currentUser} />
     )}
 
-  <PendingEmployeeApprovals 
+    <PendingEmployeeApprovals 
           currentUser={currentUser} 
           activeRestaurant={activeRestaurant}
         />
@@ -1873,13 +1875,10 @@ if (view === 'employee') {
   );
 }
 
-
-
-// Inside the App.jsx file, update the MANAGER VIEW section
-
 // MANAGER VIEW
 if (view === 'manager') {
-  if (view === 'manager' && showMaintenanceView && currentUser) {
+  // Check maintenance view first before any other rendering
+  if (showMaintenanceView && currentUser) {
     return (
       <MaintenanceIntegration 
         currentUser={currentUser} 
@@ -1888,6 +1887,7 @@ if (view === 'manager') {
       />
     );
   }
+  
   // Get the current discount based on selected location or active restaurant
   const currentDiscount = selectedLocation ? 
     getDiscount(selectedLocation) : 

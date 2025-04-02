@@ -30,6 +30,13 @@ const MaintenanceIntegration = ({ currentUser, onBack }) => {
 
   // Determine if the user is maintenance staff
   const isMaintenance = currentUser.jobTitle === 'Maintenance' || currentUser.jobTitle === 'Admin';
+  
+  // Customize button text based on user role
+  const backButtonText = currentUser.jobTitle === 'Admin' 
+    ? "Back to Admin Dashboard" 
+    : isMaintenance 
+      ? "View Discount" 
+      : "Back to Dashboard";
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -48,7 +55,7 @@ const MaintenanceIntegration = ({ currentUser, onBack }) => {
               className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
             >
               <ChevronLeft size={18} className="mr-1" />
-              <span>{isMaintenance ? "View Discount" : "Back to Dashboard"}</span>
+              <span>{backButtonText}</span>
             </button>
           </div>
         </div>
