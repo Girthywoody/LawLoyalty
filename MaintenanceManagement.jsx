@@ -33,7 +33,9 @@ import {
   updateDoc,
   serverTimestamp,
   db,
-  deleteImageFromRequest
+  deleteImageFromRequest,
+  deleteMaintenanceRequest, 
+  addImagesToRequest  
 } from './MaintenanceFirebase';
 
 import ImageUploadComponent from './ImageUploadComponent';
@@ -216,7 +218,6 @@ const handleAdditionalImageChange = (imageData) => {
   });
 };
 
-// Function to handle adding images to an existing request
 const handleAddImagesToRequest = async (requestId) => {
   if (additionalImages.images.length === 0) return;
   
