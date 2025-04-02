@@ -3,14 +3,18 @@ import { Shield, Wrench, ChevronLeft } from 'lucide-react';
 import MaintenanceManagement from './MaintenanceManagement';
 
 const MaintenanceIntegration = ({ currentUser, onBack }) => {
-  if (!currentUser || currentUser.jobTitle !== 'General Manager') {
+  // Allow both General Manager and Maintenance roles to access
+  // but pass the isMaintenance flag to control permissions
+  if (!currentUser || (currentUser.jobTitle !== 'General Manager' && 
+                      currentUser.jobTitle !== 'Maintenance' && 
+                      currentUser.jobTitle !== 'Admin')) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4">
         <div className="bg-white shadow-lg rounded-xl p-8 max-w-md text-center">
           <Shield size={48} className="mx-auto text-red-500 mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Restricted</h2>
           <p className="text-gray-600">
-            Only General Managers have access to the maintenance management system.
+            Only Maintenance staff and General Managers have access to the maintenance management system.
           </p>
           <button
             onClick={onBack}
@@ -24,6 +28,9 @@ const MaintenanceIntegration = ({ currentUser, onBack }) => {
     );
   }
 
+  // Determine if the user is maintenance staff
+  const isMaintenance = currentUser.jobTitle === 'Maintenance' || currentUser.jobTitle === 'Admin';
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
@@ -31,7 +38,9 @@ const MaintenanceIntegration = ({ currentUser, onBack }) => {
         <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center">
             <Wrench size={24} className="text-indigo-600 mr-2" />
-            <h1 className="text-xl font-semibold text-indigo-700">Maintenance Management</h1>
+            <h1 className="text-xl font-semibold text-indigo-700">
+              {isMaintenance ? "Maintenance Management" : "Maintenance Requests"}
+            </h1>
           </div>
           <div className="flex items-center space-x-4">
             <button 
@@ -39,7 +48,7 @@ const MaintenanceIntegration = ({ currentUser, onBack }) => {
               className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
             >
               <ChevronLeft size={18} className="mr-1" />
-              <span>Back to Dashboard</span>
+              <span>{isMaintenance ? "View Discount" : "Back to Dashboard"}</span>
             </button>
           </div>
         </div>
@@ -47,7 +56,10 @@ const MaintenanceIntegration = ({ currentUser, onBack }) => {
 
       {/* Main content */}
       <main className="flex-grow">
-        <MaintenanceManagement currentUser={currentUser} />
+        <MaintenanceManagement 
+          currentUser={currentUser}
+          isMaintenance={isMaintenance}
+        />
       </main>
       
       {/* Footer */}
