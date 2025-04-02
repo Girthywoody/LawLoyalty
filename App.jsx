@@ -169,98 +169,92 @@ const RestaurantLoyaltyApp = () => {
   ]
 
 
-useEffect(() => {
-  const unsubscribe = auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      try {
-        const employeesRef = collection(db, 'employees');
-        const q = query(employeesRef, where("uid", "==", user.uid));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const employeeData = querySnapshot.docs[0].data();
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const employeesRef = collection(db, 'employees');
+          const q = query(employeesRef, where("uid", "==", user.uid));
+          const querySnapshot = await getDocs(q);
           
-          if (employeeData.status === 'pending') {
+          if (!querySnapshot.empty) {
+            const employeeData = querySnapshot.docs[0].data();
+            const normalizedEmail = user.email.toLowerCase();
+            
+            if (employeeData.status === 'pending') {
+              await logoutUser();
+              setLoginError('Your account is pending approval from your manager. Please contact your manager for assistance.');
+              return;
+            }
+            
+            if (employeeData.status === 'rejected') {
+              await logoutUser();
+              setLoginError('Your application has been declined. Please contact your restaurant manager for more information.');
+              return;
+            }
+            
+            // Build the userData object correctly
+            const userData = {
+              id: user.uid,
+              name: employeeData.name || user.displayName || normalizedEmail,
+              email: normalizedEmail,
+              jobTitle: employeeData.jobTitle || 'Employee',
+              restaurantId: employeeData.restaurantId || null,
+              restaurantName: employeeData.restaurantName || null
+            };
+            
+            // Add managed restaurants for general managers
+            if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
+              userData.managedRestaurants = employeeData.managedRestaurants;
+            }
+            
+            // Flag maintenance staff for special privileges
+            if (employeeData.jobTitle === 'Maintenance' || employeeData.jobTitle === 'Admin') {
+              userData.canManageMaintenance = true;
+            }
+            
+            setCurrentUser(userData);
+            
+            // Set the view based on job title
+            const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
+                            employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
+                            'manager' :
+                            employeeData.jobTitle === 'Maintenance' ? 'maintenance' : 'employee';
+            
+            // Set the view
+            setView(userView);
+            
+            // Set appropriate default state for maintenance users
+            if (userView === 'maintenance') {
+              // Default to showing maintenance management interface for maintenance staff
+              setShowMaintenanceView(true);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            localStorage.setItem('currentView', userView);
+            
+          } else {
             await logoutUser();
-            setLoginError('Your account is pending approval from your manager. Please contact your manager for assistance.');
-            return;
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentView');
           }
-
-          
-          
-          if (employeeData.status === 'rejected') {
-            await logoutUser();
-            setLoginError('Your application has been declined. Please contact your restaurant manager for more information.');
-            return;
-          }
-          
-          
-          if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
-            userData.managedRestaurants = employeeData.managedRestaurants;
-          }
-
-
-          if (employeeData.jobTitle === 'Maintenance') {
-            userData.canManageMaintenance = true;
-          }
-
-          setCurrentUser(userData);
-
-          const userView = employeeData.jobTitle === 'Admin' ? 'admin' : 
-                employeeData.jobTitle === 'Manager' || employeeData.jobTitle === 'General Manager' ? 
-                'manager' :
-                employeeData.jobTitle === 'Maintenance' ? 'maintenance' : 'employee';
-
-          // Set the view
-          setView(userView);
-
-          const userData = {
-            id: user.uid,
-            name: employeeData.name || user.displayName || email,
-            email: normalizedEmail,
-            jobTitle: employeeData.jobTitle || 'Employee',
-            restaurantId: employeeData.restaurantId || null,
-            restaurantName: employeeData.restaurantName || null
-          };
-          
-          // Add managed restaurants for general managers
-          if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
-            userData.managedRestaurants = employeeData.managedRestaurants;
-          }
-          
-          // Flag maintenance staff for special privileges
-          if (employeeData.jobTitle === 'Maintenance' || employeeData.jobTitle === 'Admin') {
-            userData.canManageMaintenance = true;
-          }
-          
-          setCurrentUser(userData);
-          
-          // Save to localStorage
-          localStorage.setItem('currentUser', JSON.stringify(userData));
-          localStorage.setItem('currentView', userView);
-          
-        } else {
+        } catch (error) {
+          console.error("Error fetching user data:", error);
           await logoutUser();
           localStorage.removeItem('currentUser');
           localStorage.removeItem('currentView');
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        await logoutUser();
+      } else {
+        setCurrentUser(null);
+        setView('login');
         localStorage.removeItem('currentUser');
         localStorage.removeItem('currentView');
       }
-    } else {
-      setCurrentUser(null);
-      setView('login');
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('currentView');
-    }
-  });
-  
-  return () => unsubscribe();
-}, []);
-
+    });
+    
+    return () => unsubscribe();
+  }, []);
 
 
 const filteredRestaurants = () => {
@@ -1253,7 +1247,7 @@ if (view === 'maintenance') {
                       <p className="text-indigo-100 text-xs mb-1">Discount Amount</p>
                       <div className="flex items-center">
                         <Percent size={18} className="text-white mr-2" />
-                        <p className="text-3xl font-bold text-white">{currentDiscount}%</p>
+                        <p className="text-3xl font-bold text-white">{getDiscount(selectedLocation)}%</p>
                       </div>
                     </div>
                   </div>
@@ -1885,11 +1879,12 @@ if (view === 'employee') {
 
 // MANAGER VIEW
 if (view === 'manager') {
-  if (view === 'manager' && showMaintenanceView && currentUser && currentUser.jobTitle === 'General Manager') {
+  if (view === 'manager' && showMaintenanceView && currentUser) {
     return (
       <MaintenanceIntegration 
         currentUser={currentUser} 
         onBack={() => setShowMaintenanceView(false)} 
+        isMaintenance={currentUser.jobTitle === 'Maintenance' || currentUser.jobTitle === 'Admin'}
       />
     );
   }

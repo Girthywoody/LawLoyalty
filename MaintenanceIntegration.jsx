@@ -48,7 +48,7 @@ const MaintenanceIntegration = ({ currentUser, onBack }) => {
               className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
             >
               <ChevronLeft size={18} className="mr-1" />
-              <span>Back to Dashboard</span>
+              <span>{isMaintenance ? "View Discount" : "Back to Dashboard"}</span>
             </button>
           </div>
         </div>
