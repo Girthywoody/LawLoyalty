@@ -1693,32 +1693,32 @@ if (view === 'manager') {
       </header>
 
       {/* Navigation Menu */}
-      <div className="bg-white shadow-sm border-b border-gray-200 mb-6">
-        <div className="hidden sm:block max-w-7xl mx-auto">
-          <div className="flex">
+      <div className="bg-white shadow-sm border-b border-gray-200 mb-6 overflow-x-auto">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex min-w-max">
             <button
               onClick={() => setManagerView('manage')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
+              className={`px-4 sm:px-6 py-4 font-medium text-sm transition-colors whitespace-nowrap ${
                 managerView === 'manage' 
                   ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
               <div className="flex items-center">
-                <User size={16} className="mr-2" />
+                <User size={16} className="mr-2 flex-shrink-0" />
                 Manage Employees
               </div>
             </button>
             <button
               onClick={() => setManagerView('discount')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
+              className={`px-4 sm:px-6 py-4 font-medium text-sm transition-colors whitespace-nowrap ${
                 managerView === 'discount' 
                   ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
               <div className="flex items-center">
-                <Percent size={16} className="mr-2" />
+                <Percent size={16} className="mr-2 flex-shrink-0" />
                 View Discount
               </div>
             </button>
@@ -1726,39 +1726,17 @@ if (view === 'manager') {
             {currentUser && currentUser.jobTitle === 'General Manager' && (
               <button
                 onClick={() => setShowMaintenanceView(true)}
-                className={`px-6 py-4 font-medium text-sm transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50`}
+                className={`px-4 sm:px-6 py-4 font-medium text-sm transition-colors whitespace-nowrap text-gray-500 hover:text-gray-700 hover:bg-gray-50`}
               >
                 <div className="flex items-center">
-                  <Wrench size={16} className="mr-2" />
+                  <Wrench size={16} className="mr-2 flex-shrink-0" />
                   Maintenance
                 </div>
               </button>
             )}
           </div>
         </div>
-
-  {/* Mobile dropdown menu */}
-  <div className="sm:hidden">
-    <select
-      value={managerView}
-      onChange={(e) => {
-        const value = e.target.value;
-        if (value === 'maintenance') {
-          setShowMaintenanceView(true);
-        } else {
-          setManagerView(value);
-        }
-      }}
-      className="block w-full py-3 pl-3 pr-10 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-    >
-      <option value="manage">👤 Manage Employees</option>
-      <option value="discount">% View Discount</option>
-      {currentUser && currentUser.jobTitle === 'General Manager' && (
-        <option value="maintenance">🔧 Maintenance</option>
-      )}
-    </select>
-  </div>
-</div>
+      </div>
 
 
 
