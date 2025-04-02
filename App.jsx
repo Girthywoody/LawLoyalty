@@ -1135,22 +1135,15 @@ if (view === 'maintenance') {
           </div>
           <div className="flex items-center space-x-4">
             {/* Toggle between Maintenance Management and Discount View */}
-            <button 
-              onClick={() => setShowMaintenanceView(!showMaintenanceView)}
-              className={`flex items-center p-2 rounded-lg ${showMaintenanceView ? 'bg-gray-100 text-gray-700' : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'} transition-colors`}
-            >
-              {showMaintenanceView ? (
-                <>
-                  <Store size={18} className="mr-1" />
-                  <span className="hidden md:inline">View Discount</span>
-                </>
-              ) : (
-                <>
+            {currentUser && currentUser.jobTitle === 'Maintenance' && (
+                <button 
+                  onClick={() => setShowMaintenanceView(true)}
+                  className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
+                >
                   <Wrench size={18} className="mr-1" />
                   <span className="hidden md:inline">Maintenance</span>
-                </>
+                </button>
               )}
-            </button>
             <button 
               onClick={handleLogout}
               className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
