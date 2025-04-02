@@ -110,6 +110,8 @@ const MaintenanceManagement = ({ currentUser }) => {
     );
   };
 
+  
+
 // Show notification
 const showNotification = (message, type = 'info') => {
   setNotification({ message, type });
@@ -118,30 +120,48 @@ const showNotification = (message, type = 'info') => {
   }, 3000);
 };
   
-  useEffect(() => {
-    setIsLoading(true);
+useEffect(() => {
+  setIsLoading(true);
+  
+  // Subscribe to maintenance requests
+  const unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
+    // Filter requests based on current user
+    let filteredRequests = requests;
     
-    // Subscribe to maintenance requests
-    const unsubRequestsSnapshot = subscribeToMaintenanceRequests((requests) => {
-      setMaintenanceRequests(requests);
-      setFilteredRequests(requests);
-      setIsLoading(false);
-    });
+    // Only filter if the user is a General Manager (not an Admin)
+    if (currentUser && currentUser.jobTitle === 'General Manager') {
+      // Filter to only show requests created by this manager
+      filteredRequests = requests.filter(request => 
+        request.createdBy === currentUser.name || 
+        request.createdByUid === currentUser.id
+      );
+    }
     
-    // Subscribe to maintenance events
-    const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
-      setMaintenanceEvents(events);
-    });
-
-
-
-    
-    // Cleanup on unmount
-    return () => {
-      unsubRequestsSnapshot && unsubRequestsSnapshot();
-      unsubEventsSnapshot && unsubEventsSnapshot();
-    };
-  }, []);
+    setMaintenanceRequests(filteredRequests);
+    setFilteredRequests(filteredRequests);
+    setIsLoading(false);
+  });
+  
+  // Subscribe to maintenance events
+  const unsubEventsSnapshot = subscribeToMaintenanceEvents((events) => {
+    // If user is a General Manager, only show their events
+    let filteredEvents = events;
+    if (currentUser && currentUser.jobTitle === 'General Manager') {
+      filteredEvents = events.filter(event => 
+        event.technician === currentUser.name ||
+        event.createdBy === currentUser.name ||
+        event.createdByUid === currentUser.id
+      );
+    }
+    setMaintenanceEvents(filteredEvents);
+  });
+  
+  // Cleanup on unmount
+  return () => {
+    unsubRequestsSnapshot && unsubRequestsSnapshot();
+    unsubEventsSnapshot && unsubEventsSnapshot();
+  };
+}, [currentUser]);
   
   // Apply filters
   useEffect(() => {
@@ -352,6 +372,10 @@ const handleAddRequest = async () => {
       // Get the request details
       const request = maintenanceRequests.find(req => req.id === requestId);
       
+      if (!request) {
+        throw new Error("Request not found");
+      }
+      
       // Create event data with a concrete JavaScript Date
       const now = new Date();
       const eventData = {
@@ -368,25 +392,25 @@ const handleAddRequest = async () => {
       // Update the selected request with the returned data
       setSelectedRequest({
         ...selectedRequest, 
-        status: 'scheduled', 
+        status: 'in progress', // Changed from 'scheduled' to 'in progress'
         scheduledDate: result.start
       });
       
       // Also update the request in the maintenanceRequests array
       const updatedRequests = maintenanceRequests.map(req => 
         req.id === requestId 
-          ? {...req, status: 'scheduled', scheduledDate: result.start}
+          ? {...req, status: 'in progress', scheduledDate: result.start} // Changed from 'scheduled' to 'in progress'
           : req
       );
       setMaintenanceRequests(updatedRequests);
       
-      showNotification('Maintenance scheduled for immediate attention!', 'success');
+      showNotification('Maintenance marked as in progress!', 'success');
       
       // Close the detail modal
       setShowDetailModal(false);
     } catch (error) {
-      console.error("Error scheduling immediate maintenance:", error);
-      showNotification('Failed to schedule immediate maintenance', 'error');
+      console.error("Error setting maintenance to in progress:", error);
+      showNotification('Failed to update maintenance status', 'error');
     }
   };
   
@@ -615,7 +639,6 @@ const formatTime = (date) => {
     }
   };
   
-  // Get status badge
   const getStatusBadge = (status) => {
     switch(status) {
       case 'pending': 
@@ -624,9 +647,15 @@ const formatTime = (date) => {
             <AlertTriangle size={12} className="mr-1" /> Pending
           </span>
         );
-      case 'scheduled': 
+      case 'in progress': 
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+            <Clock size={12} className="mr-1" /> In Progress
+          </span>
+        );
+      case 'scheduled': 
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
             <Calendar size={12} className="mr-1" /> Scheduled
           </span>
         );
@@ -1434,10 +1463,19 @@ const formatTime = (date) => {
                       <Calendar size={16} className="mr-2" />
                       Schedule Maintenance
                     </button>
+                    
+                    <button
+                      type="button"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                      onClick={() => handleDeleteRequest(selectedRequest.id)}
+                    >
+                      <Trash2 size={16} className="mr-2" />
+                      Delete
+                    </button>
                   </div>
                 )}
                 
-                {selectedRequest.status === 'scheduled' && (
+                {selectedRequest.status === 'in progress' && (
                   <div className="flex flex-col sm:flex-row gap-3 w-full">
                     <button
                       type="button"
@@ -1456,7 +1494,28 @@ const formatTime = (date) => {
                       <Calendar size={16} className="mr-2" />
                       Reschedule
                     </button>
+                    
+                    <button
+                      type="button"
+                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                      onClick={() => handleDeleteRequest(selectedRequest.id)}
+                    >
+                      <Trash2 size={16} className="mr-2" />
+                      Delete
+                    </button>
                   </div>
+                )}
+                
+                {/* Also add delete button for completed requests */}
+                {selectedRequest.status === 'completed' && (
+                  <button
+                    type="button"
+                    className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                    onClick={() => handleDeleteRequest(selectedRequest.id)}
+                  >
+                    <Trash2 size={16} className="mr-2" />
+                    Delete Request
+                  </button>
                 )}
               </div>
             </div>

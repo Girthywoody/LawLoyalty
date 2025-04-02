@@ -29,6 +29,8 @@ const maintenanceEventsCollection = collection(db, 'maintenanceEvents');
  * @param {Array} imageFiles - Array of image files to upload
  * @returns {Promise<Object>} - Created maintenance request data
  */
+
+
 export const createMaintenanceRequest = async (requestData, imageFiles = []) => {
   try {
     // Array to store image download URLs
@@ -73,9 +75,13 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
       }
     }
     
+    // Store the creator's ID for filtering
+    const createdByUid = requestData.currentUser?.id || null;
+    
     // Create request document with image URLs and reference paths
     const docRef = await addDoc(maintenanceRequestsCollection, {
       ...requestData,
+      createdByUid, // Add the creator's ID
       images: imageUrls,
       imageRefs: imageRefs, // Store references for deletion capability
       status: 'pending',
@@ -87,6 +93,7 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
     return { 
       id: docRef.id, 
       ...requestData, 
+      createdByUid,
       images: imageUrls,
       imageRefs: imageRefs,
       createdAt: new Date(),
@@ -227,10 +234,10 @@ export const scheduleMaintenanceEvent = async (requestId, eventData) => {
       createdAt: serverTimestamp()
     });
     
-    // Update the request status
+    // Update the request status to in progress instead of scheduled
     const requestRef = doc(db, 'maintenanceRequests', requestId);
     await updateDoc(requestRef, { 
-      status: 'scheduled',
+      status: 'in progress',  // Changed from 'scheduled' to 'in progress'
       scheduledDate: startDate, // Use provided date
       updatedAt: serverTimestamp() 
     });

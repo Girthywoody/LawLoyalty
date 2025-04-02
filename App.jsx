@@ -749,6 +749,34 @@ const handleCreateManager = async () => {
     }
   };
 
+  const handleDeleteRequest = async (requestId) => {
+    try {
+      if (!confirm("Are you sure you want to delete this maintenance request?")) {
+        return; // User cancelled
+      }
+      
+      setIsLoading(true);
+      await deleteMaintenanceRequest(requestId);
+      
+      // Update state
+      setMaintenanceRequests(prev => prev.filter(req => req.id !== requestId));
+      setFilteredRequests(prev => prev.filter(req => req.id !== requestId));
+      
+      // Close detail modal if open
+      if (showDetailModal && selectedRequest?.id === requestId) {
+        setShowDetailModal(false);
+        setSelectedRequest(null);
+      }
+      
+      showNotification('Maintenance request deleted successfully', 'success');
+    } catch (error) {
+      console.error("Error deleting maintenance request:", error);
+      showNotification('Failed to delete maintenance request', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const MobileNavbar = ({ currentUser, view, setView, handleLogout }) => {
     const [showMenu, setShowMenu] = useState(false);
     
@@ -1225,16 +1253,18 @@ if (view === 'admin') {
           <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <div className="flex items-center">
               <Shield size={24} className="text-indigo-600 mr-2" />
-              <h1 className="text-xl font-semibold text-indigo-700">Maintenance Management</h1>
+              <h1 className="text-xl font-semibold text-indigo-700">Manager Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <button 
-                onClick={() => setShowMaintenanceView(false)}
-                className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
-              >
-                <ChevronLeft size={18} className="mr-1" />
-                <span>Back to Admin</span>
-              </button>
+              {currentUser && currentUser.jobTitle === 'General Manager' && (
+                <button 
+                  onClick={() => setShowMaintenanceView(true)}
+                  className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
+                >
+                  <Wrench size={18} className="mr-1" />
+                  <span className="hidden md:inline">Maintenance</span>
+                </button>
+              )}
               <button 
                 onClick={handleLogout}
                 className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
@@ -1863,20 +1893,7 @@ if (view === 'manager') {
           }}
         />
       )}
-      {currentUser && currentUser.jobTitle === 'General Manager' && (
-        <button
-          onClick={() => setShowMaintenanceView(true)}
-          className={`px-6 py-4 font-medium text-sm transition-colors ${
-            showMaintenanceView ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' : 
-            'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <div className="flex items-center">
-            <Wrench size={16} className="mr-2" />
-            Maintenance
-          </div>
-        </button>
-      )}
+
 
       {/* Main content */}
       <main className="flex-grow max-w-6xl w-full mx-auto py-8 px-4">
