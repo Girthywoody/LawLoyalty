@@ -194,14 +194,6 @@ useEffect(() => {
             return;
           }
           
-          const userData = {
-            id: user.uid,
-            name: employeeData.name || user.displayName || user.email,
-            email: user.email,
-            jobTitle: employeeData.jobTitle || 'Employee',
-            restaurantId: employeeData.restaurantId || null,
-            restaurantName: employeeData.restaurantName || null
-          };
           
           if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
             userData.managedRestaurants = employeeData.managedRestaurants;
