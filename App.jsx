@@ -1111,6 +1111,7 @@ if (view === 'register') {
   );
 }
 
+// MAINTENANCE VIEW
 if (view === 'maintenance') {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -1124,7 +1125,7 @@ if (view === 'maintenance') {
             <h1 className="text-xl font-semibold text-indigo-700">Maintenance Portal</h1>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Maintenance Management Button */}
+            {/* Toggle between Maintenance Management and Discount View */}
             <button 
               onClick={() => setShowMaintenanceView(!showMaintenanceView)}
               className={`flex items-center p-2 rounded-lg ${showMaintenanceView ? 'bg-gray-100 text-gray-700' : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'} transition-colors`}
