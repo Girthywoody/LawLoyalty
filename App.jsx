@@ -1130,20 +1130,40 @@ if (view === 'maintenance') {
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center">
-            <Wrench size={24} className="text-indigo-600 mr-2" />
-            <h1 className="text-xl font-semibold text-indigo-700">Maintenance Portal</h1>
+            {showMaintenanceView ? (
+              <>
+                <Wrench size={24} className="text-indigo-600 mr-2" />
+                <h1 className="text-xl font-semibold text-indigo-700">Maintenance Management</h1>
+              </>
+            ) : (
+              <>
+                <Shield size={24} className="text-indigo-600 mr-2" />
+                <h1 className="text-xl font-semibold text-indigo-700">Discount Portal</h1>
+              </>
+            )}
           </div>
           <div className="flex items-center space-x-4">
-            {/* Toggle between Maintenance Management and Discount View */}
-            {currentUser && currentUser.jobTitle === 'Maintenance' && (
-                <button 
-                  onClick={() => setShowMaintenanceView(true)}
-                  className="flex items-center p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
-                >
+            {/* Button to toggle between Maintenance Management and Discount View */}
+            <button 
+              onClick={() => setShowMaintenanceView(!showMaintenanceView)}
+              className={`flex items-center p-2 rounded-lg ${
+                showMaintenanceView 
+                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
+                  : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+              } transition-colors`}
+            >
+              {showMaintenanceView ? (
+                <>
+                  <Percent size={18} className="mr-1" />
+                  <span className="hidden md:inline">View Discount</span>
+                </>
+              ) : (
+                <>
                   <Wrench size={18} className="mr-1" />
-                  <span className="hidden md:inline">Maintenance</span>
-                </button>
+                  <span className="hidden md:inline">Maintenance Management</span>
+                </>
               )}
+            </button>
             <button 
               onClick={handleLogout}
               className="flex items-center p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
@@ -1188,12 +1208,11 @@ if (view === 'maintenance') {
               />
             </div>
 
-            {/* Discount display - same as employee view */}
+            {/* Discount display */}
             {selectedLocation ? (
               <div className="p-4">
                 <h3 className="text-lg font-medium text-gray-900 mb-3">Your Discount</h3>
                 <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg overflow-hidden">
-                  {/* Discount card content - same as employee view */}
                   {/* Header section */}
                   <div className="px-5 py-4 border-b border-indigo-400 border-opacity-30">
                     <h4 className="text-white text-xl font-bold">Employee Verification</h4>
