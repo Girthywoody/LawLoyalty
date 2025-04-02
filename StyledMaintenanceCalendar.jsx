@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Search, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Settings } from 'lucide-react';
 
 const StyledMaintenanceCalendar = ({ maintenanceEvents = [] }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -34,9 +34,22 @@ const StyledMaintenanceCalendar = ({ maintenanceEvents = [] }) => {
     return days;
   };
   
-  // Filter events for the selected date
+  // Process and format maintenance requests and events for the calendar
   useEffect(() => {
-    const filteredEvents = maintenanceEvents.filter(event => {
+    let calendarEvents = [];
+    
+    // Process maintenance events - these are already in the right format
+    calendarEvents = maintenanceEvents.map(event => ({
+      ...event,
+      id: event.id || `event-${Date.now()}-${Math.random()}`,
+      title: event.title || 'Maintenance Visit',
+      description: event.description,
+      location: event.location,
+      color: getEventColor(event)
+    }));
+    
+    // Filter events for the selected date
+    const filteredEvents = calendarEvents.filter(event => {
       const eventDate = new Date(event.start);
       return (
         eventDate.getDate() === selectedDate.getDate() &&
@@ -110,44 +123,34 @@ const StyledMaintenanceCalendar = ({ maintenanceEvents = [] }) => {
     });
   };
   
-  // Sample events to match the screenshot
-  const sampleEvents = [
-    {
-      id: 1,
-      title: "Marketing team meeting",
-      start: new Date(selectedDate).setHours(8, 0),
-      end: new Date(selectedDate).setHours(8, 40),
-      color: "bg-orange-100 text-orange-800"
-    },
-    {
-      id: 2,
-      title: "Make plans to create new products",
-      start: new Date(selectedDate).setHours(9, 0),
-      end: new Date(selectedDate).setHours(9, 40),
-      color: "bg-blue-100 text-blue-800"
-    },
-    {
-      id: 3,
-      title: "Coffee breaks and snacks",
-      start: new Date(selectedDate).setHours(10, 0),
-      end: new Date(selectedDate).setHours(10, 15),
-      color: "bg-blue-100 text-blue-800"
-    },
-    {
-      id: 4,
-      title: "Company policy meeting with management team",
-      start: new Date(selectedDate).setHours(11, 0),
-      end: new Date(selectedDate).setHours(12, 15),
-      color: "bg-pink-100 text-pink-800"
-    },
-    {
-      id: 5,
-      title: "Have lunch",
-      start: new Date(selectedDate).setHours(12, 30),
-      end: new Date(selectedDate).setHours(13, 30),
-      color: "bg-orange-100 text-orange-800"
+  // Determine event color based on urgency level or status
+  const getEventColor = (event) => {
+    // If it's a maintenance request (has urgencyLevel property)
+    if (event.urgencyLevel) {
+      switch(event.urgencyLevel) {
+        case 1: return "bg-gray-100 text-gray-800"; // Very Low
+        case 2: return "bg-blue-100 text-blue-800"; // Low
+        case 3: return "bg-yellow-100 text-yellow-800"; // Medium
+        case 4: return "bg-orange-100 text-orange-800"; // High
+        case 5: return "bg-red-100 text-red-800"; // Critical
+        default: return "bg-blue-100 text-blue-800";
+      }
     }
-  ];
+    
+    // If it's an event with status
+    if (event.status) {
+      switch(event.status) {
+        case 'pending': return "bg-yellow-100 text-yellow-800";
+        case 'scheduled': return "bg-purple-100 text-purple-800";
+        case 'in progress': return "bg-blue-100 text-blue-800";
+        case 'completed': return "bg-green-100 text-green-800";
+        default: return "bg-gray-100 text-gray-800";
+      }
+    }
+    
+    // Default color
+    return "bg-blue-100 text-blue-800";
+  };
   
   // Generate time slots from 8:00 to 18:00
   const timeSlots = Array.from({ length: 11 }, (_, i) => {
@@ -159,7 +162,7 @@ const StyledMaintenanceCalendar = ({ maintenanceEvents = [] }) => {
   const getEventForTimeSlot = (timeSlot) => {
     const [hour] = timeSlot.split(':').map(Number);
     
-    return sampleEvents.filter(event => {
+    return eventsForSelectedDate.filter(event => {
       const eventStartHour = new Date(event.start).getHours();
       const eventEndHour = new Date(event.end).getHours();
       const eventEndMinutes = new Date(event.end).getMinutes();
@@ -269,7 +272,7 @@ const StyledMaintenanceCalendar = ({ maintenanceEvents = [] }) => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-medium text-gray-700">Today</h3>
           <button className="p-1 rounded-full bg-gray-100 text-gray-400">
-            <CalendarIcon size={18} />
+            <Settings size={18} />
           </button>
         </div>
         
@@ -312,8 +315,8 @@ const StyledMaintenanceCalendar = ({ maintenanceEvents = [] }) => {
                           </div>
                         )}
                         
-                        {/* Current time indicator for the "Make plans" event, matching the screenshot */}
-                        {event.id === 2 && (
+                        {/* Current time indicator if the event is in progress */}
+                        {event.status === 'in progress' && (
                           <div className="absolute left-0 top-1/2 w-full pr-3">
                             <div className="relative">
                               <div className="absolute left-0 w-3 h-3 bg-indigo-600 rounded-full transform -translate-y-1/2"></div>
