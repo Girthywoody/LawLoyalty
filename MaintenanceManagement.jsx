@@ -1145,444 +1145,414 @@ const formatTime = (date) => {
         </div>
       )}
       
-      {/* Request Detail Modal */}
-      {showDetailModal && selectedRequest && (
-        <div className="fixed inset-0 overflow-y-auto z-20" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            {/* Background overlay */}
-            <div 
-              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
-              aria-hidden="true"
-              onClick={() => setShowDetailModal(false)}
-            ></div>
-            {/* Modal panel */}
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200">
-              {/* Close button */}
-              <button
-                onClick={() => setShowDetailModal(false)}
-                className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
+{/* Request Detail Modal - Enhanced Version */}
+{showDetailModal && selectedRequest && (
+  <div className="fixed inset-0 overflow-y-auto z-20" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      {/* Background overlay */}
+      <div 
+        className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
+        aria-hidden="true"
+        onClick={() => setShowDetailModal(false)}
+      ></div>
+      
+      {/* Modal panel */}
+      <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200">
+        {/* Close button */}
+        <button
+          onClick={() => setShowDetailModal(false)}
+          className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+        >
+          <X size={20} className="text-gray-500" />
+        </button>
 
-              <div className="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
-                    <AlertTriangle size={20} className="text-white" />
-                  </div>
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
-                      {selectedRequest.title}
-                    </h3>
-                          <div className="mt-4">
-                            {/* Meta Info */}
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {getStatusBadge(selectedRequest.status)}
-                              <div className="flex items-center gap-2">
-                                {isEditingUrgency ? (
-                                  <div className="flex items-center gap-2">
-                                    <select
-                                      className="rounded-lg border border-gray-300 shadow-sm py-1 px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200"
-                                      value={selectedRequest.urgencyLevel}
-                                      onChange={(e) => {
-                                        setSelectedRequest({...selectedRequest, urgencyLevel: parseInt(e.target.value)});
-                                      }}
-                                    >
-                                      <option value="1">1 - Very Low</option>
-                                      <option value="2">2 - Low</option>
-                                      <option value="3">3 - Medium</option>
-                                      <option value="4">4 - High</option>
-                                      <option value="5">5 - Critical</option>
-                                    </select>
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        // Update urgency in Firestore
-                                        const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
-                                        updateDoc(requestRef, { 
-                                          urgencyLevel: selectedRequest.urgencyLevel,
-                                          updatedAt: serverTimestamp() 
-                                        }).then(() => {
-                                          showNotification('Urgency updated successfully', 'success');
-                                          setIsEditingUrgency(false);
-                                        }).catch((error) => {
-                                          console.error("Error updating urgency:", error);
-                                          showNotification('Failed to update urgency', 'error');
-                                        });
-                                      }}
-                                      className="p-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-200"
-                                    >
-                                      <Check size={16} className="text-green-600" />
-                                    </button>
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setIsEditingUrgency(false);
-                                      }}
-                                      className="p-1 rounded-full bg-red-100 hover:bg-red-200 transition-colors duration-200"
-                                    >
-                                      <X size={16} className="text-red-600" />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
-                                      selectedRequest.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
-                                      selectedRequest.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
-                                      'bg-blue-100 text-blue-800'
-                                    }`}>
-                                      Urgency: {getUrgencyLabel(selectedRequest.urgencyLevel).text}
-                                    </span>
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setIsEditingUrgency(true);
-                                      }}
-                                      className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-                                    >
-                                      <Edit size={14} className="text-gray-600" />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            
-                            {/* Location & Created Info */}
-                            <div className="flex justify-between text-sm text-gray-500 mb-4">
-                              <div className="flex items-center">
-                                <MapPin size={16} className="mr-1" />
-                                {selectedRequest.location}
-                              </div>
-                              <div>
-                                Created by {selectedRequest.createdBy} on {formatDate(selectedRequest.createdAt)}
-                              </div>
-                            </div>
-                            
-                            {/* Description */}
-                            <div className="mt-2 mb-4">
-                              <h4 className="text-sm font-medium text-gray-300 mb-1">Description</h4>
-                              <p className="text-sm text-gray-400 whitespace-pre-wrap">
-                                {selectedRequest.description}
-                              </p>
-                            </div>
-                            
-                            {/* Status Info */}
-                            {selectedRequest.status === 'scheduled' && (
-                              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
-                                <div className="flex items-center">
-                                  <Calendar size={18} className="text-blue-600 mr-2" />
-                                  <div>
-                                    <p className="text-sm font-medium text-blue-800">
-                                      Scheduled for {formatDate(selectedRequest.scheduledDate)}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {selectedRequest.status === 'completed' && (
-                              <div className="bg-green-50 border border-green-100 rounded-lg p-4 mb-4">
-                                <div className="flex items-center">
-                                  <Check size={18} className="text-green-600 mr-2" />
-                                  <div>
-                                    <p className="text-sm font-medium text-green-800">
-                                      Completed on {formatDate(selectedRequest.completedDate)}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Images */}
-                            {selectedRequest.images && selectedRequest.images.length > 0 && (
-                              <div className="mt-4">
-                                <h4 className="text-sm font-medium text-gray-700 mb-2">Images</h4>
-                                <ImageUploadComponent
-                                  submittedImages={selectedRequest.images}
-                                  onImageDelete={handleDeleteSubmittedImage}
-                                  images={additionalImages.images}
-                                  imagePreviewUrls={additionalImages.imagePreviewUrls}
-                                  onImagesChanged={handleAdditionalImageChange}
-                                  maxSize={10}
-                                  maxFiles={10}
-                                  isSubmitted={true}
-                                />
-                              </div>
-                            )}
-                            {/* Comments */}
-                            <div className="mt-6">
-                            <h4 className="text-sm font-medium text-gray-300 mb-3">Comments</h4>
-                              
-                              {selectedRequest.comments.length === 0 ? (
-                                <p className="text-sm text-gray-400 italic">No comments yet</p>
-                              ) : (
-                                <ul className="space-y-4">
-                                  {selectedRequest.comments.map((comment) => (
-                                    <li key={comment.id} className="bg-gray-100 rounded-lg p-4">
-                                      <div className="flex justify-between items-start">
-                                        <span className="text-sm font-medium text-gray-900">{comment.createdBy}</span>
-                                        <span className="text-xs text-gray-400">
-                                          {comment.createdAt instanceof Date ? formatDate(comment.createdAt) : formatDate(new Date(comment.createdAt))}
-                                        </span>
-                                      </div>
-                                      <p className="mt-1 text-sm text-gray-600">{comment.text}</p>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                              
-                              {/* Add Comment Form */}
-                              <div className="mt-4">
-                                <div className="flex">
-                                <input 
-                                  type="text"
-                                  className="flex-grow rounded-l-lg border-gray-300 bg-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm text-gray-900 placeholder-gray-400"
-                                  placeholder="Add a comment..."
-                                  value={newComment}
-                                  onChange={(e) => setNewComment(e.target.value)}
-                                />
-                                  <button
-                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-lg shadow-sm text-gray-900 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-                                    onClick={() => handleAddComment(selectedRequest.id)}
-                                  >
-                                    <MessageCircle size={16} className="mr-2" />
-                                    Post
-                                  </button>
-                                </div>
-                                <div className="mt-6">
-                                  <h4 className="text-sm font-medium text-gray-700 mb-2">Add More Images</h4>
-                                  <ImageUploadComponent
-                                    images={additionalImages.images}
-                                    imagePreviewUrls={additionalImages.imagePreviewUrls}
-                                    onImagesChanged={handleAdditionalImageChange}
-                                    maxSize={10}
-                                    maxFiles={3}
-                                  />
-                                  {additionalImages.images.length > 0 && (
-                                    <button
-                                      type="button"
-                                      className="mt-3 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                      onClick={() => handleAddImagesToRequest(selectedRequest.id)}
-                                      disabled={isUploadingImage}
-                                    >
-                                      {isUploadingImage ? 'Uploading...' : 'Upload Images'}
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+        {/* Modal Header */}
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 pt-5 pb-4 sm:p-6 border-b border-gray-200">
+          <div className="sm:flex sm:items-start">
+            <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
+              <AlertTriangle size={20} className="text-white" />
+            </div>
+            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+              <h3 className="text-xl font-semibold text-gray-900" id="modal-title">
+                {selectedRequest.title}
+              </h3>
+              
+              {/* Meta Info */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {getStatusBadge(selectedRequest.status)}
+                <div className="flex items-center gap-2">
+                  {isEditingUrgency ? (
+                    <div className="flex items-center gap-2">
+                      <select
+                        className="rounded-lg border border-gray-300 shadow-sm py-1 px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200"
+                        value={selectedRequest.urgencyLevel}
+                        onChange={(e) => {
+                          setSelectedRequest({...selectedRequest, urgencyLevel: parseInt(e.target.value)});
+                        }}
+                      >
+                        <option value="1">1 - Very Low</option>
+                        <option value="2">2 - Low</option>
+                        <option value="3">3 - Medium</option>
+                        <option value="4">4 - High</option>
+                        <option value="5">5 - Critical</option>
+                      </select>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Update urgency in Firestore
+                          const requestRef = doc(db, 'maintenanceRequests', selectedRequest.id);
+                          updateDoc(requestRef, { 
+                            urgencyLevel: selectedRequest.urgencyLevel,
+                            updatedAt: serverTimestamp() 
+                          }).then(() => {
+                            showNotification('Urgency updated successfully', 'success');
+                            setIsEditingUrgency(false);
+                          }).catch((error) => {
+                            console.error("Error updating urgency:", error);
+                            showNotification('Failed to update urgency', 'error');
+                          });
+                        }}
+                        className="p-1 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-200"
+                      >
+                        <Check size={16} className="text-green-600" />
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsEditingUrgency(false);
+                        }}
+                        className="p-1 rounded-full bg-red-100 hover:bg-red-200 transition-colors duration-200"
+                      >
+                        <X size={16} className="text-red-600" />
+                      </button>
                     </div>
-
-                    {showSchedulePicker && selectedRequest && (
-        <div className="fixed inset-0 overflow-y-auto z-30" aria-labelledby="schedule-modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            {/* Background overlay */}
-            <div 
-              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" 
-              aria-hidden="true"
-              onClick={() => setShowSchedulePicker(false)}
-            ></div>
-
-            {/* Modal panel - centered for mobile */}
-            <div className="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full max-w-md mx-4 my-8 border border-gray-200">
-              {/* Close button */}
-              <button
-                onClick={() => setShowSchedulePicker(false)}
-                className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
-
-              <div className="bg-white px-4 sm:px-6 pt-5 pb-4 sm:p-6">
-                <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600 sm:mx-0 sm:h-10 sm:w-10">
-                    <Calendar size={20} className="text-white" />
-                  </div>
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-xl font-semibold text-gray-900" id="schedule-modal-title">
-                      Schedule Maintenance
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Select a date and time for this maintenance request.
-                    </p>
-                    
-                    <div className="mt-6 space-y-4">
-                      {/* Date Picker */}
-                      <div>
-                        <label htmlFor="maintenance-date" className="block text-sm font-medium text-gray-700">
-                          Date
-                        </label>
-                        <input
-                          type="date"
-                          id="maintenance-date"
-                          className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-                          value={scheduleDate.toISOString().split('T')[0]}
-                          onChange={(e) => {
-                            // Create date at noon to avoid timezone issues
-                            const selectedDate = new Date(e.target.value + 'T12:00:00');
-                            setScheduleDate(selectedDate);
-                          }}
-                        />
-                      </div>
-                      
-                      {/* Time Picker */}
-                      <div>
-                        <label htmlFor="maintenance-time" className="block text-sm font-medium text-gray-700">
-                          Time
-                        </label>
-                        <input
-                          type="time"
-                          id="maintenance-time"
-                          className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-                          value={scheduleTime}
-                          onChange={(e) => setScheduleTime(e.target.value)}
-                        />
-                      </div>
-                      
-                      {/* Existing Maintenance Schedule */}
-                      <div className="mt-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Your Schedule</h4>
-                        <div className="max-h-40 overflow-y-auto bg-gray-50 rounded-lg p-2 border border-gray-200">
-                          {maintenanceEvents
-                            .filter(event => {
-                              const eventDate = new Date(event.start);
-                              return eventDate.toDateString() === scheduleDate.toDateString();
-                            })
-                            .sort((a, b) => new Date(a.start) - new Date(b.start))
-                            .map((event, idx) => (
-                              <div key={idx} className="py-2 px-3 mb-1 bg-white rounded border border-gray-100 text-sm">
-                                <div className="font-medium text-gray-900">{event.title}</div>
-                                <div className="text-xs text-gray-500">
-                                  {new Date(event.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
-                                  {new Date(event.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </div>
-                                <div className="text-xs text-gray-400">{event.location}</div>
-                              </div>
-                            ))}
-                          {maintenanceEvents.filter(event => {
-                              const eventDate = new Date(event.start);
-                              return eventDate.toDateString() === scheduleDate.toDateString();
-                            }).length === 0 && (
-                            <p className="text-sm text-center text-gray-400 py-2">No events scheduled for this day</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
+                        selectedRequest.urgencyLevel >= 4 ? 'bg-red-100 text-red-800' :
+                        selectedRequest.urgencyLevel === 3 ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        Urgency: {getUrgencyLabel(selectedRequest.urgencyLevel).text}
+                      </span>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsEditingUrgency(true);
+                        }}
+                        className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+                      >
+                        <Edit size={14} className="text-gray-600" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               
-              <div className="bg-gray-50 px-4 py-4 sm:px-6 flex flex-col sm:flex-row sm:justify-end gap-3">
-                <button
-                  type="button"
-                  className="w-full sm:w-auto order-1 sm:order-2 inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
-                  onClick={() => {
-                    const dateTime = new Date(scheduleDate);
-                    const [hours, minutes] = scheduleTime.split(':');
-                    dateTime.setHours(parseInt(hours), parseInt(minutes), 0);
-                    handleScheduleMaintenanceWithDate(selectedRequest.id, dateTime);
-                    setShowSchedulePicker(false);
-                  }}
-                >
-                  Confirm Schedule
-                </button>
-                
-                <button
-                  type="button"
-                  className="w-full sm:w-auto order-2 sm:order-1 inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
-                  onClick={() => setShowSchedulePicker(false)}
-                >
-                  Cancel
-                </button>
+              {/* Location & Created Info */}
+              <div className="flex flex-wrap justify-between mt-3 text-sm text-gray-600">
+                <div className="flex items-center mr-4 mb-1">
+                  <MapPin size={16} className="text-indigo-500 mr-1 flex-shrink-0" />
+                  <span>{selectedRequest.location}</span>
+                </div>
+                <div className="flex items-center mb-1">
+                  <User size={16} className="text-indigo-500 mr-1 flex-shrink-0" />
+                  <span>Created by {selectedRequest.createdBy} on {formatDate(selectedRequest.createdAt)}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      )}
-              
-              <div className="bg-gray-50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse">
-                {selectedRequest.status === 'pending' && (
-                  <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-medium text-white hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                      onClick={() => handleImmediateSchedule(selectedRequest.id)}
-                    >
-                      <Clock size={16} className="mr-2" />
-                      Go there now
-                    </button>
-                    
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                      onClick={() => setShowSchedulePicker(true)}
-                    >
-                      <Calendar size={16} className="mr-2" />
-                      Schedule Maintenance
-                    </button>
-                    
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                      onClick={() => handleDeleteRequest(selectedRequest.id)}
-                    >
-                      <Trash2 size={16} className="mr-2" />
-                      Delete
-                    </button>
-                  </div>
-                )}
-                
+
+        {/* Modal Body - Redesigned */}
+        <div className="px-6 py-4 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Status and Description */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Status Info Cards */}
+              <div className="space-y-3">
                 {selectedRequest.status === 'in progress' && (
-                  <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                      onClick={() => handleMarkAsCompleted(selectedRequest.id)}
-                    >
-                      <Check size={16} className="mr-2" />
-                      Mark as Completed
-                    </button>
-                    
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-                      onClick={() => handleReschedule(selectedRequest.id)}
-                    >
-                      <Calendar size={16} className="mr-2" />
-                      Reschedule
-                    </button>
-                    
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                      onClick={() => handleDeleteRequest(selectedRequest.id)}
-                    >
-                      <Trash2 size={16} className="mr-2" />
-                      Delete
-                    </button>
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100">
+                        <Clock size={20} className="text-blue-600" />
+                      </div>
+                      <div className="ml-3">
+                        <h4 className="text-sm font-semibold text-blue-800">In Progress</h4>
+                        <p className="text-sm text-blue-600">
+                          This maintenance request is currently being addressed
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 
-                {/* Also add delete button for completed requests */}
-                {selectedRequest.status === 'completed' && (
-                  <button
-                    type="button"
-                    className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-3 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                    onClick={() => handleDeleteRequest(selectedRequest.id)}
-                  >
-                    <Trash2 size={16} className="mr-2" />
-                    Delete Request
-                  </button>
+                {selectedRequest.status === 'scheduled' && (
+                  <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-purple-100">
+                        <Calendar size={20} className="text-purple-600" />
+                      </div>
+                      <div className="ml-3">
+                        <h4 className="text-sm font-semibold text-purple-800">Scheduled</h4>
+                        <p className="text-sm text-purple-600">
+                          Maintenance scheduled for {formatDate(selectedRequest.scheduledDate)} at {formatTime(selectedRequest.scheduledDate)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
+                
+                {selectedRequest.status === 'completed' && (
+                  <div className="bg-green-50 border border-green-100 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-green-100">
+                        <Check size={20} className="text-green-600" />
+                      </div>
+                      <div className="ml-3">
+                        <h4 className="text-sm font-semibold text-green-800">Completed</h4>
+                        <p className="text-sm text-green-600">
+                          Completed on {formatDate(selectedRequest.completedDate)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Description */}
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <MessageCircle size={16} className="mr-2 text-indigo-500" />
+                  Description
+                </h4>
+                <div className="bg-white rounded-lg p-4 border border-gray-100">
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                    {selectedRequest.description || "No description provided."}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Comments Section */}
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <MessageCircle size={16} className="mr-2 text-indigo-500" />
+                  Comments ({selectedRequest.comments?.length || 0})
+                </h4>
+                
+                {(!selectedRequest.comments || selectedRequest.comments.length === 0) ? (
+                  <div className="bg-white rounded-lg p-4 border border-gray-100 text-center">
+                    <p className="text-sm text-gray-400 italic">No comments yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                    {selectedRequest.comments.map((comment) => (
+                      <div key={comment.id} className="bg-white rounded-lg p-3 border border-gray-100 shadow-sm">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2">
+                              <User size={14} className="text-indigo-600" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-900">{comment.createdBy}</span>
+                          </div>
+                          <span className="text-xs text-gray-400">
+                            {comment.createdAt instanceof Date ? formatDate(comment.createdAt) : formatDate(new Date(comment.createdAt))}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-gray-600 pl-10">{comment.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Add Comment Form */}
+                <div className="mt-3">
+                  <div className="flex">
+                    <input 
+                      type="text"
+                      className="flex-grow rounded-l-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm text-gray-900 placeholder-gray-400"
+                      placeholder="Add a comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                    />
+                    <button
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                      onClick={() => handleAddComment(selectedRequest.id)}
+                    >
+                      Post
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right Column - Images */}
+            <div className="lg:col-span-1">
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 h-full">
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <Camera size={16} className="mr-2 text-indigo-500" />
+                  Images ({selectedRequest.images?.length || 0})
+                </h4>
+                
+                {(!selectedRequest.images || selectedRequest.images.length === 0) ? (
+                  <div className="bg-white rounded-lg p-4 border border-gray-100 text-center">
+                    <Camera size={24} className="text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-400 italic">No images attached</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {selectedRequest.images.map((imageUrl, index) => (
+                      <div 
+                        key={`img-${index}`} 
+                        className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white cursor-pointer"
+                        onClick={() => handleImageClick(imageUrl)}
+                      >
+                        <img 
+                          src={imageUrl} 
+                          alt={`Request ${index+1}`}
+                          className="h-full w-full object-cover" 
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all duration-200">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button 
+                              className="p-1 bg-white rounded-full shadow-md"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSubmittedImage(imageUrl, index);
+                              }}
+                            >
+                              <Trash2 size={14} className="text-red-600" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Add More Images */}
+                <div className="mt-3">
+                  <h5 className="text-xs font-medium text-gray-500 mb-2">Add More Images</h5>
+                  <ImageUploadComponent
+                    images={additionalImages.images}
+                    imagePreviewUrls={additionalImages.imagePreviewUrls}
+                    onImagesChanged={handleAdditionalImageChange}
+                    maxSize={10}
+                    maxFiles={3}
+                  />
+                  {additionalImages.images.length > 0 && (
+                    <button
+                      type="button"
+                      className="mt-3 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      onClick={() => handleAddImagesToRequest(selectedRequest.id)}
+                      disabled={isUploadingImage}
+                    >
+                      {isUploadingImage ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={16} className="mr-2" />
+                          Upload Images
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      )}
+        
+        {/* Action Buttons */}
+        <div className="bg-gray-50 px-6 py-4 sm:px-6 border-t border-gray-200">
+          {selectedRequest.status === 'pending' && (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                className="flex-1 inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-base font-medium text-white hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                onClick={() => handleImmediateSchedule(selectedRequest.id)}
+              >
+                <Clock size={16} className="mr-2" />
+                Go there now
+              </button>
+              
+              <button
+                type="button"
+                className="flex-1 inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                onClick={() => setShowSchedulePicker(true)}
+              >
+                <Calendar size={16} className="mr-2" />
+                Schedule
+              </button>
+              
+              <button
+                type="button"
+                className="sm:flex-initial inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                onClick={() => handleDeleteRequest(selectedRequest.id)}
+              >
+                <Trash2 size={16} className="mr-2" />
+                Delete
+              </button>
+            </div>
+          )}
+          
+          {selectedRequest.status === 'in progress' && (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                className="flex-1 inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                onClick={() => handleMarkAsCompleted(selectedRequest.id)}
+              >
+                <Check size={16} className="mr-2" />
+                Mark as Completed
+              </button>
+              
+              <button
+                type="button"
+                className="flex-1 inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                onClick={() => handleReschedule(selectedRequest.id)}
+              >
+                <Calendar size={16} className="mr-2" />
+                Reschedule
+              </button>
+              
+              <button
+                type="button"
+                className="sm:flex-initial inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                onClick={() => handleDeleteRequest(selectedRequest.id)}
+              >
+                <Trash2 size={16} className="mr-2" />
+                Delete
+              </button>
+            </div>
+          )}
+          
+          {selectedRequest.status === 'completed' && (
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-500">
+                This maintenance request has been completed.
+              </div>
+              <button
+                type="button"
+                className="inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                onClick={() => handleDeleteRequest(selectedRequest.id)}
+              >
+                <Trash2 size={16} className="mr-2" />
+                Delete Request
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       {expandedImage && (
         <div 
           className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
