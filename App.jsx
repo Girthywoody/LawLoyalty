@@ -1154,7 +1154,7 @@ if (view === 'maintenance') {
               ) : (
                 <>
                   <Wrench size={18} className="mr-1" />
-                  <span className="hidden md:inline">Maintenance Management</span>
+                  <span className="hidden md:inline">Maintenance Dashboard</span>
                 </>
               )}
             </button>
@@ -1181,7 +1181,7 @@ if (view === 'maintenance') {
       {/* Main content */}
       {showMaintenanceView ? (
         <main className="flex-grow">
-          <MaintenanceManagement currentUser={currentUser} isMaintenance={true} />
+          <MaintenanceManagement currentUser={currentUser} isMaintenance={currentUser.jobTitle === 'Maintenance' || currentUser.jobTitle === 'Admin'} />
         </main>
       ) : (
         <main className="flex-grow max-w-5xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -1343,7 +1343,7 @@ if (view === 'admin') {
         
         {/* Main content */}
         <main className="flex-grow">
-          <MaintenanceManagement currentUser={currentUser} />
+        <MaintenanceManagement currentUser={currentUser} isMaintenance={currentUser.jobTitle === 'Maintenance' || currentUser.jobTitle === 'Admin'} />
         </main>
         
         {/* Footer */}
