@@ -39,7 +39,7 @@ import {
 } from './MaintenanceFirebase';
 
 import ImageUploadComponent from './ImageUploadComponent';
-import EnhancedMaintenanceCalendar from './EnhancedMaintenanceCalendar';
+import ModernMaintenanceCalendar from './ModernMaintenanceCalendar';
 
 
 
@@ -942,7 +942,7 @@ const formatTime = (date) => {
             </div>
 
             {/* Enhanced Maintenance Calendar */}
-            <EnhancedMaintenanceCalendar 
+            <ModernMaintenanceCalendar 
               maintenanceEvents={maintenanceEvents} 
               currentUser={currentUser}
             />
