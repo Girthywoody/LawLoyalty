@@ -185,6 +185,8 @@ useEffect(() => {
             setLoginError('Your account is pending approval from your manager. Please contact your manager for assistance.');
             return;
           }
+
+          
           
           if (employeeData.status === 'rejected') {
             await logoutUser();
@@ -204,6 +206,7 @@ useEffect(() => {
           if (employeeData.jobTitle === 'General Manager' && employeeData.managedRestaurants) {
             userData.managedRestaurants = employeeData.managedRestaurants;
           }
+
           
           setCurrentUser(userData);
           
@@ -1591,9 +1594,14 @@ if (view === 'employee') {
                   {/* Discount details */}
                   <div className="bg-white bg-opacity-10 rounded-lg p-3 border border-white border-opacity-20">
                     <p className="text-indigo-100 text-xs mb-1">Discount Amount</p>
-                    <div className="flex items-center">
-                      <Percent size={18} className="text-white mr-2" />
-                      <p className="text-3xl font-bold text-white">{currentDiscount}%</p>
+                    <div className="flex flex-col">
+                      <div className="flex items-center">
+                        <Percent size={18} className="text-white mr-2" />
+                        <p className="text-3xl font-bold text-white">{currentDiscount}%</p>
+                      </div>
+                      <p className="text-xs text-indigo-100 mt-2 italic">
+                        *Valid on regular-priced items only. Cannot be combined with other offers.
+                      </p>
                     </div>
                   </div>
                 </div>
