@@ -1069,7 +1069,72 @@ const saveEmployeeEditToFirebase = async () => {
     setShowForgotPassword(true);
   };
 
-  //test
+  const MobileNavigation = () => {
+    // Navigation tabs - we're using a scrollable horizontal container
+    return (
+      <div className="bg-white shadow-sm border-b border-gray-200 mb-6 overflow-x-auto">
+        <div className="flex whitespace-nowrap min-w-full px-2">
+          <button
+            onClick={() => setManagerView('manage')}
+            className={`px-4 py-3 font-medium text-sm transition-colors flex-shrink-0 ${
+              managerView === 'manage' 
+                ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <div className="flex items-center">
+              <User size={16} className="mr-2 flex-shrink-0" />
+              <span>Manage Employees</span>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => setManagerView('discount')}
+            className={`px-4 py-3 font-medium text-sm transition-colors flex-shrink-0 ${
+              managerView === 'discount' 
+                ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <div className="flex items-center">
+              <Percent size={16} className="mr-2 flex-shrink-0" />
+              <span>View Discount</span>
+            </div>
+          </button>
+          
+          {/* Only show Maintenance button for General Manager */}
+          {currentUser && currentUser.jobTitle === 'General Manager' && (
+            <button
+              onClick={() => setShowMaintenanceView(true)}
+              className={`px-4 py-3 font-medium text-sm transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50 flex-shrink-0`}
+            >
+              <div className="flex items-center">
+                <Wrench size={16} className="mr-2 flex-shrink-0" />
+                <span>Maintenance</span>
+              </div>
+            </button>
+          )}
+          
+          {/* Only show Analytics button for Admin or General Manager */}
+          {currentUser && (currentUser.jobTitle === 'Admin' || currentUser.jobTitle === 'General Manager') && (
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-4 py-3 font-medium text-sm transition-colors flex-shrink-0 ${
+                activeTab === 'analytics' 
+                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center">
+                <BarChart2 size={16} className="mr-2 flex-shrink-0" />
+                <span>Analytics</span>
+              </div>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   // User profile badge
   const UserProfileBadge = ({ user }) => (
@@ -1847,51 +1912,7 @@ if (view === 'manager') {
         </div>
       </header>
 
-{/* Navigation Menu - Centered and Enhanced */}
-<div className="bg-white shadow-sm border-b border-gray-200 mb-6">
-        <div className="max-w-7xl mx-auto flex justify-center">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setManagerView('manage')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                managerView === 'manage' 
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center">
-                <User size={16} className="mr-2" />
-                Manage Employees
-              </div>
-            </button>
-            <button
-              onClick={() => setManagerView('discount')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                managerView === 'discount' 
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center">
-                <Percent size={16} className="mr-2" />
-                View Discount
-              </div>
-            </button>
-            {/* Only show Maintenance button for General Manager */}
-            {currentUser && currentUser.jobTitle === 'General Manager' && (
-              <button
-                onClick={() => setShowMaintenanceView(true)}
-                className={`px-6 py-4 font-medium text-sm transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50`}
-              >
-                <div className="flex items-center">
-                  <Wrench size={16} className="mr-2" />
-                  Maintenance
-                </div>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+
 
 
 

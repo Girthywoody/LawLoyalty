@@ -32,7 +32,8 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
-  db
+  db,
+  deleteImageFromRequest
 } from './MaintenanceFirebase';
 
 import ImageUploadComponent from './ImageUploadComponent';
@@ -303,6 +304,77 @@ const handleAddRequest = async () => {
   const handleReschedule = (requestId) => {
     // Simply show the schedule picker with the current date/time
     setShowSchedulePicker(true);
+  };
+
+  const handleDeleteSubmittedImage = async (imageUrl, imageIndex) => {
+    if (!selectedRequest) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Delete the image from Firebase
+      await deleteImageFromRequest(selectedRequest.id, imageUrl);
+      
+      // Update the selected request in state
+      const updatedImages = [...selectedRequest.images];
+      updatedImages.splice(imageIndex, 1);
+      
+      setSelectedRequest({
+        ...selectedRequest,
+        images: updatedImages
+      });
+      
+      // Also update the request in the maintenanceRequests array
+      const updatedRequests = maintenanceRequests.map(req => 
+        req.id === selectedRequest.id
+          ? { ...req, images: updatedImages }
+          : req
+      );
+      
+      setMaintenanceRequests(updatedRequests);
+      setFilteredRequests(
+        filteredRequests.map(req => 
+          req.id === selectedRequest.id
+            ? { ...req, images: updatedImages }
+            : req
+        )
+      );
+      
+      showNotification('Image deleted successfully', 'success');
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      showNotification('Failed to delete image', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteRequest = async (requestId) => {
+    try {
+      if (!confirm("Are you sure you want to delete this maintenance request?")) {
+        return; // User cancelled
+      }
+      
+      setIsLoading(true);
+      await deleteMaintenanceRequest(requestId);
+      
+      // Update state
+      setMaintenanceRequests(prev => prev.filter(req => req.id !== requestId));
+      setFilteredRequests(prev => prev.filter(req => req.id !== requestId));
+      
+      // Close detail modal if open
+      if (showDetailModal && selectedRequest?.id === requestId) {
+        setShowDetailModal(false);
+        setSelectedRequest(null);
+      }
+      
+      showNotification('Maintenance request deleted successfully', 'success');
+    } catch (error) {
+      console.error("Error deleting maintenance request:", error);
+      showNotification('Failed to delete maintenance request', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleScheduleMaintenanceWithDate = async (requestId, date) => {
@@ -1223,32 +1295,20 @@ const formatTime = (date) => {
                             
                             {/* Images */}
                             {selectedRequest.images && selectedRequest.images.length > 0 && (
-                            <div className="mt-4">
-                              <h4 className="text-sm font-medium text-gray-700 mb-2">Images</h4>
-                              <div className="grid grid-cols-2 gap-3">
-                                {selectedRequest.images.map((image, index) => (
-                                  <div 
-                                    key={index} 
-                                    className="relative cursor-pointer rounded-lg overflow-hidden hover:opacity-90 transition-opacity duration-200"
-                                    onClick={() => handleImageClick(image)}
-                                  >
-                                    <img 
-                                      src={image}
-                                      alt={`Issue ${index + 1}`}
-                                      className="h-48 w-full object-cover rounded-lg shadow-sm"
-                                    />
-                                    <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 flex items-center justify-center transition-all duration-200">
-                                      <div className="opacity-0 hover:opacity-100 text-white">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                        </svg>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
+                              <div className="mt-4">
+                                <h4 className="text-sm font-medium text-gray-700 mb-2">Images</h4>
+                                <ImageUploadComponent
+                                  submittedImages={selectedRequest.images}
+                                  onImageDelete={handleDeleteSubmittedImage}
+                                  images={additionalImages.images}
+                                  imagePreviewUrls={additionalImages.imagePreviewUrls}
+                                  onImagesChanged={handleAdditionalImageChange}
+                                  maxSize={10}
+                                  maxFiles={10}
+                                  isSubmitted={true}
+                                />
                               </div>
-                            </div>
-                          )}
+                            )}
                             {/* Comments */}
                             <div className="mt-6">
                             <h4 className="text-sm font-medium text-gray-300 mb-3">Comments</h4>

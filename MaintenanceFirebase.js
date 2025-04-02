@@ -105,6 +105,65 @@ export const createMaintenanceRequest = async (requestData, imageFiles = []) => 
   }
 };
 
+export const deleteImageFromRequest = async (requestId, imageUrl) => {
+  try {
+    // Get current request data
+    const requestRef = doc(db, 'maintenanceRequests', requestId);
+    const requestDoc = await getDoc(requestRef);
+    
+    if (!requestDoc.exists()) {
+      throw new Error('Request not found');
+    }
+    
+    const requestData = requestDoc.data();
+    const currentImages = requestData.images || [];
+    const currentImageRefs = requestData.imageRefs || [];
+    
+    // Find the index of the image to delete
+    const imageIndex = currentImages.findIndex(url => url === imageUrl);
+    
+    if (imageIndex === -1) {
+      throw new Error('Image not found in request');
+    }
+    
+    // Get the storage reference for this image
+    const imageRef = currentImageRefs[imageIndex];
+    
+    // Delete from storage if we have a reference
+    if (imageRef) {
+      try {
+        const storageRef = ref(storage, imageRef);
+        await deleteObject(storageRef);
+      } catch (storageError) {
+        console.error("Error deleting image from storage:", storageError);
+        // Continue with Firestore update even if storage deletion fails
+      }
+    }
+    
+    // Remove from arrays
+    const updatedImages = [...currentImages];
+    updatedImages.splice(imageIndex, 1);
+    
+    const updatedImageRefs = [...currentImageRefs];
+    updatedImageRefs.splice(imageIndex, 1);
+    
+    // Update request with updated image arrays
+    await updateDoc(requestRef, {
+      images: updatedImages,
+      imageRefs: updatedImageRefs,
+      updatedAt: serverTimestamp()
+    });
+    
+    return { 
+      images: updatedImages,
+      imageRefs: updatedImageRefs
+    };
+  } catch (error) {
+    console.error("Error deleting image from request:", error);
+    throw error;
+  }
+};
+
 /**
  * Deletes a maintenance request and its associated images
  * @param {string} requestId - The request ID to delete
