@@ -1847,8 +1847,8 @@ if (view === 'manager') {
         </div>
       </header>
 
-      {/* Navigation Menu - Centered and Enhanced */}
-      <div className="bg-white shadow-sm border-b border-gray-200 mb-6">
+{/* Navigation Menu - Centered and Enhanced */}
+<div className="bg-white shadow-sm border-b border-gray-200 mb-6">
         <div className="max-w-7xl mx-auto flex justify-center">
           <div className="flex space-x-2">
             <button
@@ -1877,6 +1877,18 @@ if (view === 'manager') {
                 View Discount
               </div>
             </button>
+            {/* Only show Maintenance button for General Manager */}
+            {currentUser && currentUser.jobTitle === 'General Manager' && (
+              <button
+                onClick={() => setShowMaintenanceView(true)}
+                className={`px-6 py-4 font-medium text-sm transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50`}
+              >
+                <div className="flex items-center">
+                  <Wrench size={16} className="mr-2" />
+                  Maintenance
+                </div>
+              </button>
+            )}
           </div>
         </div>
       </div>
