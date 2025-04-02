@@ -314,6 +314,7 @@ const UserManagementTable = ({
                     >
                       <option value="Employee">Employee</option>
                       <option value="Manager">Manager</option>
+                      <option value="Maintenance">Maintenance</option>
                       {employee.jobTitle === 'Admin' && <option value="Admin">Admin</option>}
                       {employee.jobTitle === 'General Manager' && <option value="General Manager">General Manager</option>}
                     </select>
