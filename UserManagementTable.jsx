@@ -322,6 +322,7 @@ const UserManagementTable = ({
                       employee.jobTitle === 'Admin' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
                       employee.jobTitle === 'Manager' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
                       employee.jobTitle === 'General Manager' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                      employee.jobTitle === 'Maintenance' ? 'bg-red-50 text-red-700 border border-red-200' :
                       'bg-green-50 text-green-700 border border-green-200'
                     }`}>
                       {employee.jobTitle}
