@@ -16,7 +16,8 @@ import {
   MapPin,
   Mail,
   Wrench,
-  ChevronLeft
+  ChevronLeft,
+  AlertTriangle 
 } from 'lucide-react';
 import MaintenanceManagement from './MaintenanceManagement';
 import { subscribeToUserCooldown } from './RestaurantAnalytics';
@@ -657,6 +658,30 @@ const getDiscount = (locationName) => {
   
   // Default return if no match found
   return 20; // Default discount
+};
+
+const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+const [employeeToDelete, setEmployeeToDelete] = useState(null);
+
+// Prepare to delete employee (show confirmation)
+const confirmDelete = (employee) => {
+  setEmployeeToDelete(employee);
+  setShowDeleteConfirm(true);
+};
+
+// Handle delete after confirmation
+const handleDelete = () => {
+  if (employeeToDelete) {
+    removeEmployeeFromFirebase(employeeToDelete.id);
+    setShowDeleteConfirm(false);
+    setEmployeeToDelete(null);
+  }
+};
+
+// Cancel delete
+const cancelDelete = () => {
+  setShowDeleteConfirm(false);
+  setEmployeeToDelete(null);
 };
 
 const handleSelectRestaurant = (restaurant) => {
@@ -2423,6 +2448,34 @@ if (view === 'manager') {
           </div>
         )}
       </main>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-auto shadow-xl">
+            <div className="flex items-center justify-center mb-4 text-red-500">
+              <AlertTriangle size={48} />
+            </div>
+            <h3 className="text-xl font-semibold text-center mb-4">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-6 text-center">
+              Are you sure you want to delete {employeeToDelete?.name}? This action cannot be undone.
+            </p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-4 mt-8">
