@@ -2174,7 +2174,7 @@ if (view === 'manager') {
                                   <Edit size={16} />
                                 </button>
                                 <button
-                                  onClick={() => removeEmployeeFromFirebase(employee.id)}
+                                  onClick={() => confirmDelete(employee)}
                                   className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-md transition-colors"
                                   aria-label="Remove employee"
                                 >

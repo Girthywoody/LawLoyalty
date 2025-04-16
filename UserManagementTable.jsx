@@ -26,6 +26,7 @@ const UserManagementTable = ({
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const [filteredByFilters, setFilteredByFilters] = useState([]);
 
+  
   // Get all unique restaurants from employees
   const allRestaurants = () => {
     const uniqueRestaurants = new Set();
@@ -112,7 +113,7 @@ const UserManagementTable = ({
     setEmployeeToDelete(employee);
     setShowDeleteConfirm(true);
   };
-
+  
   // Handle delete after confirmation
   const handleDelete = () => {
     if (employeeToDelete) {
@@ -121,7 +122,7 @@ const UserManagementTable = ({
       setEmployeeToDelete(null);
     }
   };
-
+  
   // Cancel delete
   const cancelDelete = () => {
     setShowDeleteConfirm(false);
